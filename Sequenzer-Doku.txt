@@ -1,0 +1,267 @@
+   Bedienung im aktiven Sequenzer Fenster
+   ======================================
+
+   Damit man etwas anwählen kann, muss man zuerst ein Midi File einlesen. Das
+   Sequenzer Fenster steht danach im Vordergrund.
+   Eventuell sollte man das File beim Einlesen transponieren, z.B. für eine
+   C-Partitur für das b-Örgeli sollte bei "Transpose" der Wert 3 stehen.
+   Dabei werden Probleme im "DOS-Fenster" aufgelistet. Das "DOS-Fenster"  kann
+   in der Task-Leiste aktiviert werden.
+
+   Note anklicken: Die gewählte Note ist schwarz.
+
+   Möglichkeiten mit der Tastatur:
+
+   Taste 'P': wechselt den Push-Zustand, die klingende Note bleibt unverändert
+   Taste 'X': wechselt den "Cross"-Zustand, die Griff-Note bleibt unverändert
+   Taste 'O': wechselt den Push-Zustand, die Griff-Note bleibt unverändert
+   Taste 'I': wenn es eine zweite Wahl zur klingenden Note gibt, wird diese gewählt
+              (der Push-Zustand bleibt erhalten)
+
+   Taste 'N': spielt zur gewählten Note den Akkord ohne Bass
+   Taste 'B': spielt den Akkord ohne die gewählte Note und ohne Bass
+   Taste 'M': spielt die gewählte Note
+   Taste 'V': spielt zur gewählten Note den Akkord mit Bass
+
+   Leertaste: Play ab gewählter Note (oder ab Anfang)
+
+   Tasten "D" oder "Delete": löscht die gewählte Note
+   Tasten "I" oder "Insert": fügt an der Stelle der gewählten Note eine neue Note ein
+     (die neue Note steht 2 Zeilen tiefer)
+
+   Pfeile nach links oder rechts: Noten werden verschoben, Griff- und Klang-Note
+     bleiben erhalten
+
+   Pfeile nach oben oder unten: die neue Griff-Note wird übernommen
+     (die Klang-Note wirde entsprechend der Griff-Note angepasst)
+
+   ctrl-Pfeil nach links oder rechts: verschiebt die Partitur ab gewählter Note
+     (Nummerierung im Feld "Index" beachten)
+   shift-Pfeil nach links oder rechts: verändert die Länge der gewählten Note
+
+   TAB: nächste Note  (wenn keine Note gewählt ist, wird die erste gewählt)
+   ctrl-TAB, shift-TAB, ctrl-shift-TAB: Note zurück
+     (wenn keine Note gewählt ist, wird die letzte gewählt)
+     (Der Wert im Feld "Index" wird um eins erhöht, bzw. verkleinert)
+
+   Taste "ESC": keine Note ist gewählt und das "Gummi"-Rechteck verschwindet
+
+   "Gummi"-Rechteck
+   ----------------
+   Mit rechter Maus-Taste "Gummi"-Rechteck wählen. Die Höhe spielt keinen Rolle.
+   Möglichkeiten bei gewähltem "Gummi"-Rechteck:
+   - Links-, Rechts-Pfeil: Rechteck verschiebt sich nach links bzw. nach rechts
+   - Up-, Down-Pfeil: Rechteck wird länger bzw. kürzer
+   - Tasten 'P', 'X', 'O' und 'I': die entsprechende Taste wird auf alle Noten
+     im "Gummi"-Rechteck ausgeführt
+
+
+   "Trim Note" (CheckBox): Beim Selektieren einer Note wird sie am Raster in
+     Länge und Position angepasst. (nicht mehr gültig)
+
+   "Mute" (Check Box): Stummschaltung
+
+   Achtung: Die Noten werden sortiert nach der linken Position der Note!
+     Deshalb ist es möglich, dass bei einer geänderten Note der "Index" ändert.
+
+   Wenn der Eingabe-Fokus auf dem Griffschrift-Fenster steht, wird mit Ctrl-S
+   eine Kopie der Partitur gespeichert. Der File-Name steht im Konsolen-Fenster.
+
+   -----------------------------------------------------------------------------
+
+   "Save Midi-Partitur" (Button): Partitur wird mit allen Angaben wie folgt
+     gespeichert:
+   
+   Midi File mit Griff-Noten inklusive Balg- und Kreuz-Angaben:
+
+   Im ersten Track muss folgende Copyright-Notiz enthalten sein: 
+     'Griffschrift - Copyright by juerg5524.ch'
+   Ok, es genügt, wenn folgendes steht:
+     'Griffschrift - Copyright'
+     
+   Danach gelten die folgenden Angaben:
+
+   Balg Angabe mit Midi-Event: $b0 $1f xx  (xx: 0 oder 127)
+
+   Griff-Note:                 $b0 $20 xx  (xx: Griff-Note)
+   Griff-Note mit Kreuz:       $b0 $21 xx  (xx: Griff-Note)
+   Repeat-Angabe:              $b0 $22 yy
+
+   Wenn die Griff-Note gleich der Klang-Note und ohne Kreuz ist, dann wird kein
+   Griff-Noten-Event ausgegeben.
+
+   Damit kann das so erzeugte Midi-File mit jedem beliebigen Player abgespielt
+   werden. 
+
+   An dieser Stelle, sollte man dieses Midi-File in ein Notensatz-Programm
+   importieren können.
+      
+   Wenn folgendes steht, dann sind Griff- und Klang-Noten vertauscht:
+     'real Griffschrift - Copyright'
+
+   Das heisst: Wenn man diese Partitur in ein Notensatz-Programm importiert,
+   dann erhält man die Griff-Darstellung. Wobei Kreuz- und Balg-Hinweise noch
+   fehlen.
+
+   -----------------------------------------------------------------------------
+
+   Beispiel:
+
+   Button "Choose .mid-File": z.B. "Cornalia Walzer.mid" selektieren
+
+   Danach beliebig editieren oder abspielen.
+   Speichern mit dem Button "Save Griff-Partitur" (bestehende Files werden nicht überschrieben)
+
+   Button "Load Partitur": das Midi File wird neu geladen.
+
+   -----------------------------------------------------------------------------
+
+   Noten mit MuseScore erstellen (ist noch fehlerhaft, sieht aber hübsch aus):
+   Beschreibung stimmt nicht mehr!!!
+
+   Mit dem MidiSequenzer eine Partitur einlesen (Button "Load Partitur"), z.B.
+   "Cornelia Walzer.mid". Takt in "Partitur Header" anpassen. Ebenso die Partitur
+   verschieben, so dass der Auftakt korrekt ist.
+   Danach mit Button "Midi Partitur" z.B. in "Cornelia.mid"
+   speichern. Damit ist der Bass herausgefiltert und die nötigen
+   Push/Pull-Marken sind eingesetzt worden.
+
+   "Cornelia.mid" in MuseScore einlesen. Im Menü "Datei/Export" anwählen und als 
+   ".mscx"-Datei exportieren, z.B. als Cornelia.mscx.
+
+   Wieder im MidiSequenzer "Cornelia.mid" einlesen (Button "Load Partitur").
+   Mit Button "Xml Griff File" die Xml-Griff-Datei erstellen. Dazu muss die
+   Datei "Cornelia.mscx" ausgewählt werden: Als Resultat wird die Datei
+   "Cornelia_griff.mscx" erstellt. Diese Datei kann jetzt als Griff-Partitur
+   in MuseScore eingelesen werden.   
+
+   -----------------------------------------------------------------------------
+
+   Umstellen des Instruments von A- auf B-Örgeli (und umgekehrt) wird die
+   Partitur transponiert.
+
+   -----------------------------------------------------------------------------
+
+   Ampel:
+
+   Beim Drücken eines Knopfs ist der entsprechende Ton zu hören, bis man das
+   Drücken beendet. Die Shift-Taste kann als Push-Indikator verwendet werden.
+   Die Bässe werden als Akkorde gespielt.
+
+   -----------------------------------------------------------------------------
+
+   Bearbeitung von mit dem MidiRecorder aufgenommenen Stücken
+   ==========================================================
+
+   1. Mit "Choose mit-File" Aufnahme anwählen und einlesen.
+   2. In der Gruppe "Partitur Header" den Takt einstellen (3/4 , 4/4 usw.).
+      "Ticks per Quarter" sollte ungefähr stimmen.
+   3. Die ganze Partitur verschieben, so dass der Auftakt etwa an der richtigen
+      Stelle steht. Dazu die erste Note anwählen: mit der Maus anklicken. Wenn es
+      die erste Note ist, dann sollte in der Gruppe "Selected Griff Event" bei
+      "Index" 0 stehen. Sonst kann man mit Ctrl-Tab einen Index zurück gehen.
+      Nun die Partitur verschieben: ctrl-shift-Pfeil links oder rechts.
+   4. In der Gruppe "Partitur Header" zuerst den Knopf "Optimizer" dann
+      "Longer Pitches" drücken.
+   5. Jetzt sollte das Ergebnis einigermassen genügen. Wenn nicht, mit dem Knopf
+      "Load Partitur" die Partitur neu laden.
+
+   6. Partitur abspeichern ("Save Midi-Partitur").
+
+   Weitere Bearbeitung:
+     Balg-Funktion (Push/Pull) einsetzen (mit "Gummi"-Rechteck und 'P')
+     Doppelte Belegung prüfen (mit "Gummi"-Rechteck und 'I')
+
+   -----------------------------------------------------------------------------
+
+   Erstellung von LilyPond Dateien (".ly")   (Alpha-Version)
+   =======================================
+
+   Die Erstellung von LilyPond Dateien funktioniert für einfache Stücke. Der
+   Bass wird ignoriert.
+
+   (Button "Save for LilyPond")
+
+   -----------------------------------------------------------------------------
+   Midi Dateien:
+
+   Knödldrahner: https://www.volksmusik.cc/volkstanz/knoedldrahner_n.htm
+   Mit "Transpose" = -4
+   "Smallest Note" = 16th einlesen
+   danach "Ticks per Quarter Note" = 240 setzen
+
+   ziehen/stossen markieren: Über Noten (Rechtecke) mit rechter Maustaste ziehen.
+   Mit 'p' zwischen ziehen und stossen umschalten. 'I' schaltet zwischen den
+   doppelten Belegungen hin und her.
+
+   Midi abspeichern ("Save Midi Partitur"). Die Korrekturen werden ebenfalls
+   mitgespeichert (ausser dem Wert von "Smallest Note").
+
+   -----------------------------------------------------------------------------
+
+   Wenn das Hauptfenster den Fokus hat, kann mit der F1-Taste eine neue Partitur
+   gestartet werden.
+   F2: Griff-Fenster ist sichtbar
+   F3: Ampel-Fenster ist sichtbar
+   f4: Konsole-Fenster ist sichtbar
+
+   Das Ampel-Fenster hat den Fokus: Die Tastatur verhält sich, wie die Knöpfe am
+   Örgeli.
+
+   -----------------------------------------------------------------------------
+
+   https://www.ziachfuchs.com/sites/default/files/zf_ziffernblock01.png
+
+   Der Nummernblock der PC-Tastatur ist während des Abspielens aktiviert:
+
+   0: Play / Pause
+   1: setzt den Beginn eines Loops
+   2: setzt das Ende einel Loops
+   3: löscht den Loop
+   4: verlangsamt das Abspielen Schrittweise
+   5: beschleunigt das Abspielen Schrittweise
+   6 bis 9: keine Funktion
+   '.': geht im Stück 4 Sekunden zurück
+   Enter: Stop / ganzes Stück abspielen
+   +/-: verändert das Wiedergabe-Volumen
+
+   -----------------------------------------------------------------------------
+
+   Bass in Animation (Ampel):
+
+   - F5 bis F12
+   - Shift für stossen
+   - Control für innere Reihe 
+   -----------------------------------------------------------------------------
+
+   Örgli-Noten generieren
+
+   Mit den Tasten c d e f g a h und 1 bis 9
+   Grosse Bass-Ziffern mit Ctrl
+   Oktave tiefer Ctrl
+   Oktave höher Shift
+
+   -----------------------------------------------------------------------------
+
+   Copy - Paste
+
+   Mit Rechteck Tasten 'X' und 'C'
+   Ctrl-'V' ist "paste" nach selektiertem Event (oder am Ende der Partitur)
+
+   -----------------------------------------------------------------------------
+
+   Markieren für Rubber-Band:
+
+   Event selektieren, danach "Backspace" drücken
+   nach erneuter Selektion wird danach das Auswahl-Rechteck angezeigt
+
+   -----------------------------------------------------------------------------
+
+   Bei gedrückter "Scroll Lock"-Taste:
+
+   - Midi-Eingaben werden in der Partitur eingesetzt
+   - angewählte "Knöpfe" im Ampel-Fenster generieren die entsprechenden Noten in
+     der Partitur
+
+   Druck/Zug: Wird durch Shift und dem Padal (Midi) gesteuert.
+
