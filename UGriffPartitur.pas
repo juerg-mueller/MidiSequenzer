@@ -27,7 +27,7 @@ uses
 {$if defined(DCC)}
   AnsiStrings,
 {$endif}
-  Classes, Messages, Windows, SysUtils, Types, Graphics, Forms, Variants,
+  Classes, SysUtils, Types, Variants, Forms, Windows,
   UInstrument, UMyMemoryStream, UMyMidiStream, UEventArray,
   UGriffEvent;
 
@@ -44,6 +44,7 @@ const MuseScoreTPC : array [0..11] of byte =
       (14, 14, 16, 16, 18, 13, 13, 15, 15, 17, 19, 19);
 
 type
+  TColor = DWord;
    
   PPlayProc = procedure (Sender: TObject) of object;
   PPlayRectProc = procedure (rect: TRect) of object;
@@ -60,7 +61,7 @@ type
   end;
 
 
-  PGriffPartitur = ^TGriffPartitur;
+//  PGriffPartitur = ^TGriffPartitur;
   TGriffPartitur = class
   public
     fSelected: integer;
@@ -153,7 +154,6 @@ type
     procedure DoSoundPitchs(const EventPitchs: TEventPitchArr);
     function TickToScreen(tick: integer): integer;
 
-    procedure DrawGriff(canvas: TCanvas; ClipRect: TRect; Horz_pos: integer);
     function KeyDown(var Key: Word; Shift: TShiftState): boolean;
 
     procedure DoStopPlay;
@@ -179,6 +179,7 @@ type
 
 var
   Sustain_: boolean = false; // midi keyboard flag
+  GriffPartitur_: TGriffPartitur;
 
 function ShiftUsed: boolean;
 
@@ -1154,479 +1155,6 @@ begin
 end;
 
 
-procedure TGriffPartitur.DrawGriff(canvas: TCanvas; ClipRect: TRect; Horz_pos: integer);
-type
-  TNotenWeight = (nwFullDot, nwFull, nwHalfDot, nwHalf, nwQuarterDot, nwQuarter, nwEightDot, nwEight, nwShort);
-
-  procedure DrawCross(rect: TRect);
-  var
-    w, c: cardinal;
-  begin
-    w := Canvas.Pen.Width;
-    c := Canvas.Pen.Color;
-    Canvas.Pen.Width := 2;
-    Canvas.Pen.Color := 0;//$ffffff;
- //   if UseEllipses then
-    begin
-      inc(rect.Left, 3);
-      dec(rect.Right, 3);
-      inc(rect.Top, 3);
-      dec(rect.Bottom, 3);
-    end;
-    canvas.MoveTo(rect.Left+1, rect.Top+1);
-    canvas.LineTo(rect.Right-1, rect.Bottom-1);
-    canvas.MoveTo(rect.Left+1, rect.Bottom-1);
-    canvas.LineTo(rect.Right-1, rect.Top+1);
-    Canvas.Pen.Width := w;
-    Canvas.Pen.Color := c;
-  end;
-
-  procedure DrawNote(rect: TRect);
-  begin    
-    if UseEllipses then
-      canvas.Ellipse(rect)
-    else begin
-  //    if odd((rect.Top + 5) div row_height) then 
-  //      inc(rect.Top);
-      canvas.Pen.Color := 0;
-      canvas.FillRect(rect);
-    
-      canvas.MoveTo(rect.Left, rect.Top + 2);
-      canvas.LineTo(rect.Left, rect.Bottom - 2);
-      canvas.LineTo(rect.Right-1, rect.Bottom - 2);
-      canvas.LineTo(rect.Right-1, rect.Top + 2);
-      canvas.LineTo(rect.Left, rect.Top + 2);
-    end;
-  end;
-
-  procedure PaintNote(x, y: integer; Cross: boolean; Weight: TNotenWeight);
-  var
-    rect, rect1: TRect;
-  begin
-    rect.Left := x;
-    rect.Top := y;
-    rect.Width := 14;
-    rect.Height := 9;
-    canvas.Pen.Color := 0;
-    if Weight >= nwQuarterDot then
-    begin
-      canvas.Brush.Color := 0;
-      canvas.Pen.Width := 1;
-    end else begin
-      canvas.Brush.Color := $ffffff;
-      canvas.Pen.Width := 2;
-    end;
-    canvas.Brush.Style := bsSolid;
-    canvas.Ellipse(rect);
-    if Cross then
-    begin
-      rect1 := rect;
-      rect1.Offset(-7, 2);
-      rect1.Width := 5;
-      rect1.Height := 5;
-      canvas.Pen.Width := 2;
-      canvas.MoveTo(rect1.Left, rect1.Top);
-      canvas.LineTo(rect1.Right, rect1.Bottom);
-      canvas.MoveTo(rect1.Left, rect1.Bottom);
-      canvas.LineTo(rect1.Right, rect1.Top);
-    end;
-    if Weight in [nwFullDot, nwHalfDot, nwQuarterDot, nwEightDot] then
-    begin
-      canvas.Pen.Width := 1;
-      canvas.Brush.Color := 0;
-      rect1 := rect;
-      rect1.Offset(16, 4);
-      rect1.Height := 5;
-      rect1.Width := 5;
-      canvas.Ellipse(rect1);
-    end;
-    if Weight >= nwHalfDot then
-    begin
-      canvas.Pen.Width := 2;
-      rect1 := rect;
-      rect1.Offset(14, 5);
-      canvas.MoveTo(rect1.Left, rect1.Top);
-      canvas.LineTo(rect1.Left, rect1.Top - 25);
-      if Weight >= nwEightDot then
-      begin
-        canvas.LineTo(rect1.Left + 6, rect1.Top - 16);
-        if Weight = nwShort then
-        begin
-          canvas.MoveTo(rect1.Left, rect1.Top - 19);
-          canvas.LineTo(rect1.Left + 6, rect1.Top - 10);
-        end;
-      end;
-    end;
-  end;
-
- var
-   w, h: integer;
-   d, tickDur: TGriffDuration;
-   quot: double;
-
-  procedure DrawSmallNotes(klingend: boolean);
-  var
-    i, j, k: integer;
-    Weight: TNotenWeight;
-    NotenVersatz: integer;
-    rect: TRect;
-  begin
-    // kleines Notensystem unten
-  //  NotenVersatz := 440;
-
- // if Instrument.bigInstrument then
-    NotenVersatz := 460;
-  canvas.Pen.Color := 0;
-  for i := 1 to 5 do
-  begin
-    canvas.MoveTo(ClipRect.Left - Horz_pos, i*8 + MoveVert + NotenVersatz);
-    canvas.LineTo(ClipRect.Right - Horz_pos, i*8 + MoveVert + NotenVersatz);
-  end;
-  for i := clipRect.Left div pitch_width to (w div pitch_width) do
-  begin
-    j := i*pitch_width;
-    if (i mod GriffHeader.Details.MeasureFact) = 0 then
-    begin
-      if (clipRect.Left <= j) and (j < clipRect.Right) then
-      begin
-        canvas.Pen.Color := 0;
-        Canvas.MoveTo(j - Horz_pos, 8 + MoveVert + NotenVersatz);
-        Canvas.LineTo(j - Horz_pos, 5*8 + MoveVert + NotenVersatz);
-      end;
-
-    end;// else begin
-      canvas.Pen.Color := $ff7f7f;
-      Canvas.MoveTo(j - Horz_pos, 8 + MoveVert + NotenVersatz);
-      Canvas.LineTo(j - Horz_pos, 8 + MoveVert + NotenVersatz - 10);
-   // end;
-    if j > clipRect.Right then
-      break;
-  end;
-
-
-  canvas.Pen.Color := 0;
-  canvas.Brush.Color := 0;
-  canvas.Brush.Style := bsClear;
-  for i := 0 to GriffHeader.UsedEvents-1 do
-    with GriffEvents[i] do
-    begin
-      d := GetDuration;
-      if (NoteType = ntBass) or
-         not d.IsIntersect(tickDur) then
-        continue;
-
-      rect := AbsRect;
-      rect.Left := round(rect.Left*quot);
-      rect.Right := round(rect.Right*quot);
-      rect.Offset(0, MoveVert);
-      if not rect.IntersectsWith(clipRect) then
-        continue;
-
-      rect.Offset(-Horz_pos + 9, 0);
-      rect.Top := (MaxGriffIndex - AbsRect.Top - 1)*4 - 28 + + MoveVert + NotenVersatz;
-
-      // Zusatzstriche
-      for j := 20 to AbsRect.Top+3 do
-        if not odd(j) then
-        begin
-          k := (MaxGriffIndex-j)*4 + MoveVert + NotenVersatz - 16;
-          canvas.MoveTo(rect.Left + 22, k);
-          canvas.LineTo(rect.Left - 4, k);
-        end;
-      for j := 8 downto AbsRect.Top+3 do
-        if not odd(j) then
-        begin
-          k := (MaxGriffIndex-j)*4 + MoveVert + NotenVersatz - 16;
-          canvas.MoveTo(rect.Left + 22, k);
-          canvas.LineTo(rect.Left - 4, k);
-        end;
-
-      j := round((GriffEvents[i].AbsRect.Width + GriffHeader.Details.DeltaTimeTicks/32.0)/(GriffHeader.Details.DeltaTimeTicks/4.0));
-      case j of
-        0, 1: Weight := nwShort;
-        2:    Weight := nwEight;    // 2
-        3:    Weight := nwEightDot;
-        4, 5: Weight := nwQuarter;  // 4
-        6:    Weight := nwQuarterDot;
-        7..10: Weight := nwHalf;    // 8
-        11..14: Weight := nwHalfDot;
-        15..20: Weight := nwFull;  // 16
-        else  Weight := nwFullDot
-      end;
-{      if (i + 1 < UsedEvents) and
-         (Weight > nwQuarter) and (abs(AbsRect.Left - GriffEvents[i+1].AbsRect.Left) < 20) then
-        Weight := nwQuarter;   }
-      PaintNote(rect.Left, rect.Top, Cross, Weight);
-    end;
-  end;
-
-var
-  rect, rectSelected: TRect;
-  CrossSelected: boolean;
-
-  i, j: integer;
-  smallDiff: integer;
-  pushDur, noPushDur: integer;
-  PushStart: integer;
-  s: string;
-  FontSize: integer;
-  rhalbe: integer;
-begin
-  SortEvents;
-
-  canvas.Brush.Color := $ffffff;
-  canvas.FillRect(clipRect);
-  FontSize := Canvas.Font.Size;
-
-  clipRect.Offset(Horz_pos, 0);
-  
-  quot := pitch_width/GriffHeader.Details.GetMeasureDiv;
-  tickDur.Left := trunc(clipRect.Left/quot);
-  tickDur.Right := trunc(clipRect.Right/quot)+1;
-  
-  w:= pitch_width*GetRelTotalDuration + 500;
-  h:= row_height*(MaxGriffIndex+1);
-  rhalbe := row_height div 2;
-
-  // blaue Zeilen zeichnen
-  canvas.Pen.Width := 1;
-  Canvas.Pen.Color := $ff0000; // blau
-  for i := 0 to MaxGriffIndex do
-  begin
-    if not odd(i) or
-       (not Instrument.bigInstrument and (i in [0..1, 25..26]))  then
-      continue;
-
-    if i in [8..16] then
-      continue;
-
-    rect.Create(0, i*row_height - 1 + rhalbe, w, 0);
-    rect.Bottom := rect.Top + 1;
-    rect.Offset(0, MoveVert);
-    rect.Intersect(clipRect);
-    dec(rect.Left);
-    inc(rect.Right);
-    rect.Offset(-Horz_pos, 0);
-    if not rect.IsEmpty then
-    begin
-      canvas.MoveTo(rect.left, rect.Top);
-      canvas.LineTo(rect.right, rect.Top);
-    end;
-  end;
-  
-  canvas.Pen.Width := 3;
-
-  // senkrechte Striche zeichnen  
-  canvas.Brush.Color := $ffffff; // für Nummerierung
-  smallDiff := 0;
-  if not Instrument.bigInstrument then
-    smallDiff := 2;
-  for i := clipRect.Left div pitch_width to (w div pitch_width) do
-  begin
-    if (i mod GriffHeader.Details.MeasureFact) = 0 then
-      Canvas.Pen.Color := $c0c0c0
-    else
-      Canvas.Pen.Color := $f0f0f0;
-    j := i*pitch_width;
-    if (clipRect.Left <= j) and (j < clipRect.Right) then
-    begin
-      Canvas.MoveTo(j - Horz_pos, MoveVert+smallDiff*row_height+rhalbe);
-      Canvas.LineTo(j - Horz_pos, h+MoveVert-{smallDiff*}row_height+rhalbe);
-    end;
-
-    // Taktnummer
-    if (i mod GriffHeader.Details.MeasureFact) = 0 then
-    begin
-      s := IntToStr((i div GriffHeader.Details.MeasureFact) + 1);
-      Canvas.TextOut(j - Horz_pos -  Canvas.TextWidth(s) div 2,
-                     2 + smallDiff*row_height, s);
-    end;
-    if j > clipRect.Right then
-      break;
-  end;
-
-  // schwarze Zeilen zeichnen
-  Canvas.Brush.Color := 0;
-  for i := 0 to MaxGriffIndex do
-  begin
-     if not odd(i) or
-       (not Instrument.bigInstrument and (i in [0..2, 22..26]))  then
-      continue;
-
-    if not (i in [8..18]) then
-      continue;
-      
-    rect.Create(0, i*row_height + rhalbe - 2, w, 0);
-    rect.Bottom := rect.Top + 5;
-    rect.Offset(0, MoveVert);
-    rect.Intersect(clipRect);
-    dec(rect.Left);
-    inc(rect.Right);
-    rect.Offset(-Horz_pos, 0);
-    if not rect.IsEmpty then
-      Canvas.FillRect(rect);
-  end;  
-
-  rectSelected.Create(0, 0, 0, 0);
-  CrossSelected := false;
-  canvas.Pen.Color := $000000;
-  // Noten-Rechtecke zeichnen
-  for i := 0 to GriffHeader.UsedEvents-1 do
-    with GriffEvents[i] do
-    begin
-      d := GetDuration;
-      if not d.IsIntersect(tickDur) then
-        continue;
-      rect := AbsRect;
-      rect.Left := round(rect.Left*quot);
-      rect.Right := round(rect.Right*quot);
-      rect.Top := (MaxGriffIndex - rect.Top)*row_height;
-      rect.Height := row_height;
-      inc(rect.Left, 2);
-      dec(rect.Right, 1);
-      rect.Offset(0, MoveVert);
-      if not rect.IntersectsWith(clipRect) then
-        continue;
-      rect.Offset(-Horz_pos, 0);
-      canvas.Brush.Color := ColorNote;
-      if (i = Selected) and (NoteType <> ntBass) then
-      begin
-        rectSelected := rect;
-        CrossSelected := Cross;
-        continue;
-      end;
-      if NoteType <> ntBass then
-      begin
-        if NoteType > ntBass then
-        begin
-          if Repeat_ <> rRegular then
-            canvas.Brush.Color := $00e0e0
-          else
-            canvas.Brush.Color := $ffffff;
-        end else
-        if Repeat_ > rRegular then
-          canvas.Brush.Color := $00ffff
-        else
-        if InPush then
-          canvas.Brush.Color := $ff00ff
-        else
-          canvas.Brush.Color := $ffff00; //ColorNote;
-        DrawNote(rect);
-        if Cross then
-          DrawCross(rect);
-      end else begin
-        if not Instrument.bigInstrument then
-          rect.Offset(0, 2*row_height);
-        if (GriffPitch in [1..8]) and Instrument.bigInstrument then
-        begin
-          s := GetSteiBass;
-        end else
-          s := IntToStr(GriffPitch);
-        if i = Selected then
-          canvas.Brush.Color := ColorSelected
-        else
-        if Repeat_ > rRegular then
-          canvas.Brush.Color := $00ffff
-        else
-        if Instrument.BassDiatonic and InPush then
-          canvas.Brush.Color := $df00df
-        else
-          canvas.Brush.Color := $ffffff;
-//        fact := Canvas.TextWidth(s);
-        if Cross  and not Instrument.bigInstrument then
-        begin
-          Canvas.Font.Size := FontSize;
-        end else begin
-          Canvas.Font.Size := FontSize + 4;
-         // rect.Offset(4, 0);
-        end;
-        rect.Offset(0, -smallDiff*row_height);
-        Canvas.TextOut(rect.Left, rect.Top + rect.Height div 2, s);
-      end;
-    end;
-    Canvas.Font.Size := FontSize;
-
-  if not rectSelected.IsEmpty then
-  begin
-    if GriffEvents[Selected].NoteType = ntBass then
-    begin
-    end else begin
-      canvas.Brush.Color := ColorSelected;
-      DrawNote(rectSelected);
-      if CrossSelected then
-      begin
-        i := trunc(sqrt((sqr(ColorSelected shr 16) +
-                         sqr((ColorSelected shr 8) and $ff) +
-                         sqr(ColorSelected and $ff)) / 3));
-        if i >= $80 then
-          canvas.Pen.Color := 0
-        else
-          canvas.Pen.Color := $ffffff;
-        DrawCross(rectSelected);
-      end;
-    end;
-  end;
-
-  // Balg-Information
-  PushStart := 0; 
-  for i := 0 to GriffHeader.UsedEvents-1 do
-  begin
-    with GriffEvents[i] do
-    begin
-      if not GriffEvents[i].IsDiatonic(Instrument) or
-         not GetDuration.IsIntersect(tickDur) then
-        continue;
-
-      pushDur := GetDrawDuration(i, true);
-      noPushDur := GetDrawDuration(i, false);
-      if (noPushDur > 0) and (pushDur = 0) then
-        continue;
-      
-      if (pushDur > 0) and (noPushDur > 0) then
-        canvas.Brush.Color := $c0c0c0  // grau: ungültig
-      else
-        canvas.Brush.Color := $000000; // blau: push
-        
-      rect := AbsRect;
-      if (NoteType = ntBass) and (rect.Width < quarterNote div 2) then
-        rect.Width := quarterNote div 2;
-
-      if PushStart > rect.Left then
-        rect.Left := PushStart;
-      rect.Create(round(quot*rect.Left), (MaxGriffIndex+3)*row_height,
-                  round(quot*rect.Right),(MaxGriffIndex+4)*row_height);
-      rect.Height := 6;
-      rect.Offset(0, MoveVert + 2);
-      rect.Intersect(clipRect);
-      rect.Offset(-Horz_pos, 0);
-      if not rect.IsEmpty then
-        canvas.FillRect(rect);
-      PushStart := AbsRect.Right;
-    end;     
-  end;
-
-  // play position
-  canvas.Pen.Width := 1;
-  if playLocation-Horz_pos >= 0 then
-  begin
-    canvas.Pen.Color := $0000ff;
-    if Instrument.bigInstrument then
-    begin
-      canvas.MoveTo(playLocation-Horz_pos, MoveVert);
-      canvas.LineTo(playLocation-Horz_pos, 25*row_height-2+MoveVert)
-    end else begin
-      canvas.MoveTo(playLocation-Horz_pos, 3*row_height+MoveVert);
-      canvas.LineTo(playLocation-Horz_pos, 24*row_height-2+MoveVert);
-    end;
-  end;
-
-  DrawSmallNotes(false);
-//  DrawSmallNotes(true);
-
-  Canvas.Font.Size := FontSize;
-  canvas.Font.Style := [fsBold];
-  canvas.Brush.Style := bsSolid;
-end;
 
 function TGriffPartitur.ScreenToNotePoint(var NotePoint: TPoint; ScreenPoint: TPoint): boolean;
 begin
@@ -3411,7 +2939,14 @@ begin
   SortEvents;
 end;
 
+initialization
+  GriffPartitur_ := TGriffPartitur.Create;
+  GriffPartitur_.ColorNote := $ff0000;
+  GriffPartitur_.UseEllipses := false;
 
+finalization
+
+  GriffPartitur_.Free;
 
 
 end.

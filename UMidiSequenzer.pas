@@ -195,7 +195,7 @@ begin
          (Ext = '.mscx') or
          (Ext = '.mid') or (Ext = '.midi') then
       begin
-        if not frmGriff.GriffPartitur.PartiturLoaded or
+        if not GriffPartitur_.PartiturLoaded or
            (Application.MessageBox(
                  PChar('Die Partitur wird überschrieben. Wollen Sie das?'),
                        'Warnung', MB_YESNO) = IDYES )then
@@ -240,7 +240,7 @@ begin
     GriffEvent.Clear;
     GriffEvent.InPush := Event.Push_;
     GriffEvent.SoundPitch := aData1;
-    if GriffEvent.SoundToGriff(frmGriff.GriffPartitur.Instrument) and
+    if GriffEvent.SoundToGriff(GriffPartitur_.Instrument) and
        (GriffEvent.InPush = Event.Push_) then
     begin
       Event.Row_ := GriffEvent.GetRow;
@@ -266,11 +266,10 @@ var
   Ok: boolean;
   Index: integer;
   Partitur: TEventArray;
-  GriffPartitur: TGriffPartitur;
 
   procedure PrepareFinally;
   begin
-    with frmGriff.GriffPartitur do
+    with GriffPartitur_ do
     begin
       SortEvents;
       edtDeltaTimeTicks.Text := IntToStr(GriffHeader.Details.DeltaTimeTicks);
@@ -296,15 +295,15 @@ var
     frmGriff.HorzScrollBar.Position := 0;
     frmGriff.Show;
     frmGriff.Caption := ExtractFilename(PartiturFileName);
-    frmGriff.GriffPartitur.PartiturFileName := PartiturFileName;
-    frmGriff.GriffPartitur.PlayEvent.Clear;
+    GriffPartitur_.PartiturFileName := PartiturFileName;
+    GriffPartitur_.PlayEvent.Clear;
 
     SetLength(PartiturFileName, Length(PartiturFileName) - Length(ExtractFileExt(PartiturFileName)));
   end;
 
 begin
   frmGriff.Hide;
-  frmGriff.GriffPartitur.Clear;
+  GriffPartitur_.Clear;
   SelectedChanges(nil);
 
   if edtMidiFile.Text = '' then
@@ -321,31 +320,31 @@ begin
 
   if ext = '.griff' then
   begin
-    frmGriff.GriffPartitur.LoadFromGriffFile(PartiturFileName);
+    GriffPartitur_.LoadFromGriffFile(PartiturFileName);
     PrepareFinally;
-    Index := InstrumentIndex(frmGriff.GriffPartitur.Instrument.Name);
+    Index := InstrumentIndex(GriffPartitur_.Instrument.Name);
     if Index >= 0 then
     begin
       cbTransInstrument.ItemIndex := Index;
-      frmAmpel.ChangeInstrument(@frmGriff.GriffPartitur.Instrument);
+      frmAmpel.ChangeInstrument(@GriffPartitur_.Instrument);
       SelectedChanges(nil);
     end;
-    Index := 11 + frmGriff.GriffPartitur.Instrument.TransposedPrimes;
+    Index := 11 + GriffPartitur_.Instrument.TransposedPrimes;
     if (Index  >= 0) and (Index < cbxTransInstrument.Items.Count) then
       cbxTransInstrument.ItemIndex := Index;
     PrepareFinally;
     exit;
   end;
 
-  GriffPartitur := frmGriff.GriffPartitur;
   if (ext = '.xml') or (ext = '.musicxml') or (ext = '.mxl') or
      (ext = '.mscx') or (ext = '.mscz') then
   begin
     cbxTransInstrument.ItemIndex := 11;
     if (ext = '.mscx') or (ext = '.mscz') then
-      Ok := LoadFromMscx(GriffPartitur, PartiturFileName)
+      Ok := LoadFromMscx(GriffPartitur_, PartiturFileName)
     else
-      Ok := GriffPartitur.LoadFromMusicXML(PartiturFileName);
+      Ok := GriffPartitur_
+      .LoadFromMusicXML(PartiturFileName);
     if Ok then
     begin
       PrepareFinally;
@@ -357,8 +356,8 @@ begin
 
   Partitur := TEventArray.Create;
   try
-   // frmGriff.GriffPartitur.SetInstrument(InstrumentsList[cbTransInstrument.ItemIndex].Name);
-    Partitur.DetailHeader := frmGriff.GriffPartitur.GriffHeader.Details;
+   // GriffPartitur_.SetInstrument(InstrumentsList[cbTransInstrument.ItemIndex].Name);
+    Partitur.DetailHeader := GriffPartitur_.GriffHeader.Details;
 
     if ext = '.txt' then
     begin
@@ -380,11 +379,11 @@ begin
        (FileOpenDialog1.FilterIndex = 6) or
        (Partitur.GetCopyright in [noCopy]) then
     begin
-      frmGriff.GriffPartitur.LoadFromTrackEventArray(Partitur);
+      GriffPartitur_.LoadFromTrackEventArray(Partitur);
       if ext = '.txt' then
-        frmGriff.GriffPartitur.SetBassGriff;
-      frmGriff.GriffPartitur.CheckSustain;
-      frmGriff.GriffPartitur.TransposeInstrument(cbxTransInstrument.ItemIndex - 11);
+        GriffPartitur_.SetBassGriff;
+      GriffPartitur_.CheckSustain;
+      GriffPartitur_.TransposeInstrument(cbxTransInstrument.ItemIndex - 11);
     end else begin
       if not cbxLoadAsGriff.Checked then
       begin
@@ -397,18 +396,18 @@ begin
         end;
       end;
 
-      if not frmGriff.GriffPartitur.Instrument.BassDiatonic and
+      if not GriffPartitur_.Instrument.BassDiatonic and
          (Partitur.GetCopyright = prepCopy) then
       begin
         TGriffArray.ReduceBass(Partitur.TrackArr[1], $1);
       end;
-      frmGriff.GriffPartitur.GriffHeader.Details := Partitur.DetailHeader;
-      frmGriff.GriffPartitur.LoadFromEventPartitur(Partitur, cbxLoadAsGriff.Checked);
+      GriffPartitur_.GriffHeader.Details := Partitur.DetailHeader;
+      GriffPartitur_.LoadFromEventPartitur(Partitur, cbxLoadAsGriff.Checked);
       if Partitur.GetCopyright = prepCopy then
       begin
-        frmGriff.GriffPartitur.CheckSustain;
+        GriffPartitur_.CheckSustain;
       end;
-      frmGriff.GriffPartitur.RepeatToRest;
+      GriffPartitur_.RepeatToRest;
     end;
 
     PrepareFinally;
@@ -419,7 +418,7 @@ end;
 
 procedure TfrmSequenzer.btnLongerPitchesClick(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.MakeLongerPitches;
+  GriffPartitur_.MakeLongerPitches;
   frmGriff.Invalidate;
 end;
 
@@ -451,7 +450,7 @@ var
 begin
   if btnPlay.Caption = 'Play Partitur' then
   begin
-    if not frmGriff.GriffPartitur.PartiturLoaded then
+    if not GriffPartitur_.PartiturLoaded then
       exit;
 
     frmAmpel.Hide;
@@ -466,35 +465,35 @@ begin
     cbxNoSound.Enabled := false;
     cbxMuteBass.Enabled := false;
     btnPlay.Caption := 'Stop Play';
-    iEvent := frmGriff.GriffPartitur.Selected;
+    iEvent := GriffPartitur_.Selected;
     if iEvent >= 0 then
     begin
-      frmGriff.GriffPartitur.PlayEvent.Clear;
-      frmGriff.GriffPartitur.PlayEvent.iEvent := iEvent;
+      GriffPartitur_.PlayEvent.Clear;
+      GriffPartitur_.PlayEvent.iEvent := iEvent;
     end;
-    frmGriff.GriffPartitur.iAEvent := -1;
-    frmGriff.GriffPartitur.iBEvent := -1;
-//    frmGriff.GriffPartitur.Volume := 1.0;
+    GriffPartitur_.iAEvent := -1;
+    GriffPartitur_.iBEvent := -1;
+//    GriffPartitur_.Volume := 1.0;
     repeat
-      if iEvent < frmGriff.GriffPartitur.UsedEvents then
+      if iEvent < GriffPartitur_.UsedEvents then
         for i := 0 to iEvent-1 do
-          if (frmGriff.GriffPartitur.GriffEvents[i].AbsRect.Right >
-              frmGriff.GriffPartitur.GriffEvents[iEvent].AbsRect.Left) then
+          if (GriffPartitur_.GriffEvents[i].AbsRect.Right >
+              GriffPartitur_.GriffEvents[iEvent].AbsRect.Left) then
           begin
             iEvent := i;
             break;
           end;
-      frmGriff.GriffPartitur.StopPlay := false;
-      frmGriff.GriffPartitur.iSkipEvent := -1;
+      GriffPartitur_.StopPlay := false;
+      GriffPartitur_.iSkipEvent := -1;
       frmGriff.Invalidate;
-      frmGriff.GriffPartitur.StartPlay;
+      GriffPartitur_.StartPlay;
       Player := TGriffPlayer.Create(true);
-      Player.GriffPartitur := frmGriff.GriffPartitur;
-      Player.Event := frmGriff.GriffPartitur.PlayEvent;
+      Player.GriffPartitur := GriffPartitur_;
+      Player.Event := GriffPartitur_.PlayEvent;
       Player.Resume;
-      frmGriff.GriffPartitur.IsPlaying := true;
+      GriffPartitur_.IsPlaying := true;
       try
-        frmGriff.GriffPartitur.PlayAmpel(frmGriff.GriffPartitur.PlayEvent,
+        GriffPartitur_.PlayAmpel(GriffPartitur_.PlayEvent,
                                                 StrToIntDef(edtPlayDelay.Text, 0));
         while not Player.Terminated_ do
         begin
@@ -502,15 +501,15 @@ begin
         sleep(10);
         end;
       finally
-        frmGriff.GriffPartitur.IsPlaying := false;
+        GriffPartitur_.IsPlaying := false;
         Player.Free;
       end;
-      if frmGriff.GriffPartitur.iSkipEvent >= 0 then
-        iEvent := frmGriff.GriffPartitur.iSkipEvent;
-    until frmGriff.GriffPartitur.iSkipEvent < 0;
+      if GriffPartitur_.iSkipEvent >= 0 then
+        iEvent := GriffPartitur_.iSkipEvent;
+    until GriffPartitur_.iSkipEvent < 0;
     btnPlay.Caption := 'Play Partitur';
   end else begin
-    frmGriff.GriffPartitur.StopPlay := true;
+    GriffPartitur_.StopPlay := true;
     Sleep(100);
     Application.ProcessMessages;
     btnPlay.Caption := 'Play Partitur';
@@ -522,13 +521,13 @@ begin
 end;
 procedure TfrmSequenzer.btnPurgeBassClick(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.PurgeBass;
+  GriffPartitur_.PurgeBass;
   frmGriff.Invalidate;
 end;
 
 procedure TfrmSequenzer.btnRealSoundClick(Sender: TObject);
 begin
-//  frmGriff.GriffPartitur.DelayBass(StrToInt(edtPlayDelay.Text));
+//  GriffPartitur_.DelayBass(StrToInt(edtPlayDelay.Text));
 end;
 
 procedure TfrmSequenzer.btnResetMidiClick(Sender: TObject);
@@ -541,13 +540,13 @@ var
   FileName, ext: string;
   n: integer;
 begin
-  if not frmGriff.GriffPartitur.PartiturLoaded then
+  if not GriffPartitur_.PartiturLoaded then
     exit;
 
   FileName := FileOpenDialog1.FileName;
   ext := ExtractFileExt(FileName);
   SetLength(FileName, Length(FileName) - Length(ext));
-  with frmGriff.GriffPartitur do
+  with GriffPartitur_ do
   begin
     n := 1;
     while FileExists(FileName + '_' + IntToStr(n) + '.griff') do
@@ -586,7 +585,7 @@ var
   Stream: TMyMemoryStream;
   Ok: boolean;
 begin
-  if not frmGriff.GriffPartitur.PartiturLoaded then
+  if not GriffPartitur_.PartiturLoaded then
     exit;
 
   realSound := Sender = btnRealSound;
@@ -601,11 +600,11 @@ begin
     ext := LowerCase(ExtractFileExt(s));
     ext1 := '';
     case SaveDialog1.FilterIndex of
-      1: if (ext <> '.mscx') and (ext <> '.mscz') then
+      2: if (ext <> '.mscx') and (ext <> '.mscz') then
            ext1 := '_.mscz';
-      2: if ext <> '.ly' then
+      3: if ext <> '.ly' then
            ext1 := '.ly';
-      3: if (ext <> '.xml') and (ext <> '.musicxml') then
+      4: if (ext <> '.xml') and (ext <> '.musicxml') then
            ext1 := '.musicxml';
       else
          if ext <> '.mid' then
@@ -621,12 +620,11 @@ begin
         exit;
 
     case SaveDialog1.FilterIndex of
-      2,
-      3: ok := frmGriff.GriffPartitur.SaveToMusicXML(s, SaveDialog1.FilterIndex = 3);
-      4: begin
+      2: Ok := SaveToMscx(GriffPartitur_, s);
+      3: begin
            s1 := ExtractFileName(s);
            SetLength(s1, Length(s1)-Length(ExtractFileExt(s1)));
-           Stream := frmGriff.GriffPartitur.MakeLilyPond(s1);
+           Stream := GriffPartitur_.MakeLilyPond(s1);
            ok := (Stream <> nil) and (Stream.Size > 10);
            if ok then
            begin
@@ -637,9 +635,9 @@ begin
            end;
            Stream.Free;
          end;
-      5: Ok := SaveToMscx(frmGriff.GriffPartitur, s);
+      4: ok := GriffPartitur_.SaveToMusicXML(s, true);
       else begin
-        ok := frmGriff.GriffPartitur.SaveToMidiFile(s, realSound);
+        ok := GriffPartitur_.SaveToMidiFile(s, realSound);
         if ok then
           frmGriff.Caption := ExtractFilename(s);
       end;
@@ -668,19 +666,19 @@ end;
 
 procedure TfrmSequenzer.btnSmallestClick(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.MakeSmallestNote;
+  GriffPartitur_.MakeSmallestNote;
   frmGriff.Invalidate;
 end;
 
 procedure TfrmSequenzer.Button1Click(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.CheckSustain;
+  GriffPartitur_.CheckSustain;
   frmGriff.Invalidate;
 end;
 
 procedure TfrmSequenzer.btnBassSynchClick(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.BassSynch;
+  GriffPartitur_.BassSynch;
   frmGriff.Invalidate;
 end;
 
@@ -689,16 +687,16 @@ var
   s: string;
 begin
   edtStopEnter(nil);
-  frmGriff.GriffPartitur.LoadChanges;
+  GriffPartitur_.LoadChanges;
   if cbTransInstrument.ItemIndex < 0 then
     cbTransInstrument.ItemIndex := 0;
   s := cbTransInstrument.Items[cbTransInstrument.ItemIndex];
   cbTransInstrument.Text := s;
-  frmGriff.GriffPartitur.SetInstrument(AnsiString(s));
+  GriffPartitur_.SetInstrument(AnsiString(s));
   cbxTransInstrumentChange(nil);
 
-  frmAmpel.ChangeInstrument(@frmGriff.GriffPartitur.Instrument);
-  if frmGriff.GriffPartitur.Instrument.Accordion then
+  frmAmpel.ChangeInstrument(@GriffPartitur_.Instrument);
+  if GriffPartitur_.Instrument.Accordion then
     MidiInstr := $15  // Akkordeon
   else
     MidiInstr := $16; // Harmonika
@@ -716,7 +714,7 @@ begin
   if cbxTransInstrument.ItemIndex >= 0 then
   begin
     delta := cbxTransInstrument.ItemIndex - 11;
-    frmGriff.GriffPartitur.TransposeInstrument(delta);
+    GriffPartitur_.TransposeInstrument(delta);
   end;
 end;
 
@@ -726,8 +724,8 @@ var
   Event: PGriffEvent;
   Instrument: PInstrument;
 begin
-  Event := frmGriff.GriffPartitur.SelectedEvent;
-  Instrument := @frmGriff.GriffPartitur.Instrument;
+  Event := GriffPartitur_.SelectedEvent;
+  Instrument := @GriffPartitur_.Instrument;
   if (Event <> nil) and (Instrument <> nil) then
   begin
     with Event^ do
@@ -774,7 +772,7 @@ begin
             SoundPitch := Instrument.Bass[false, GriffPitch];
             AbsRect.Top := -1;
             AbsRect.Height := 1;
-            AbsRect.Width := frmGriff.GriffPartitur.GriffHeader.Details.DeltaTimeTicks div 3;
+            AbsRect.Width := GriffPartitur_.GriffHeader.Details.DeltaTimeTicks div 3;
           end;
         ord(ntRest):
           NoteType := ntRest;
@@ -791,10 +789,10 @@ var
   Event: PGriffEvent;
 //  diatonic: boolean;
 begin
-  Event := frmGriff.GriffPartitur.SelectedEvent;
+  Event := GriffPartitur_.SelectedEvent;
   if Event <> nil then
   begin
-  //  diatonic := frmGriff.GriffPartitur.Instrument.BassDiatonic;
+  //  diatonic := GriffPartitur_.Instrument.BassDiatonic;
     with Event^ do
       if (NoteType in [ntDiskant, ntBass]) and
          (cbxCross.Checked <> Cross) then
@@ -803,7 +801,7 @@ begin
         begin
           Cross := cbxCross.Checked
         end else
-        if (frmGriff.GriffPartitur.Instrument.Columns < 4) and odd(AbsRect.Top) then
+        if (GriffPartitur_.Instrument.Columns < 4) and odd(AbsRect.Top) then
           cbxCross.Checked := false
         else begin
           Cross := cbxCross.Checked;
@@ -834,7 +832,7 @@ begin
   if cbxMidiOut.ItemIndex >= 0 then
   begin
     MidiOutput.Close(MicrosoftIndex);
-    if frmGriff.GriffPartitur.iVirtualMidi <> cbxMidiOut.ItemIndex then
+    if GriffPartitur_.iVirtualMidi <> cbxMidiOut.ItemIndex then
       MicrosoftIndex := cbxMidiOut.ItemIndex
     else
       cbxMidiOut.ItemIndex := MicrosoftIndex;
@@ -847,29 +845,29 @@ end;
 
 procedure TfrmSequenzer.cbxMuteBassClick(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.noBass := cbxMuteBass.Checked;
+  GriffPartitur_.noBass := cbxMuteBass.Checked;
 end;
 
 procedure TfrmSequenzer.cbxMuteTrebleClick(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.noTreble := cbxMuteTreble.Checked;
+  GriffPartitur_.noTreble := cbxMuteTreble.Checked;
 end;
 
 procedure TfrmSequenzer.cbxNoSoundClick(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.noSound := cbxNoSound.Checked;
+  GriffPartitur_.noSound := cbxNoSound.Checked;
 end;
 
 procedure TfrmSequenzer.cbxPushClick(Sender: TObject);
 var
   Event: PGriffEvent;
 begin
-  Event := frmGriff.GriffPartitur.SelectedEvent;
+  Event := GriffPartitur_.SelectedEvent;
   if (Event <> nil) and
      (Event.NoteType in [ntDiskant, ntBass]) then
   begin
     with Event^ do
-      if (NoteType = ntBass) and not frmGriff.GriffPartitur.Instrument.BassDiatonic then
+      if (NoteType = ntBass) and not GriffPartitur_.Instrument.BassDiatonic then
         cbxPush.Checked := false
       else
       if (InPush <> cbxPush.Checked) then
@@ -889,7 +887,7 @@ end;
 
 procedure TfrmSequenzer.cbxSmallestNoteChange(Sender: TObject);
 begin
-  with frmGriff.GriffPartitur do
+  with GriffPartitur_ do
   begin
     if not PartiturLoaded then
       exit;
@@ -913,33 +911,33 @@ end;
 
 procedure TfrmSequenzer.cbxTaktChange(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.GriffHeader.Details.MeasureFact := cbxTakt.ItemIndex + 2;
+  GriffPartitur_.GriffHeader.Details.MeasureFact := cbxTakt.ItemIndex + 2;
   frmGriff.Invalidate;
 end;
 
 
 procedure TfrmSequenzer.cbxTrimNoteClick(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.trimNote := cbxTrimNote.Checked;
+  GriffPartitur_.trimNote := cbxTrimNote.Checked;
 end;
 
 procedure TfrmSequenzer.cbxViertelChange(Sender: TObject);
 var
   q: integer;
 begin
-//  q := frmGriff.GriffPartitur.quarterNote;
+//  q := GriffPartitur_.quarterNote;
   case cbxViertel.ItemIndex of
     0: q := 4;
     1: q := 8;
     else q := 4;
   end;
-  frmGriff.GriffPartitur.GriffHeader.Details.MeasureDiv :=  q;
+  GriffPartitur_.GriffHeader.Details.MeasureDiv :=  q;
   frmGriff.Invalidate;
 end;
 
 procedure TfrmSequenzer.cbxVirtualChange(Sender: TObject);
 begin
-  with frmGriff.GriffPartitur do
+  with GriffPartitur_ do
   begin
     if iVirtualMidi >= 0 then
       MidiOutput.Close(iVirtualMidi);
@@ -961,7 +959,7 @@ procedure TfrmSequenzer.cbxVoltaChange(Sender: TObject);
 var
   Event: PGriffEvent;
 begin
-  with frmGriff.GriffPartitur do
+  with GriffPartitur_ do
   begin
     Event := SelectedEvent;
     if Event <> nil then
@@ -995,12 +993,12 @@ var
 begin
   b := StrToIntDef(edtBPM.Text, 0);
   if b >= 20 then
-    frmGriff.GriffPartitur.GriffHeader.Details.beatsPerMin := b;
+    GriffPartitur_.GriffHeader.Details.beatsPerMin := b;
 end;
 
 procedure TfrmSequenzer.edtDeltaTimeTicksExit(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.GriffHeader.Details.DeltaTimeTicks := StrToInt(edtDeltaTimeTicks.Text);
+  GriffPartitur_.GriffHeader.Details.DeltaTimeTicks := StrToInt(edtDeltaTimeTicks.Text);
   cbxSmallestNoteChange(Sender);
   cbxViertelChange(Sender);
 end;
@@ -1017,7 +1015,7 @@ end;
 
 procedure TfrmSequenzer.AktualizeHeader;
 begin
-  with frmGriff.GriffPartitur.GriffHeader.Details do
+  with GriffPartitur_.GriffHeader.Details do
   begin
     edtDeltaTimeTicks.Text := IntToStr(DeltaTimeTicks);
     edtBPM.Text := IntToStr(beatsPerMin);
@@ -1029,7 +1027,7 @@ var
   Event: PGriffEvent;
   Index: integer;
 begin
-  Event := frmGriff.GriffPartitur.SelectedEvent;
+  Event := GriffPartitur_.SelectedEvent;
   if (Event <> nil) and
      (Event.NoteType in [ntDiskant, ntBass]) then
     with Event^ do
@@ -1054,7 +1052,7 @@ var
   Event: PGriffEvent;
 begin
   l := StrToIntDef(edtLeftPos.Text, -1);
-  Event := frmGriff.GriffPartitur.SelectedEvent;
+  Event := GriffPartitur_.SelectedEvent;
   if (Event <> nil) and (l >= 0) then
   begin
     if abs(l - Event.AbsRect.Left) < 200 then
@@ -1062,7 +1060,7 @@ begin
       w := Event.AbsRect.Width;
       Event.AbsRect.Left := l;
       Event.AbsRect.Width := w;
-      frmGriff.GriffPartitur.SortEvents;
+      GriffPartitur_.SortEvents;
     end;
   end;
   SelectedChanges(Event);
@@ -1070,14 +1068,14 @@ end;
 
 procedure TfrmSequenzer.edtStopEnter(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.StopPlay := true;
+  GriffPartitur_.StopPlay := true;
   Sleep(100);
 end;
 
 procedure TfrmSequenzer.edtPlayDelayExit(Sender: TObject);
 begin
-  frmGriff.GriffPartitur.PlayDelay := StrToIntDef(edtPlayDelay.Text, 0);
-  edtPlayDelay.Text := IntToStr(frmGriff.GriffPartitur.PlayDelay);
+  GriffPartitur_.PlayDelay := StrToIntDef(edtPlayDelay.Text, 0);
+  edtPlayDelay.Text := IntToStr(GriffPartitur_.PlayDelay);
 end;
 
 procedure TfrmSequenzer.edtSoundPitchExit(Sender: TObject);
@@ -1088,7 +1086,7 @@ var
   sPitch: integer;
   s: string;
 begin
-  Event := frmGriff.GriffPartitur.SelectedEvent;
+  Event := GriffPartitur_.SelectedEvent;
   if Event = nil then
     exit;
 
@@ -1097,7 +1095,7 @@ begin
   if Pos(' ', s) > 0 then
     SetLength(s, Pos(' ', s) - 1);
   sPitch := StrToInt(s);
-  with frmGriff.GriffPartitur do
+  with GriffPartitur_ do
   begin
     Event1 := Event^;
     if Event1.GriffToSound(Instrument) and
@@ -1132,15 +1130,15 @@ procedure TfrmSequenzer.edtWidthExit(Sender: TObject);
 var
   w: integer;
 begin
-  if frmGriff.GriffPartitur.SelectedEvent <> nil then
+  if GriffPartitur_.SelectedEvent <> nil then
   begin
     w := StrToIntDef(edtWidth.Text, 0);
     if w > 10 then
     begin
-      frmGriff.GriffPartitur.SelectedEvent.AbsRect.Width := w;
-      frmGriff.GriffPartitur.SortEvents;
+      GriffPartitur_.SelectedEvent.AbsRect.Width := w;
+      GriffPartitur_.SortEvents;
     end;
-    SelectedChanges(frmGriff.GriffPartitur.SelectedEvent);
+    SelectedChanges(GriffPartitur_.SelectedEvent);
   end else
     edtWidth.Text := '';
 end;
@@ -1150,7 +1148,7 @@ var
   KeyCode: word;
 begin
 {
-  if frmGriff.GriffPartitur.PlayControl(Msg.CharCode, Msg.KeyData) then
+  if GriffPartitur_.PlayControl(Msg.CharCode, Msg.KeyData) then
   begin
     Handled := true;
     exit;
@@ -1169,17 +1167,16 @@ begin
     exit;
 
   frmGriff.SelectedChanges := SelectedChanges;
-  frmGriff.GriffPartitur.DoPlay := btnPlayClick;
-  frmGriff.GriffPartitur.DoSave := btnSaveGriffClick;
-  frmGriff.GriffPartitur.DoPlayRect := frmGriff.SetPlayRect;
-  frmGriff.GriffPartitur.SetInstrument(InstrumentsList[cbTransInstrument.ItemIndex].Name);
+  GriffPartitur_.DoPlay := btnPlayClick;
+  GriffPartitur_.DoSave := btnSaveGriffClick;
+  GriffPartitur_.DoPlayRect := frmGriff.SetPlayRect;
+  GriffPartitur_.SetInstrument(InstrumentsList[cbTransInstrument.ItemIndex].Name);
 
   cbTransInstrumentChange(nil);
-  frmAmpel.PlayControl := frmGriff.GriffPartitur.PlayControl;
+  frmAmpel.PlayControl := GriffPartitur_.PlayControl;
   frmAmpel.SelectedChanges := SelectedChanges;
   frmAmpel.Show;
   frmAmpel.KeyDown := frmGriff.FormKeyDown;
-  frmAmpel.GriffPartitur := @frmGriff.GriffPartitur;
 
   cbxMidiOut.Items.Assign(MidiOutput.DeviceNames);
   Midi.OpenMidiMicrosoft;
@@ -1209,7 +1206,7 @@ end;
 
 procedure TfrmSequenzer.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  frmGriff.GriffPartitur.StopPlay := true;
+  GriffPartitur_.StopPlay := true;
 end;
 
 procedure TfrmSequenzer.FormCreate(Sender: TObject);
@@ -1232,7 +1229,7 @@ begin
 //    btnLongerPitches.Visible := true;
 //    btnBassSynch.Visible := true;
 //    cbxLoadAsGriff.Visible := true;
-    btnRealSound.Visible := true;
+//    btnRealSound.Visible := true;
   end;
 {$if defined(CONSOLE)}
   if not RunningWine then
@@ -1249,7 +1246,7 @@ end;
 procedure TfrmSequenzer.MessageEvent(var Msg: TMsg; var Handled: Boolean);
 begin
   if (Msg.message = WM_KEYDOWN) and
-     frmGriff.GriffPartitur.PlayControl(Msg.wParam, Msg.lParam) then
+     GriffPartitur_.PlayControl(Msg.wParam, Msg.lParam) then
   begin
     Handled := true;
     exit;
@@ -1304,9 +1301,8 @@ begin
   begin
     case Msg.wParam of
       vk_F1:
-        with frmGriff do
         begin
-          if GriffPartitur.PartiturLoaded then
+          if GriffPartitur_.PartiturLoaded then
             if Application.MessageBox(
                PChar('Die Partitur wird überschrieben. Wollen Sie das?'),
                      'Warnung', MB_YESNO) <> IDYES then
@@ -1315,18 +1311,18 @@ begin
               exit;
             end;
           frmGriff.Caption := 'unbekannt';
-          GriffPartitur.Clear;
+          GriffPartitur_.Clear;
           edtDeltaTimeTicksExit(self);
           cbxTaktChange(self);
           cbxViertelChange(Self);
           edtBPMExit(nil);
-          GriffPartitur.PartiturLoaded := true;
+          GriffPartitur_.PartiturLoaded := true;
           cbTransInstrumentChange(nil);
-          GriffPartitur.InsertNewEvent(-1);
-          frmGriff.GriffPartitur.Selected := 0;
+          GriffPartitur_.InsertNewEvent(-1);
+          GriffPartitur_.Selected := 0;
           frmGriff.HorzScrollBar.Position := 0;
           frmGriff.HorzScrollBar.Range := 0;
-          SelectedChanges(GriffPartitur.SelectedEvent);
+          SelectedChanges(GriffPartitur_.SelectedEvent);
           Show;
         end;
       vk_F2:
@@ -1376,7 +1372,7 @@ end;
 
 function TfrmSequenzer.ChangeNote(Event: PGriffEvent; WithSound: boolean): boolean;
 begin
-  frmGriff.GriffPartitur.ChangeNote(Event, WithSound);
+  GriffPartitur_.ChangeNote(Event, WithSound);
   frmGriff.Invalidate;
   result := true;
 end;
@@ -1405,16 +1401,16 @@ begin
   end else
   with SelectedEvent^ do
   begin
-    Sharp := frmGriff.GriffPartitur.Instrument.Sharp;
+    Sharp := GriffPartitur_.Instrument.Sharp;
     edtGriffPitch.Enabled := NoteType = ntBass;
     gbGriffEvent.Enabled := true;
-    Sound := SoundPitch; // GetSoundPitch(frmGriff.GriffPartitur.Instrument);
+    Sound := SoundPitch; // GetSoundPitch(GriffPartitur_.Instrument);
     cbxNoteType.ItemIndex := ord(NoteType);
     if NoteType = ntBass then
     begin
       edtSoundPitch.Text := IntToStr(Sound) + '  $' + IntToHex(Sound) + '  ' + MidiOnlyNote(Sound, Sharp);
       s := IntToStr(GriffPitch);
-      if frmGriff.GriffPartitur.Instrument.BassDiatonic and
+      if GriffPartitur_.Instrument.BassDiatonic and
          (GriffPitch in [1..8]) then
       begin
         if Cross then
@@ -1430,9 +1426,9 @@ begin
     cbxCross.Checked := SelectedEvent.Cross;
     cbxPush.Checked := SelectedEvent.InPush;
     edtGriffLine.Text := IntToStr(AbsRect.Top);
-    if frmGriff.GriffPartitur.SelectedEvent = SelectedEvent then
+    if GriffPartitur_.SelectedEvent = SelectedEvent then
     begin
-      edtIndex.Text := IntToStr(frmGriff.GriffPartitur.Selected);
+      edtIndex.Text := IntToStr(GriffPartitur_.Selected);
       edtLeftPos.Text := IntToStr(AbsRect.Left);
       edtWidth.Text := IntToStr(AbsRect.Width);
       cbxVolta.ItemIndex := ord(Repeat_);

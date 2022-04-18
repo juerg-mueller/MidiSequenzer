@@ -103,7 +103,6 @@ type
     MinIndex, MaxIndex: integer;
     PlayControl: PPlayControl;
     KeyDown: PKeyDown;
-    GriffPartitur: PGriffPartitur;
     IsActive: boolean;
     procedure GenerateNewNote(Event: TMouseEvent);
     procedure ChangeInstrument(Instrument_: PInstrument);
@@ -172,7 +171,7 @@ begin
   CriticalAmpel.Acquire;
   try
     for i := 0 to UsedEvents-1 do
-      if MouseEvents[i].Push_<> Push then
+      if MouseEvents[i].Push_ <> Push then
       begin
         Event := MouseEvents[i];
         if Event.Pitch > 0 then  // MIDI Eingabe
@@ -181,7 +180,7 @@ begin
           GriffEvent.Clear;
           GriffEvent.SoundPitch := Event.Pitch;
           GriffEvent.InPush := Event.Push_;
-          if GriffEvent.SoundToGriff(frmGriff.GriffPartitur.Instrument) and
+          if GriffEvent.SoundToGriff(GriffPartitur_.Instrument) and
              (GriffEvent.InPush = Event.Push_) then
           begin
             Event.Row_ := GriffEvent.GetRow;
@@ -200,7 +199,7 @@ begin
         end;
       end;
 
-    // Control wechselt: Bass Reihe ändert
+    // Control wechselt: Bass Reihe ändert (Tastatur F5 bis F12)
     for i := 0 to UsedEvents-1 do
       if (MouseEvents[i].Pitch = 0) and // nicht für Midi-Eingabe vom Keyboard
          (MouseEvents[i].Key > 0) and   // nur für Tastatur
@@ -223,9 +222,6 @@ var
 begin
   if UsedEvents >= High(MouseEvents) then
     exit;
-
-  //if @frmAmpel.GriffPartitur <> nil then
-   // frmAmpel.GriffPartitur.Selected := -1;
 
   CriticalAmpel.Acquire;
   try
@@ -595,7 +591,7 @@ var
   c: integer;
   d: integer;
 begin
-  if (GriffPartitur.iVirtualMidi >= 0) then
+  if (GriffPartitur_.iVirtualMidi >= 0) then
   begin
     case Event.Row_ of
       1: b := 0;
@@ -619,7 +615,7 @@ begin
       d := $40;
       if Event.Push_ and On_ then
         inc(d, $10);
-      MidiOutput.Send(GriffPartitur.iVirtualMidi, c, b, d);
+      MidiOutput.Send(GriffPartitur_.iVirtualMidi, c, b, d);
       write(Format('$%2.2x $%2.2x $%2.2x', [c, b, d]));
       writeln(Format('  (%d  %d  %d)', [c, b, d]));
     end;
@@ -647,15 +643,15 @@ procedure TfrmAmpel.GenerateNewNote(Event: TMouseEvent);
 var
   GriffEvent: TGriffEvent;
 begin
-  if (@GriffPartitur <> nil) and GriffPartitur.PartiturLoaded and
+  if GriffPartitur_.PartiturLoaded and
      (Event.Row_ > 0) then
   begin
-    if (GriffPartitur.SelectedEvent <> nil) then
+    if (GriffPartitur_.SelectedEvent <> nil) then
     begin
-      GriffEvent := GriffPartitur.SelectedEvent^;
-      GriffEvent.AbsRect.Offset(GriffPartitur.SelectedEvent.AbsRect.Width, 0);
+      GriffEvent := GriffPartitur_.SelectedEvent^;
+      GriffEvent.AbsRect.Offset(GriffPartitur_.SelectedEvent.AbsRect.Width, 0);
     end else
-      GriffEvent := GriffPartitur.GriffEvents[GriffPartitur.UsedEvents-1];
+      GriffEvent := GriffPartitur_.GriffEvents[GriffPartitur_.UsedEvents-1];
     GriffEvent.NoteType := ntDiskant;
     if Event.Row_ > 4 then
       GriffEvent.NoteType := ntBass;
@@ -681,7 +677,7 @@ begin
     end;
     GriffEvent.AbsRect.Height := 1;
     GriffEvent.InPush := Event.Push_;
-    GriffPartitur.InsertNewSelected(GriffEvent);
+    GriffPartitur_.InsertNewSelected(GriffEvent);
 
     frmGriff.ShowSelected;
   end;

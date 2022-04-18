@@ -25,7 +25,6 @@ interface
 uses
   SysUtils, Classes, WideStrUtils;
 
-
 type
 
   TMyMemoryStream = class(TMemoryStream)

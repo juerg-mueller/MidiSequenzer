@@ -19,9 +19,9 @@ uses
   UXmlParser in 'UXmlParser.pas',
   USheetMusic in 'USheetMusic.pas',
   UMuseScore in 'UMuseScore.pas',
-  UVirtual in 'UVirtual.pas',
   teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
-  ustuff in 'teVirtual\ustuff.pas';
+  ustuff in 'teVirtual\ustuff.pas',
+  UVirtual in 'UVirtual.pas';
 
 {$R *.res}
 

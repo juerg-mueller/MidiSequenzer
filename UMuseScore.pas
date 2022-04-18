@@ -33,7 +33,7 @@ uses
 
 const
   UseBellows = true;
-  UseColors_ = true;
+  UseColors_ = false;
   UseGrandCross = true;
   BellowsWidth = 0.5;
 
@@ -1533,7 +1533,6 @@ var
   s, t: string;
   p: integer;
   WithBass: boolean;
-  Stream: TMyMemoryStream;
 begin
   WithBass := false;
   for p := 0 to GriffPartitur.UsedEvents-1 do
@@ -1664,11 +1663,7 @@ begin
     Score.RemoveChild(Staff3);
   end;
 
-  Stream := KXmlNode.BuildMemoryStream(Root);
-  Stream.SaveToFile(FileName);
-  Stream.Free;
-
-  result := true;
+  result := Root.SaveToMsczFile(FileName);
 end;
 
 end.

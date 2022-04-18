@@ -30,7 +30,6 @@ object frmSequenzer: TfrmSequenzer
     Align = alBottom
     Caption = 'Load/Save Midi Partitur'
     TabOrder = 0
-    ExplicitTop = 330
     DesignSize = (
       898
       110)
@@ -150,7 +149,6 @@ object frmSequenzer: TfrmSequenzer
     Caption = 'Selected Griff Event'
     Enabled = False
     TabOrder = 1
-    ExplicitHeight = 330
     object Label1: TLabel
       Left = 24
       Top = 50
@@ -328,7 +326,6 @@ object frmSequenzer: TfrmSequenzer
     Align = alRight
     Caption = 'Optimization'
     TabOrder = 2
-    ExplicitHeight = 330
     DesignSize = (
       150
       332)
@@ -343,7 +340,6 @@ object frmSequenzer: TfrmSequenzer
       Visible = False
       OnClick = btnBassSynchClick
       OnEnter = edtStopEnter
-      ExplicitTop = 205
     end
     object btnSmallest: TButton
       Left = 27
@@ -355,7 +351,6 @@ object frmSequenzer: TfrmSequenzer
       TabOrder = 1
       OnClick = btnSmallestClick
       OnEnter = edtStopEnter
-      ExplicitTop = 267
     end
     object btnLongerPitches: TButton
       Left = 27
@@ -367,7 +362,6 @@ object frmSequenzer: TfrmSequenzer
       TabOrder = 2
       OnClick = btnLongerPitchesClick
       OnEnter = edtStopEnter
-      ExplicitTop = 236
     end
     object btnPurgeBass: TButton
       Left = 27
@@ -399,7 +393,6 @@ object frmSequenzer: TfrmSequenzer
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 3
-    ExplicitHeight = 330
     object gbHeader: TGroupBox
       Left = 0
       Top = 0
@@ -535,7 +528,6 @@ object frmSequenzer: TfrmSequenzer
       Align = alClient
       Caption = 'Midi / Sound'
       TabOrder = 1
-      ExplicitHeight = 117
       object Label11: TLabel
         Left = 219
         Top = 61
@@ -660,7 +652,6 @@ object frmSequenzer: TfrmSequenzer
       Align = alBottom
       Caption = 'Schwyzer'#246'rgeli / Steirische Harmonika'
       TabOrder = 2
-      ExplicitTop = 258
       object Label13: TLabel
         Left = 24
         Top = 34
