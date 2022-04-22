@@ -107,7 +107,7 @@ type
     procedure GenerateNewNote(Event: TMouseEvent);
     procedure ChangeInstrument(Instrument_: PInstrument);
     function KnopfRect(Row: byte {1..6}; index: byte {0..10}): TRect;
-    procedure UseVirtualMidi(Event: TMouseEvent; On_: boolean);
+//    procedure UseVirtualMidi(Event: TMouseEvent; On_: boolean);
     procedure PaintAmpel(Row: byte {1..6}; index: integer {0..10}; Push, On_: boolean);
     function GetKeyIndex(var Event: TMouseEvent; Key: word): boolean;
   end;
@@ -132,6 +132,43 @@ implementation
 
 uses
   UfrmGriff, Midi;
+
+procedure UseVirtualMidi(Event: TMouseEvent; On_: boolean);
+var
+  b: integer;
+  c: integer;
+  d: integer;
+begin
+  if (GriffPartitur_.iVirtualMidi >= 0) then
+  begin
+    case Event.Row_ of
+      1: b := 0;
+      2: b := 14;
+      3: b := 26;
+      4: b := 38;
+      5: b := 100;
+      6: b := 110;
+      else b := 0;
+    end;
+    inc(b, Event.Index_);
+    if (not Event.Push_) and (Event.Row_ <= 4) then
+      inc(b, 50);
+    if (RowIndexToGriff(Event.Row_, Event.Index_) > 0) or
+       (Event.Row_ > 4) then
+    begin
+      if On_ then
+        c := $90
+      else
+        c := $80;
+      d := $40;
+      if Event.Push_ and On_ then
+        inc(d, $10);
+      MidiOutput.Send(GriffPartitur_.iVirtualMidi, c, b, d);
+      write(Format('$%2.2x $%2.2x $%2.2x', [c, b, d]));
+      writeln(Format('  (%d  %d  %d)', [c, b, d]));
+    end;
+  end;
+end;
 
 procedure TMouseEvent.Clear;
 begin
@@ -237,7 +274,6 @@ begin
   finally
     CriticalAmpel.Leave;
   end;
-
 end;
 
 procedure TAmpelEvents.DoAmpel(Index: integer; On_: boolean);
@@ -252,6 +288,7 @@ begin
       MidiOutput.Send(MicrosoftIndex, $90 + Row_ - 1, Event.SoundPitch, $4f)
     else
       MidiOutput.Send(MicrosoftIndex, $80 + Row_ - 1, Event.SoundPitch, $40);
+    UseVirtualMidi(MouseEvents[Index], On_);
 
     if assigned(frmAmpel.SelectedChanges) then
     begin
@@ -342,7 +379,6 @@ begin
   begin
     if not cont or not Down then
     begin
-      frmAmpel.UseVirtualMidi(Event, false);
       EventOff(Event);
     end;
   end else
@@ -563,7 +599,6 @@ begin
   Event.Push_ := Push;
   if GetKeyIndex(Event, Key) then
   begin
-    UseVirtualMidi(Event, Sender <> nil);
     if (Sender <> nil) then
       AmpelEvents.NewEvent(Event);
   end;
@@ -582,44 +617,6 @@ begin
 
   AmpelEvents.GetEventOff(Key, Event);
   AmpelEvents.EventOff(Event);
-  UseVirtualMidi(Event, false);
-end;
-
-procedure TfrmAmpel.UseVirtualMidi(Event: TMouseEvent; On_: boolean);
-var
-  b: integer;
-  c: integer;
-  d: integer;
-begin
-  if (GriffPartitur_.iVirtualMidi >= 0) then
-  begin
-    case Event.Row_ of
-      1: b := 0;
-      2: b := 14;
-      3: b := 26;
-      4: b := 38;
-      5: b := 100;
-      6: b := 110;
-      else b := 0;
-    end;
-    inc(b, Event.Index_);
-    if (not Event.Push_) and (Event.Row_ <= 4) then
-      inc(b, 50);
-    if (RowIndexToGriff(Event.Row_, Event.Index_) > 0) or
-       (Event.Row_ > 4) then
-    begin
-      if On_ then
-        c := $90
-      else
-        c := $80;
-      d := $40;
-      if Event.Push_ and On_ then
-        inc(d, $10);
-      MidiOutput.Send(GriffPartitur_.iVirtualMidi, c, b, d);
-      write(Format('$%2.2x $%2.2x $%2.2x', [c, b, d]));
-      writeln(Format('  (%d  %d  %d)', [c, b, d]));
-    end;
-  end;
 end;
 
 procedure TfrmAmpel.FormMouseDown(Sender: TObject; Button: TMouseButton;
@@ -632,7 +629,6 @@ begin
   P.Y := Y;
   Event := MakeMouseDown(P, ShiftUsed);
 
-  UseVirtualMidi(Event, true);
   if (@KeyDown <> nil) and
      ((GetKeyState(vk_scroll) = 1) or //   numlock pause scroll
       (GetKeyState(vk_RMenu) < 0)) then // AltGr

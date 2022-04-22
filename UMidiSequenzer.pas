@@ -133,7 +133,6 @@ type
     procedure cbxTransInstrumentChange(Sender: TObject);
     procedure cbxMuteTrebleClick(Sender: TObject);
     procedure cbxVoltaChange(Sender: TObject);
-    procedure SaveDialog1TypeChange(Sender: TObject);
     procedure btnResetMidiClick(Sender: TObject);
     procedure cbxPushMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -560,23 +559,6 @@ begin
   end;
 end;
 
-procedure TfrmSequenzer.SaveDialog1TypeChange(Sender: TObject);
-var
-  s, t: string;
-begin
-  t := SaveDialog1.FileName;
-  s := ExtractFileExt(t);
-  SetLength(t, Length(t) - Length(s));
-  case SaveDialog1.FilterIndex of
-    1: s := '.mid';
-    2: s := '.xml';
-    3: s := '.ly';
-    4: s := '_.mscx';
-  end;
-  SaveDialog1.FileName := t + s;
-end;
-
-
 procedure TfrmSequenzer.btnSaveMidiClick(Sender: TObject);
 var
   s, s1: string;
@@ -629,9 +611,6 @@ begin
            if ok then
            begin
              Stream.SaveToFile(s);
-{$if defined(CONSOLE)}
-             writeln('saved file: ', s);
-{$endif}
            end;
            Stream.Free;
          end;
