@@ -20,8 +20,8 @@ uses
   USheetMusic in 'USheetMusic.pas',
   UMuseScore in 'UMuseScore.pas',
   teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
-  ustuff in 'teVirtual\ustuff.pas',
-  UVirtual in 'UVirtual.pas';
+  UVirtual in 'UVirtual.pas',
+  UFormHelper in 'UFormHelper.pas';
 
 {$R *.res}
 

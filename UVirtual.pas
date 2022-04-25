@@ -21,9 +21,7 @@ implementation
 uses
   SysUtils,
   teVirtualMIDIdll,
-  uStuff,
-  Midi,
-  Forms;
+  Midi;
 
 var
   dummy: word;
@@ -52,7 +50,6 @@ begin
 {$endif}
       exit;
     end;
-//  writeln( 'command: '+ bintostr( mididatabytes, datalength ) );
 end;
 
 
@@ -80,8 +77,6 @@ begin
       writeln('could not create port2: '+virtualMIDIError(GetLastError()));
     end;
 {$endif}
-    Sleep(10);
-    Application.ProcessMessages;
   end;
 end;
 
