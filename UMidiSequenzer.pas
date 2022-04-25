@@ -164,7 +164,7 @@ implementation
 uses
   UfrmGriff, Midi, UAmpel, UMidiDataStream, UEventArray, UGriffPlayer,
   UGriffArray, UXmlNode, UXmlParser,
-  USheetMusic, UMuseScore, UVirtual;
+  USheetMusic, UMuseScore, UVirtual, UFormHelper;
 
 function GetConsoleWindow: HWND; stdcall; external kernel32;
 
@@ -195,9 +195,7 @@ begin
          (Ext = '.mid') or (Ext = '.midi') then
       begin
         if not GriffPartitur_.PartiturLoaded or
-           (Application.MessageBox(
-                 PChar('Die Partitur wird überschrieben. Wollen Sie das?'),
-                       'Warnung', MB_YESNO) = IDYES )then
+           (Warning('Die Partitur wird überschrieben. Wollen Sie das?') = IDYES )then
         begin
           FileOpenDialog1.FileName := FileName;
           edtMidiFile.Text := FileName;
@@ -248,7 +246,7 @@ begin
       begin
         frmAmpel.AmpelEvents.NewEvent(Event);
         if (GetKeyState(vk_scroll) = 1) then //   numlock pause scroll
-          frmAmpel.GenerateNewNote(Event);
+          frmGriff.GenerateNewNote(Event);
       end;
     end;
   end;
@@ -457,9 +455,9 @@ begin
     frmAmpel.Show;
     frmGriff.Hide;
     frmGriff.Show;
-    Application.ProcessMessages;
+    ProcessMessages;
     sleep(100);
-    Application.ProcessMessages;
+    ProcessMessages;
 
     cbxNoSound.Enabled := false;
     cbxMuteBass.Enabled := false;
@@ -496,7 +494,7 @@ begin
                                                 StrToIntDef(edtPlayDelay.Text, 0));
         while not Player.Terminated_ do
         begin
-        Application.ProcessMessages;
+        ProcessMessages;
         sleep(10);
         end;
       finally
@@ -510,13 +508,13 @@ begin
   end else begin
     GriffPartitur_.StopPlay := true;
     Sleep(100);
-    Application.ProcessMessages;
+    ProcessMessages;
     btnPlay.Caption := 'Play Partitur';
   end;
   cbxNoSound.Enabled := true;
   cbxMuteBass.Enabled := true;
 
-  Application.ProcessMessages;
+  ProcessMessages;
 end;
 procedure TfrmSequenzer.btnPurgeBassClick(Sender: TObject);
 begin
@@ -598,7 +596,7 @@ begin
       s := s + ext1;
     end;
     if FileExists(s) then
-      if Application.MessageBox(PChar('File "' + s + '" existiert. Überschreiben?'), 'Warnung', MB_YESNO) <> IDYES then
+      if Warning('File "' + s + '" existiert. Überschreiben?') <> IDYES then
         exit;
 
     case SaveDialog1.FilterIndex of
@@ -622,7 +620,7 @@ begin
       end;
     end;
     if not ok then
-      Application.MessageBox(PChar('File "' + s + '" nicht gespeichert'), 'Fehler', MB_OK)
+      Warning('File "' + s + '" nicht gespeichert')
     else begin
 {$if defined(CONSOLE)}
       writeln('File saved: ', s);
@@ -811,7 +809,7 @@ begin
   if cbxMidiOut.ItemIndex >= 0 then
   begin
     MidiOutput.Close(MicrosoftIndex);
-    if GriffPartitur_.iVirtualMidi <> cbxMidiOut.ItemIndex then
+    if iVirtualMidi <> cbxMidiOut.ItemIndex then
       MicrosoftIndex := cbxMidiOut.ItemIndex
     else
       cbxMidiOut.ItemIndex := MicrosoftIndex;
@@ -929,7 +927,6 @@ begin
     if iVirtualMidi >= 0 then
     begin
       MidiOutput.Open(iVirtualMidi);
-      MidiOutput.Send(iVirtualMidi, $c0, MidiInstr, $00);
     end;
   end;
 end;
@@ -1213,13 +1210,15 @@ begin
 {$if defined(CONSOLE)}
   if not RunningWine then
     ShowWindow(GetConsoleWindow, SW_SHOWMINIMIZED);
-  SetConsoleTitle('Midi Sequenzer - Trace Window');
+  SetConsoleTitle('MidiSequenzer - Trace Window');
 {$endif}
   Application.OnMessage := MessageEvent;
   DragAcceptFiles(Self.Handle, true);
 
-  UVirtual.LoopbackName := 'Midi Sequenzer Loopback';
+  UVirtual.LoopbackName := 'MidiSequenzer loopback';
   InstallLoopback;
+  Sleep(10);
+  Application.ProcessMessages;
 end;
 
 procedure TfrmSequenzer.MessageEvent(var Msg: TMsg; var Handled: Boolean);
@@ -1282,9 +1281,7 @@ begin
       vk_F1:
         begin
           if GriffPartitur_.PartiturLoaded then
-            if Application.MessageBox(
-               PChar('Die Partitur wird überschrieben. Wollen Sie das?'),
-                     'Warnung', MB_YESNO) <> IDYES then
+            if Warning('Die Partitur wird überschrieben. Wollen Sie das?') <> IDYES then
             begin
               frmGriff.Show;
               exit;

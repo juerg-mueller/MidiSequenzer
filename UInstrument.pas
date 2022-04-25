@@ -391,7 +391,7 @@ begin
   if (Row >= 5) and (Index > High(TBassArr)) then
     exit;
 
-  if not BassDiatonic then
+  if not BassDiatonic and (Row >= 5) then
     Push_ := true;
 
   case Row of

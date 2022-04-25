@@ -59,6 +59,7 @@ type
     SelectedChanges: PSelectedProc;
     procedure SetPlayRect(rect: TRect);
     procedure ShowSelected;
+    procedure GenerateNewNote(Event: TMouseEvent);
 
   end;
 
@@ -69,6 +70,8 @@ var
 implementation
 
 {$R *.dfm}
+
+uses UInstrument;
 
 function OverLine(x, Left, Right, y, Top, Delta : integer) : boolean;
 begin
@@ -192,7 +195,7 @@ begin
     end;
   end;
 end;
-  {
+{
 function TfrmGriff.GetKeyIndex(var Event: UAmpel.TMouseEvent; Key: word): boolean;
 var
   i: integer;
@@ -239,7 +242,7 @@ begin
   if (GetKeyState(vk_RMenu) < 0) and
      frmAmpel.GetKeyIndex(Event, Key) then
   begin
-    frmAmpel.GenerateNewNote(Event);
+    GenerateNewNote(Event);
     exit;
   end;
   if Key = 27 then
@@ -1147,5 +1150,50 @@ begin
   canvas.Font.Style := [fsBold];
   canvas.Brush.Style := bsSolid;
 end;
+
+procedure TfrmGriff.GenerateNewNote(Event: UAmpel.TMouseEvent);
+var
+  GriffEvent: TGriffEvent;
+begin
+  if GriffPartitur_.PartiturLoaded and
+     (Event.Row_ > 0) then
+  begin
+    if (GriffPartitur_.SelectedEvent <> nil) then
+    begin
+      GriffEvent := GriffPartitur_.SelectedEvent^;
+      GriffEvent.AbsRect.Offset(GriffPartitur_.SelectedEvent.AbsRect.Width, 0);
+    end else
+      GriffEvent := GriffPartitur_.GriffEvents[GriffPartitur_.UsedEvents-1];
+    GriffEvent.NoteType := ntDiskant;
+    if Event.Row_ > 4 then
+      GriffEvent.NoteType := ntBass;
+    GriffEvent.Cross := Event.Row_ in [3,4];
+    if Event.Row_ <= 4 then
+    begin
+      GriffEvent.SoundPitch :=
+        GriffPartitur_.Instrument.RowIndexToSound(Event.Row_, Event.Index_, Event.Push_);
+      GriffEvent.NoteType := ntDiskant;
+      inc(Event.Index_, Event.Index_);
+      if not odd(Event.Row_) then
+        inc(Event.Index_);
+      GriffEvent.GriffPitch := UInstrument.IndexToGriff(Event.Index_);
+      GriffEvent.AbsRect.Top := Event.Index_;
+    end else begin
+      GriffEvent.GriffPitch := Event.Index_;
+      GriffEvent.Cross := Event.Row_ = 6;
+      if GriffPartitur_.Instrument.BassDiatonic and not Event.Push_ then
+        GriffEvent.SoundPitch := GriffPartitur_.Instrument.PullBass[Event.Row_ = 6, Event.Index_]
+      else
+        GriffEvent.SoundPitch := GriffPartitur_.Instrument.Bass[Event.Row_ = 6, Event.Index_];
+      GriffEvent.AbsRect.Top := -1;
+    end;
+    GriffEvent.AbsRect.Height := 1;
+    GriffEvent.InPush := Event.Push_;
+    GriffPartitur_.InsertNewSelected(GriffEvent);
+
+    frmGriff.ShowSelected;
+  end;
+end;
+
 
 end.

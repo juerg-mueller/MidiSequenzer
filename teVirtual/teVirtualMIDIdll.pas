@@ -88,7 +88,6 @@ type
 implementation
 
 uses
-  ustuff,
   sysutils;
 
 
@@ -115,7 +114,10 @@ var m_logging: DWORD;
     portCritical: tcriticalsection;
     portCount: dword;
 
-
+function IsGerman: boolean;
+begin
+  result:=(GetUserDefaultLangID() and $3ff)=7;
+end;
 
 // finalize - called automatically when the application shuts down
 procedure FinalVM();

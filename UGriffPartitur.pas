@@ -27,9 +27,9 @@ uses
 {$if defined(DCC)}
   AnsiStrings,
 {$endif}
-  Classes, SysUtils, Types, Variants, Forms, Windows,
+  Classes, SysUtils, Types, Variants, Windows,
   UInstrument, UMyMemoryStream, UMyMidiStream, UEventArray,
-  UGriffEvent;
+  UGriffEvent, UFormHelper;
 
 const
   row_height = 15;
@@ -75,7 +75,6 @@ type
     GriffHeader: TGriffHeader;
     GriffEvents: TGriffEventArray;
     CopyEvents: TGriffEventArray; // buffer for ctrl-x, -c, -v
-    iVirtualMidi: integer;
 
     // Play-Variablen
     StopPlay: boolean;
@@ -178,10 +177,7 @@ type
 
 
 var
-  Sustain_: boolean = false; // midi keyboard flag
   GriffPartitur_: TGriffPartitur;
-
-function ShiftUsed: boolean;
 
 
 implementation
@@ -195,13 +191,6 @@ uses
   UfrmGriff,
 {$endif}
   UGriffArray, Midi,  UXmlNode, UXmlParser;
-
-function ShiftUsed: boolean;
-begin
-  result := (GetKeyState(vk_capital) = 1) or
-            (GetKeyState(vk_shift) < 0) or
-            Sustain_;
-end;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1785,7 +1774,7 @@ var
   var
     t, Row, i: integer;
   begin
-    Application.ProcessMessages;
+    ProcessMessages;
     sleep(1);
 
     Ticks := GriffHeader.Details.GetTicks;
@@ -1988,7 +1977,7 @@ var
   var
     i, t: integer;
   begin
-    Application.ProcessMessages;
+    ProcessMessages;
     sleep(10);
     Ticks := GriffHeader.Details.GetTicks;
     Offset := Offset + PlayFactor*(Ticks - TickOffset);

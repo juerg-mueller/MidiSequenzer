@@ -20,7 +20,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Touch.GestureMgr, SyncObjs, UITypes,
-  UInstrument, UGriffPartitur, UGriffEvent;
+  UInstrument, UGriffEvent;
 
 type
   TSoundGriff = procedure (Row: byte; index: byte; Push: boolean; On_:boolean) of object;
@@ -90,10 +90,10 @@ type
     procedure FormDeactivate(Sender: TObject);
     procedure cbxLinkshaenderClick(Sender: TObject);
   private
-    Instrument: PInstrument;
     function MakeMouseDown(const P: TPoint; Push: boolean): TMouseEvent;
     function FlippedHorz: boolean;
   public
+    Instrument: PInstrument;
     AmpelEvents: TAmpelEvents;
     FlippedVert: boolean;
     FlippedHorz_: boolean;
@@ -104,10 +104,8 @@ type
     PlayControl: PPlayControl;
     KeyDown: PKeyDown;
     IsActive: boolean;
-    procedure GenerateNewNote(Event: TMouseEvent);
     procedure ChangeInstrument(Instrument_: PInstrument);
     function KnopfRect(Row: byte {1..6}; index: byte {0..10}): TRect;
-//    procedure UseVirtualMidi(Event: TMouseEvent; On_: boolean);
     procedure PaintAmpel(Row: byte {1..6}; index: integer {0..10}; Push, On_: boolean);
     function GetKeyIndex(var Event: TMouseEvent; Key: word): boolean;
   end;
@@ -131,44 +129,7 @@ implementation
 {$R *.dfm}
 
 uses
-  UfrmGriff, Midi;
-
-procedure UseVirtualMidi(Event: TMouseEvent; On_: boolean);
-var
-  b: integer;
-  c: integer;
-  d: integer;
-begin
-  if (GriffPartitur_.iVirtualMidi >= 0) then
-  begin
-    case Event.Row_ of
-      1: b := 0;
-      2: b := 14;
-      3: b := 26;
-      4: b := 38;
-      5: b := 100;
-      6: b := 110;
-      else b := 0;
-    end;
-    inc(b, Event.Index_);
-    if (not Event.Push_) and (Event.Row_ <= 4) then
-      inc(b, 50);
-    if (RowIndexToGriff(Event.Row_, Event.Index_) > 0) or
-       (Event.Row_ > 4) then
-    begin
-      if On_ then
-        c := $90
-      else
-        c := $80;
-      d := $40;
-      if Event.Push_ and On_ then
-        inc(d, $10);
-      MidiOutput.Send(GriffPartitur_.iVirtualMidi, c, b, d);
-      write(Format('$%2.2x $%2.2x $%2.2x', [c, b, d]));
-      writeln(Format('  (%d  %d  %d)', [c, b, d]));
-    end;
-  end;
-end;
+  UfrmGriff, Midi, UFormHelper;
 
 procedure TMouseEvent.Clear;
 begin
@@ -211,13 +172,16 @@ begin
       if MouseEvents[i].Push_ <> Push then
       begin
         Event := MouseEvents[i];
+        if (Event.Row_ >= 5) and not frmAmpel.Instrument.BassDiatonic then
+        begin
+        end else
         if Event.Pitch > 0 then  // MIDI Eingabe
         begin
           Event.Push_ := Push;
           GriffEvent.Clear;
           GriffEvent.SoundPitch := Event.Pitch;
           GriffEvent.InPush := Event.Push_;
-          if GriffEvent.SoundToGriff(GriffPartitur_.Instrument) and
+          if GriffEvent.SoundToGriff(frmAmpel.Instrument^) and
              (GriffEvent.InPush = Event.Push_) then
           begin
             Event.Row_ := GriffEvent.GetRow;
@@ -276,6 +240,43 @@ begin
   end;
 end;
 
+procedure UseVirtualMidi(Event: TMouseEvent; On_: boolean);
+var
+  b: integer;
+  c: integer;
+  d: integer;
+begin
+  if iVirtualMidi >= 0 then
+  begin
+    case Event.Row_ of
+      1: b := 0;
+      2: b := 14;
+      3: b := 26;
+      4: b := 38;
+      5: b := 100;
+      6: b := 110;
+      else b := 0;
+    end;
+    inc(b, Event.Index_);
+    if (not Event.Push_) and (Event.Row_ <= 4) then
+      inc(b, 50);
+    if (RowIndexToGriff(Event.Row_, Event.Index_) > 0) or
+       (Event.Row_ > 4) then
+    begin
+      if On_ then
+        c := $90
+      else
+        c := $80;
+      d := $40;
+      if Event.Push_ and On_ then
+        inc(d, $10);
+      MidiOutput.Send(iVirtualMidi, c, b, d);
+      write(Format('$%2.2x $%2.2x $%2.2x', [c, b, d]));
+      writeln(Format('  (%d  %d  %d)', [c, b, d]));
+    end;
+  end;
+end;
+
 procedure TAmpelEvents.DoAmpel(Index: integer; On_: boolean);
 var
   Event: TGriffEvent;
@@ -289,6 +290,7 @@ begin
     else
       MidiOutput.Send(MicrosoftIndex, $80 + Row_ - 1, Event.SoundPitch, $40);
     UseVirtualMidi(MouseEvents[Index], On_);
+    frmAmpel.PaintAmpel(Row_, Index_, Push_, On_);
 
     if assigned(frmAmpel.SelectedChanges) then
     begin
@@ -383,7 +385,7 @@ begin
     end;
   end else
   if Down then  
-    frmAmpel.MakeMouseDown(P, UGriffPartitur.ShiftUsed);
+    frmAmpel.MakeMouseDown(P, ShiftUsed);
 end;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -632,51 +634,7 @@ begin
   if (@KeyDown <> nil) and
      ((GetKeyState(vk_scroll) = 1) or //   numlock pause scroll
       (GetKeyState(vk_RMenu) < 0)) then // AltGr
-    GenerateNewNote(Event);
-end;
-
-procedure TfrmAmpel.GenerateNewNote(Event: TMouseEvent);
-var
-  GriffEvent: TGriffEvent;
-begin
-  if GriffPartitur_.PartiturLoaded and
-     (Event.Row_ > 0) then
-  begin
-    if (GriffPartitur_.SelectedEvent <> nil) then
-    begin
-      GriffEvent := GriffPartitur_.SelectedEvent^;
-      GriffEvent.AbsRect.Offset(GriffPartitur_.SelectedEvent.AbsRect.Width, 0);
-    end else
-      GriffEvent := GriffPartitur_.GriffEvents[GriffPartitur_.UsedEvents-1];
-    GriffEvent.NoteType := ntDiskant;
-    if Event.Row_ > 4 then
-      GriffEvent.NoteType := ntBass;
-    GriffEvent.Cross := Event.Row_ in [3,4];
-    if Event.Row_ <= 4 then
-    begin
-      GriffEvent.SoundPitch :=
-        Instrument.RowIndexToSound(Event.Row_, Event.Index_, Event.Push_);
-      GriffEvent.NoteType := ntDiskant;
-      inc(Event.Index_, Event.Index_);
-      if not odd(Event.Row_) then
-        inc(Event.Index_);
-      GriffEvent.GriffPitch := IndexToGriff(Event.Index_);
-      GriffEvent.AbsRect.Top := Event.Index_;
-    end else begin
-      GriffEvent.GriffPitch := Event.Index_;
-      GriffEvent.Cross := Event.Row_ = 6;
-      if Instrument.BassDiatonic and not Event.Push_ then
-        GriffEvent.SoundPitch := Instrument.PullBass[Event.Row_ = 6, Event.Index_]
-      else
-        GriffEvent.SoundPitch := Instrument.Bass[Event.Row_ = 6, Event.Index_];
-      GriffEvent.AbsRect.Top := -1;
-    end;
-    GriffEvent.AbsRect.Height := 1;
-    GriffEvent.InPush := Event.Push_;
-    GriffPartitur_.InsertNewSelected(GriffEvent);
-
-    frmGriff.ShowSelected;
-  end;
+ //   GenerateNewNote(Event);
 end;
 
 function TfrmAmpel.MakeMouseDown(const P: TPoint; Push: boolean): TMouseEvent;
@@ -936,6 +894,9 @@ begin
 
   if (Instrument = nil) or (Instrument.GetPitch(Row, Index, Push) <= 0) then
     exit;
+
+  if (Row >= 5) and not Instrument.BassDiatonic then
+    Push := false;
 
   rect := KnopfRect(Row, index);
   if not On_ then
