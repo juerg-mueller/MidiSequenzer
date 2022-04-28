@@ -35,6 +35,11 @@ begin
 end;
 
 procedure teVMCallback( MidiPort: LPVM_MIDI_PORT; MidiDataBytes: PBYTE; DataLength: cardinal; dwCallbackInstance: Pointer ); stdcall;
+{$if defined(CONSOLE)}
+var
+  i: integer;
+  b: byte;
+{$endif}
 begin
   if ( mididatabytes = nil ) or ( datalength = 0 ) then
     begin
@@ -43,6 +48,18 @@ begin
 {$endif}
       exit;
     end;
+
+{$if defined(CONSOLE)}
+  for i := 0 to DataLength-1 do
+  begin
+    b := MidiDataBytes[i];
+    write(' $', IntToHex(b));
+  end;
+  writeln;
+  if (MidiDataBytes^ and $f0) = $80 then
+    writeln;
+{$endif}
+
   if not virtualMIDISendData( midiport, mididatabytes, datalength ) then
     begin
 {$if defined(CONSOLE)}
@@ -51,7 +68,6 @@ begin
       exit;
     end;
 end;
-
 
 function InstallLoopback: boolean;
 begin

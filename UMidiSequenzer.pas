@@ -164,7 +164,7 @@ implementation
 uses
   UfrmGriff, Midi, UAmpel, UMidiDataStream, UEventArray, UGriffPlayer,
   UGriffArray, UXmlNode, UXmlParser,
-  USheetMusic, UMuseScore, UVirtual, UFormHelper;
+  USheetMusic, UMuseScore, UVirtual, UFormHelper, UMidiEvent;
 
 function GetConsoleWindow: HWND; stdcall; external kernel32;
 
@@ -340,8 +340,7 @@ begin
     if (ext = '.mscx') or (ext = '.mscz') then
       Ok := LoadFromMscx(GriffPartitur_, PartiturFileName)
     else
-      Ok := GriffPartitur_
-      .LoadFromMusicXML(PartiturFileName);
+      Ok := GriffPartitur_.LoadFromMusicXML(PartiturFileName);
     if Ok then
     begin
       PrepareFinally;
@@ -1131,7 +1130,7 @@ begin
   end;
   }
 // KeyCode := {Menus.}ShortCut(Msg.CharCode, KeyDataToShiftState(Msg.KeyData));
-  //writeln(IntToHex(Keycode));
+//  writeln(IntToHex(Keycode));
   //Handled := KeyCode = 32786;   }
 end;
 
@@ -1222,6 +1221,8 @@ begin
 end;
 
 procedure TfrmSequenzer.MessageEvent(var Msg: TMsg; var Handled: Boolean);
+var
+  w: word;
 begin
   if (Msg.message = WM_KEYDOWN) and
      GriffPartitur_.PlayControl(Msg.wParam, Msg.lParam) then
@@ -1230,48 +1231,7 @@ begin
     exit;
   end;
 
-  if ((Msg.message = WM_KEYDOWN) or (Msg.message = WM_KEYUP)) then
-  begin
-    //writeln(Msg.wParam, '  ', IntToHex(Msg.lParam));
-    if frmAmpel.IsActive then
-    begin
-      if (Msg.lParam and $fff0000) = $0150000 then    // Z
-        Msg.wParam := 90;
-      if (Msg.lParam and $fff0000) = $02c0000 then    // Y
-        Msg.wParam := 89;
-      // 4. Reihe ' ^
-      if (Msg.lParam and $fff0000) = $00c0000 then
-        Msg.wParam := 219;
-      if (Msg.lParam and $fff0000) = $00d0000 then
-        Msg.wParam := 221;
-      // 3. Reihe ü ¨
-      if RunningWine then
-      begin
-        if (Msg.lParam and $fff0000) = $0600000 then
-          Msg.wParam := 186;
-      end else
-      if (Msg.lParam and $fff0000) = $01a0000 then
-        Msg.wParam := 186;
-      if (Msg.lParam and $fff0000) = $01b0000 then
-        Msg.wParam := 192;
-      // 2. Reihe ö ä $
-      if (Msg.lParam and $fff0000) = $0270000 then
-        Msg.wParam := 222;
-      if (Msg.lParam and $fff0000) = $0280000 then
-        Msg.wParam := 220;
-      if (Msg.lParam and $fff0000) = $02b0000 then
-        Msg.wParam := 223;
-      // 1. Reihe , . -
-      if (Msg.lParam and $fff0000) = $0330000 then
-        Msg.wParam := 188;
-      if (Msg.lParam and $fff0000) = $0340000 then
-        Msg.wParam := 190;
-      if (Msg.lParam and $fff0000) = $0350000 then
-        Msg.wParam := 189;
-      if (Msg.lParam and $fff0000) = $0560000 then
-        Msg.wParam := 226;
-    end;
-  end;
+  frmAmpel.KeyMessageEvent(Msg, Handled);
 
   // keine messages für die console
   if (Msg.message = WM_KEYDOWN) and

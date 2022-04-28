@@ -18,8 +18,8 @@ unit UXmlParser;
 interface
 
 uses
-  SysUtils, System.Zip, Dialogs, Forms, Windows,
-  UMyMemoryStream, UXmlNode, Classes;
+  SysUtils, System.Zip, Dialogs, Windows,
+  UMyMemoryStream, UXmlNode, Classes, UFormHelper;
 
 type
   // xml Grammar:
@@ -527,7 +527,7 @@ begin
 {$ifdef CONSOLE}
     system.writeln(err);
 {$else}
-    Application.MessageBox(PChar(err), 'Error', MB_OK);
+   ErrMessage(err);
 {$endif}
   end else begin
     MyStream := KXmlNode.BuildMemoryStream(Root);

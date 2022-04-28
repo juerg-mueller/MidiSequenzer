@@ -71,7 +71,7 @@ implementation
 
 {$R *.dfm}
 
-uses UInstrument;
+uses UInstrument, UMidiEvent;
 
 function OverLine(x, Left, Right, y, Top, Delta : integer) : boolean;
 begin

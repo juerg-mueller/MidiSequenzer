@@ -29,7 +29,7 @@ implementation
 
 uses
   UXmlNode, UXmlParser, UEventArray, UGriffArray, UGriffEvent,
-  UMyMidiStream, UInstrument, USheetMusic, UMyMemoryStream;
+  UMyMidiStream, UInstrument, USheetMusic, UMyMemoryStream, UMidiEvent;
 
 const
   UseBellows = true;

@@ -115,6 +115,7 @@ const
   
 var
   MicrosoftIndex: integer = 0;
+  TrueMicrosoftIndex: integer = -1;
   MidiInstr: byte = $15; // Akkordeon
 
 procedure OpenMidiMicrosoft;
@@ -391,6 +392,7 @@ begin
         if s = MicrosoftSync then
         begin
           MicrosoftIndex := fDeviceNames.Count;
+          TrueMicrosoftIndex := MicrosoftIndex;
 {$if defined(CONSOLE)}
           writeln('Index for ', MicrosoftSync, ' ', MicrosoftIndex);
         end else
@@ -480,43 +482,53 @@ end;
 
 procedure DoSoundPitch(Pitch: byte; On_: boolean);
 begin
-  if On_ then
+  if MicrosoftIndex >= 0 then
   begin
- //   writeln(Pitch, '  $', IntToHex(Pitch));
-    MidiOutput.Send(MicrosoftIndex, $90, Pitch, $4f)
-  end else
-    MidiOutput.Send(MicrosoftIndex, $80, Pitch, $40);        
+    if On_ then
+    begin
+   //   writeln(Pitch, '  $', IntToHex(Pitch));
+      MidiOutput.Send(MicrosoftIndex, $90, Pitch, $4f)
+    end else
+      MidiOutput.Send(MicrosoftIndex, $80, Pitch, $40);
+  end;
 end;
 
 procedure ResetMidi;
 var
   i: integer;
 begin
-  if MidiOutput.IsOpen(MicrosoftIndex) then
-    for i := 0 to 15 do
-    begin
-      Sleep(5);
-      MidiOutput.Send(MicrosoftIndex, $B0 + i, 120, 0);  // all sound off
-    end;
-  Sleep(5);
+  if MicrosoftIndex >= 0 then
+  begin
+    if MidiOutput.IsOpen(MicrosoftIndex) then
+      for i := 0 to 15 do
+      begin
+        Sleep(5);
+        MidiOutput.Send(MicrosoftIndex, $B0 + i, 120, 0);  // all sound off
+      end;
+    Sleep(5);
+  end;
 end;
 
 procedure OpenMidiMicrosoft;
 begin
-  MidiOutput.Open(MicrosoftIndex);
-  try
-    ResetMidi;
-    MidiOutput.Send(MicrosoftIndex, $c0, MidiInstr, $00);
-    MidiOutput.Send(MicrosoftIndex, $c1, MidiInstr, $00);
-    MidiOutput.Send(MicrosoftIndex, $c2, MidiInstr, $00);
-    MidiOutput.Send(MicrosoftIndex, $c3, MidiInstr, $00);
-    MidiOutput.Send(MicrosoftIndex, $c4, MidiInstr, $00);
-    MidiOutput.Send(MicrosoftIndex, $c5, MidiInstr, $00);
-  finally
+  if MicrosoftIndex >= 0 then
+  begin
+    MidiOutput.Open(MicrosoftIndex);
+    try
+//      ResetMidi;
+      MidiOutput.Send(MicrosoftIndex, $c0, MidiInstr, $00);
+      MidiOutput.Send(MicrosoftIndex, $c1, MidiInstr, $00);
+      MidiOutput.Send(MicrosoftIndex, $c2, MidiInstr, $00);
+      MidiOutput.Send(MicrosoftIndex, $c3, MidiInstr, $00);
+      MidiOutput.Send(MicrosoftIndex, $c4, MidiInstr, $00);
+      MidiOutput.Send(MicrosoftIndex, $c5, MidiInstr, $00);
+      MidiOutput.Send(MicrosoftIndex, $c6, MidiInstr, $00);
+    finally
+    end;
+  {$if defined(CONSOLE)}
+    writeln('Midi Port-', MicrosoftIndex, ' opend');
+  {$endif}
   end;
-{$if defined(CONSOLE)}
-  writeln('Midi Port-', MicrosoftIndex, ' opend');
-{$endif}
 end;
 
 initialization
@@ -526,6 +538,5 @@ initialization
 finalization
   FreeAndNil(gMidiInput);
   FreeAndNil(gMidiOutput);
-
 
 end.

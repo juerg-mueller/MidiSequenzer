@@ -23,7 +23,7 @@ uses
   UInstrument,
 {$endif}
   Classes, SysUtils, windows,
-  UMyMidiStream, UEventArray;
+  UMyMidiStream, UEventArray, UMidiEvent;
 
 const
   CopyPrep = AnsiString('juerg5524.ch');

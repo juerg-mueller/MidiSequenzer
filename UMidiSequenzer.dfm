@@ -13,6 +13,7 @@ object frmSequenzer: TfrmSequenzer
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  KeyPreview = True
   OldCreateOrder = False
   Position = poDesigned
   OnClose = FormClose

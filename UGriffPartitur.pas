@@ -29,7 +29,7 @@ uses
 {$endif}
   Classes, SysUtils, Types, Variants, Windows,
   UInstrument, UMyMemoryStream, UMyMidiStream, UEventArray,
-  UGriffEvent, UFormHelper;
+  UGriffEvent, UFormHelper, UMidiEvent;
 
 const
   row_height = 15;

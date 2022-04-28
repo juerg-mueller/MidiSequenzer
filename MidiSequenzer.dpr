@@ -21,7 +21,8 @@ uses
   UMuseScore in 'UMuseScore.pas',
   teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
   UVirtual in 'UVirtual.pas',
-  UFormHelper in 'UFormHelper.pas';
+  UFormHelper in 'UFormHelper.pas',
+  UMidiEvent in 'UMidiEvent.pas';
 
 {$R *.res}
 

@@ -8,6 +8,9 @@ uses
 var
   Sustain_: boolean = false; // midi keyboard flag
   iVirtualMidi: integer = -1;
+  shiftIsPush: boolean = true;
+
+  RunningWine: boolean = false;
 
 
 procedure ProcessMessages;
@@ -39,6 +42,31 @@ begin
   result := (GetKeyState(vk_capital) = 1) or
             (GetKeyState(vk_shift) < 0) or
             Sustain_;
+  result := result = shiftIsPush;
 end;
+
+function IsRunningInWine: boolean;
+type
+  TWineVers = function: PAnsiChar; cdecl;
+var
+  hnd: HModule;
+  pwine_get_version: TWineVers;
+begin
+  hnd := GetModuleHandle('ntdll.dll');
+  pwine_get_version := nil;
+  if (hnd <> 0) then
+    pwine_get_version := GetProcAddress(hnd, 'wine_get_version');
+  result := @pwine_get_version <> nil;
+{$if defined(CONSOLE)}
+  if result then
+    writeln('wine version: ', pwine_get_version);
+{$endif}
+  RunningWine := result;
+end;
+
+initialization
+  IsRunningInWine;
+
+finalization
 
 end.

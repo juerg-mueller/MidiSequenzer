@@ -19,7 +19,7 @@ interface
 
 uses
   SysUtils, System.Zip,
-  UGriffPartitur, UMyMemoryStream, UGriffEvent;
+  UGriffPartitur, UMyMemoryStream, UGriffEvent, UMidiEvent;
 
 type
   TTieStatus = (tieOff, tieStart, tieMitte, tieStop);

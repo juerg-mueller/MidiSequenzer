@@ -22,7 +22,7 @@ unit UEventArray;
 interface
 
 uses
-  UMyMidiStream, SysUtils, Classes, Forms;
+  UMyMidiStream, SysUtils, Classes, UMidiEvent;
 
 const
   CopyrightGriff = AnsiString('Griffschrift - Copyright by juerg5524.ch');
@@ -1094,7 +1094,7 @@ begin
       sleep(4);
     {$ifdef LINUX}
       UfrmSelector.Channel_Selection.lbPlayLength.Caption := Pos^;
-      Application.ProcessMessages;
+//      Application.ProcessMessages;
     {$endif}
     end;
   end;

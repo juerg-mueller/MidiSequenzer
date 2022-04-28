@@ -19,7 +19,7 @@ interface
 
 uses
   SysUtils,
-  UMyMidiStream, UGriffEvent, UEventArray, UInstrument;
+  UMyMidiStream, UGriffEvent, UEventArray, UInstrument, UMidiEvent;
 
 type
 

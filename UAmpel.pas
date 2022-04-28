@@ -13,6 +13,30 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 //
+
+// Zusatzinformationen, welche im Synthesizer-Midi-Kanal mitgeliefert werden.
+// ==========================================================================
+//
+// Midi-Balg-Information, wird bei jedem Wechsel ausgegeben:
+//   B7 1f 00/01    01 für Push; 00 für Pull
+//
+// Die Tastatur-Spalten werden je einem eigenen Midi-Kanal zugewiesen.
+//   91 nn xx  für die äusserste Diskant-Spalte
+//   ..
+//   96 nn xx  Für die äusserste Bass-Spalte
+//
+//
+// Tastatureingabe
+// ===============
+//
+// Mit der Tastatur (Buchstaben, Zahlen und Sonderzeichen) wird die Diskantseite
+// der Steirischen Harmonika abgebildet. Der Gleichton (mit Kreuz markiert) ist die H-Taste.
+//
+// F5 bis F12 wird für die Bässe verwendet.
+// Mit Ctrl schaltet man von der äusseren Bassreihe auf die innere.
+//
+// Mit der Shift-Taste ändert man die Balgbewegung.
+//
 unit UAmpel;
 
 interface
@@ -20,7 +44,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Touch.GestureMgr, SyncObjs, UITypes,
-  UInstrument, UGriffEvent;
+  UInstrument, UGriffEvent, Menus;
 
 type
   TSoundGriff = procedure (Row: byte; index: byte; Push: boolean; On_:boolean) of object;
@@ -38,22 +62,26 @@ type
 
   TfrmAmpel = class;
 
+  TLastPush = (unknown, LastPush_, LastPull_);
   TAmpelEvents = class
   private
     frmAmpel: TfrmAmpel;
     CriticalAmpel: TCriticalSection;
     MouseEvents: array [0..10] of TMouseEvent;
     FUsedEvents: integer;
+    LastPush: TLastPush;
 
     procedure DoAmpel(Index: integer; On_: boolean);
+    procedure SendPush(Push: boolean);
   public
     constructor Create(Ampel: TfrmAmpel);
     destructor Destroy; override;
     procedure NewPush(Push, Ctrl: boolean);
     procedure NewEvent(const Event: TMouseEvent);
     procedure EventOff(const Event: TMouseEvent);
-    procedure GetEventOff(Key: integer; var Event: TMouseEvent);
+    procedure GetKeyEvent(Key: integer; var Event: TMouseEvent);
     procedure CheckMovePoint(const P: TPoint; Down: boolean);
+    procedure InitLastPush;
     property UsedEvents : integer read FUsedEvents;
   end;
 
@@ -89,6 +117,7 @@ type
     procedure FormActivate(Sender: TObject);
     procedure FormDeactivate(Sender: TObject);
     procedure cbxLinkshaenderClick(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
   private
     function MakeMouseDown(const P: TPoint; Push: boolean): TMouseEvent;
     function FlippedHorz: boolean;
@@ -108,6 +137,9 @@ type
     function KnopfRect(Row: byte {1..6}; index: byte {0..10}): TRect;
     procedure PaintAmpel(Row: byte {1..6}; index: integer {0..10}; Push, On_: boolean);
     function GetKeyIndex(var Event: TMouseEvent; Key: word): boolean;
+    procedure InitLastPush;
+    procedure KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);
+    procedure OnMidiInData(aDeviceIndex: integer; aStatus, aData1, aData2: byte; Timestamp: integer);
   end;
 
   TKeys = array [0..11] of AnsiChar;
@@ -129,14 +161,17 @@ implementation
 {$R *.dfm}
 
 uses
-  UfrmGriff, Midi, UFormHelper;
+{$ifndef __VIRTUAL__}
+  UfrmGriff,
+{$endif}
+  Midi, UFormHelper, UMidiEvent;
 
 procedure TMouseEvent.Clear;
 begin
   P.X := -1;
   P.Y := -1;
   Row_ := 0;
-  Index_ := 0;
+  Index_ := -1;
   Key := 0;
   Pitch := 0;
 end;
@@ -151,6 +186,7 @@ begin
   frmAmpel := Ampel;
   CriticalAmpel := TCriticalSection.Create;
   FUsedEvents := 0;
+  LastPush := unknown;
 end;
 
 destructor TAmpelEvents.Destroy;
@@ -160,51 +196,46 @@ begin
   inherited;
 end;
 
+procedure TAmpelEvents.InitLastPush;
+begin
+  LastPush := unknown;
+end;
+
+procedure TfrmAmpel.InitLastPush;
+begin
+  AmpelEvents.InitLastPush;
+end;
+
+procedure TAmpelEvents.SendPush(Push: boolean);
+begin
+  if (LastPush = LastPull_) = Push then
+  begin
+    if Push then
+      LastPush := LastPush_
+    else
+      LastPush := LastPull_;
+
+    if (MicrosoftIndex >= 0) then
+      MidiOutput.Send(MicrosoftIndex, $B7, ControlSustain, ord(Push));
+  end;
+end;
+
 procedure TAmpelEvents.NewPush(Push, Ctrl: boolean);
 var
   i: integer;
   Event: TMouseEvent;
   GriffEvent: TGriffEvent;
+  PushChanges: boolean;
 begin
   CriticalAmpel.Acquire;
   try
-    for i := 0 to UsedEvents-1 do
-      if MouseEvents[i].Push_ <> Push then
-      begin
-        Event := MouseEvents[i];
-        if (Event.Row_ >= 5) and not frmAmpel.Instrument.BassDiatonic then
-        begin
-        end else
-        if Event.Pitch > 0 then  // MIDI Eingabe
-        begin
-          Event.Push_ := Push;
-          GriffEvent.Clear;
-          GriffEvent.SoundPitch := Event.Pitch;
-          GriffEvent.InPush := Event.Push_;
-          if GriffEvent.SoundToGriff(frmAmpel.Instrument^) and
-             (GriffEvent.InPush = Event.Push_) then
-          begin
-            Event.Row_ := GriffEvent.GetRow;
-            Event.Index_ := GriffEvent.GetIndex;
-            if (Event.Row_ > 0) and (Event.Index_ >= 0) then
-            begin
-              DoAmpel(i, false);
-              MouseEvents[i] := Event;
-              DoAmpel(i, true);
-            end;
-          end;
-        end else begin
-          DoAmpel(i, false);
-          MouseEvents[i].Push_ := Push;
-          DoAmpel(i, true);
-        end;
-      end;
+    if UsedEvents = 0 then
+      exit;
 
     // Control wechselt: Bass Reihe ändert (Tastatur F5 bis F12)
     for i := 0 to UsedEvents-1 do
       if (MouseEvents[i].Pitch = 0) and // nicht für Midi-Eingabe vom Keyboard
          (MouseEvents[i].Key > 0) and   // nur für Tastatur
-         (MouseEvents[i].Row_ in [5, 6]) and
          (((MouseEvents[i].Row_ = 5) and not Ctrl) or
           ((MouseEvents[i].Row_ = 6) and Ctrl)) then
       begin
@@ -212,6 +243,67 @@ begin
         MouseEvents[i].Row_ := MouseEvents[i].Row_ xor 3;
         DoAmpel(i, true);
       end;
+
+    PushChanges := (LastPush = LastPull_) = Push;
+    if not PushChanges then
+      exit;
+
+    for i := 0 to UsedEvents-1 do
+    begin
+      Event := MouseEvents[i];
+      if (Event.Row_ >= 5) and not frmAmpel.Instrument.BassDiatonic then
+      begin
+      end else
+      if Event.Pitch > 0 then  // MIDI Eingabe
+      begin
+        Event.Push_ := Push;
+        GriffEvent.Clear;
+        GriffEvent.SoundPitch := Event.Pitch;
+        GriffEvent.InPush := Event.Push_;
+        if GriffEvent.SoundToGriff(frmAmpel.Instrument^) and
+           (GriffEvent.InPush = Event.Push_) then
+        begin
+          Event.Row_ := GriffEvent.GetRow;
+          Event.Index_ := GriffEvent.GetIndex;
+          if (Event.Row_ > 0) and (Event.Index_ >= 0) then
+          begin
+            DoAmpel(i, false);
+            MouseEvents[i] := Event;
+          end;
+        end;
+      end else begin
+        DoAmpel(i, false);
+        MouseEvents[i].Push_ := Push;
+      end;
+    end;
+
+    SendPush(Push);
+
+    for i := 0 to UsedEvents-1 do
+    begin
+      Event := MouseEvents[i];
+      if (Event.Row_ >= 5) and not frmAmpel.Instrument.BassDiatonic then
+      begin
+      end else
+      if Event.Pitch > 0 then  // MIDI Eingabe
+      begin
+        GriffEvent.Clear;
+        GriffEvent.SoundPitch := Event.Pitch;
+        GriffEvent.InPush := Event.Push_;
+        if GriffEvent.SoundToGriff(frmAmpel.Instrument^) and
+           (GriffEvent.InPush = Event.Push_) then
+        begin
+          Event.Row_ := GriffEvent.GetRow;
+          Event.Index_ := GriffEvent.GetIndex;
+          if (Event.Row_ > 0) and (Event.Index_ >= 0) then
+          begin
+            DoAmpel(i, true);
+          end;
+        end;
+      end else begin
+        DoAmpel(i, true);
+      end;
+    end;
   finally
     CriticalAmpel.Release;
   end;
@@ -234,6 +326,15 @@ begin
 
       MouseEvents[UsedEvents] := Event;
       inc(fUsedEvents);
+      if LastPush = unknown then
+      begin
+        if not Event.Push_ then
+          LastPush := LastPush_
+        else
+          LastPush := LastPull_;
+        SendPush(Event.Push_);
+      end;
+
       DoAmpel(UsedEvents-1, true);
   finally
     CriticalAmpel.Leave;
@@ -271,8 +372,8 @@ begin
       if Event.Push_ and On_ then
         inc(d, $10);
       MidiOutput.Send(iVirtualMidi, c, b, d);
-      write(Format('$%2.2x $%2.2x $%2.2x', [c, b, d]));
-      writeln(Format('  (%d  %d  %d)', [c, b, d]));
+//      write(Format('$%2.2x $%2.2x $%2.2x', [c, b, d]));
+//      writeln(Format('  (%d  %d  %d)', [c, b, d]));
     end;
   end;
 end;
@@ -280,15 +381,24 @@ end;
 procedure TAmpelEvents.DoAmpel(Index: integer; On_: boolean);
 var
   Event: TGriffEvent;
+  d: byte;
 begin
   with MouseEvents[Index] do
   begin
     frmAmpel.PaintAmpel(Row_, Index_, Push_, On_);
     Event.SetEvent(Row_, Index_, Push_, frmAmpel.Instrument^);
-    if On_ then
-      MidiOutput.Send(MicrosoftIndex, $90 + Row_ - 1, Event.SoundPitch, $4f)
-    else
-      MidiOutput.Send(MicrosoftIndex, $80 + Row_ - 1, Event.SoundPitch, $40);
+    if (MicrosoftIndex >= 0) and (Row_ in [1..6]) then
+    begin
+      if On_ then
+      begin
+        d := $5f;
+        if Row_ >= 5 then
+          d := $6F;
+        MidiOutput.Send(MicrosoftIndex, $90 + Row_ , Event.SoundPitch, d)
+      end else begin
+        MidiOutput.Send(MicrosoftIndex, $80 + Row_, Event.SoundPitch, $40);
+      end;
+    end;
     UseVirtualMidi(MouseEvents[Index], On_);
     frmAmpel.PaintAmpel(Row_, Index_, Push_, On_);
 
@@ -311,7 +421,7 @@ begin
   try
     for i := 0 to UsedEvents-1 do
       if ((MouseEvents[i].Row_ = Event.Row_) and (MouseEvents[i].Index_ = Event.Index_)) or
-         (MouseEvents[i].Pitch = Event.Pitch) then
+         ((MouseEvents[i].Pitch = Event.Pitch) and (Event.Pitch > 0)) then
       begin
         DoAmpel(i, false);
         for j := i+1 to UsedEvents-1 do
@@ -324,7 +434,7 @@ begin
   end;
 end;
 
-procedure TAmpelEvents.GetEventOff(Key: integer; var Event: TMouseEvent);
+procedure TAmpelEvents.GetKeyEvent(Key: integer; var Event: TMouseEvent);
 var
   i: integer;
 begin
@@ -341,7 +451,6 @@ begin
     CriticalAmpel.Leave;
   end;
 end;
-
 
 procedure TAmpelEvents.CheckMovePoint(const P: TPoint; Down: boolean);
 var
@@ -606,6 +715,11 @@ begin
   end;
 end;
 
+procedure TfrmAmpel.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+  //
+end;
+
 procedure TfrmAmpel.FormKeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 var
@@ -617,7 +731,7 @@ begin
     exit;
   end;
 
-  AmpelEvents.GetEventOff(Key, Event);
+  AmpelEvents.GetKeyEvent(Key, Event);
   AmpelEvents.EventOff(Event);
 end;
 
@@ -631,10 +745,12 @@ begin
   P.Y := Y;
   Event := MakeMouseDown(P, ShiftUsed);
 
+{$ifndef __VIRTUAL__}
   if (@KeyDown <> nil) and
      ((GetKeyState(vk_scroll) = 1) or //   numlock pause scroll
       (GetKeyState(vk_RMenu) < 0)) then // AltGr
- //   GenerateNewNote(Event);
+    frmGriff.GenerateNewNote(Event);
+{$endif}
 end;
 
 function TfrmAmpel.MakeMouseDown(const P: TPoint; Push: boolean): TMouseEvent;
@@ -865,11 +981,21 @@ begin
 end;
 
 procedure TfrmAmpel.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+var
+  KeyCode: word;
 begin
   if (Msg.KeyData and $40000000) <> 0 then // auto repeat
   begin
     Handled := true;
     exit;
+  end;
+  KeyCode := {Menus.}ShortCut(Msg.CharCode, KeyDataToShiftState(Msg.KeyData));
+  //writeln(IntToHex(Keycode));
+  if (KeyCode and $fff) = vk_F10 then
+  begin
+    KeyCode := vk_F10;
+    FormKeyDown(self, KeyCode, []);
+    Handled := true;
   end;
 end;
 
@@ -956,5 +1082,149 @@ begin
   result := FlippedHorz_ = not cbxLinksHaender.Checked;
 end;
 
+procedure TfrmAmpel.OnMidiInData(aDeviceIndex: integer; aStatus, aData1, aData2: byte; Timestamp: integer);
+var
+  Event: TMouseEvent;
+  Key: word;
+  GriffEvent: TGriffEvent;
+
+  function GetInstr(var Event: TMouseEvent): boolean;
+  var
+    Vocal: TVocalArray;
+    Bass: TBassArray;
+  begin
+    if Event.Row_ in [1..4] then
+    begin
+      if Event.Push_ then
+        Vocal := Instrument.Push
+      else
+        Vocal := Instrument.Pull;
+      Event.Index_ := GetIndexToPitchInArray(Event.Pitch, Vocal.Col[Event.Row_]);
+    end else
+    if Event.Row_ in [5..6] then
+    begin
+      if not Event.Push_ and Instrument.BassDiatonic then
+        Bass := Instrument.PullBass
+      else
+        Bass := Instrument.Bass;
+      Event.Index_ := GetBassIndex(Bass[Event.Row_ = 6], Event.Pitch);
+    end;
+    result := Event.Index_ >= 0;
+  end;
+
+begin
+  Event.Clear;
+  Event.Pitch := aData1;
+  Event.Row_ := 1;
+  Event.Index_ := -1;
+  Event.Push_ := ShiftUsed;
+
+  if ((aStatus = $b0) and (aData1 = 64)) or
+     ((aStatus = $b7) and (aData1 = ControlSustain)) then
+  begin
+    Sustain_ := aData2 > 0;
+    Key := 0;
+    frmAmpel.FormKeyDown(self, Key, []);
+  end;
+  if aStatus = $80 then
+  begin
+    AmpelEvents.EventOff(Event);
+  end else
+  if aStatus = $90 then
+  begin
+    GriffEvent.Clear;
+    GriffEvent.InPush := Event.Push_;
+    GriffEvent.SoundPitch := aData1;
+    if GriffEvent.SoundToGriff(Instrument^) and
+       (GriffEvent.InPush = Event.Push_) then
+    begin
+      Event.Row_ := GriffEvent.GetRow;
+      Event.Index_ := GriffEvent.GetIndex;
+      if (Event.Row_ > 0) and (Event.Index_ >= 0) then
+      begin
+        AmpelEvents.NewEvent(Event);
+{$ifndef __VIRTUAL__}
+        if (GetKeyState(vk_scroll) = 1) then // numlock pause scroll
+          frmGriff.GenerateNewNote(Event);
+{$endif}
+      end;
+    end;
+  end else
+  if ((aStatus and $f) in [1..6]) and
+     ((aStatus shr 4) in [8, 9]) then
+  begin
+    Event.Row_ := (aStatus and $f);
+    if GetInstr(Event) then
+    begin
+      if (aStatus shr 4) = 9 then
+        AmpelEvents.NewEvent(Event)
+      else
+        AmpelEvents.EventOff(Event);
+    end;
+  end;
+end;
+
+procedure TfrmAmpel.KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);
+begin
+  if ((Msg.message = WM_KEYDOWN) or (Msg.message = WM_KEYUP)) then
+  begin
+{$ifdef CONSOLE}
+    writeln(Msg.wParam, '  ', IntToHex(Msg.lParam));
+{$endif}
+    if frmAmpel.IsActive then
+    begin
+      if (Msg.lParam and $fff0000) = $0150000 then    // Z
+        Msg.wParam := 90;
+      if (Msg.lParam and $fff0000) = $02c0000 then    // Y
+        Msg.wParam := 89;
+      // 4. Reihe ' ^
+      if (Msg.lParam and $fff0000) = $00c0000 then
+        Msg.wParam := 219;
+      if (Msg.lParam and $fff0000) = $00d0000 then
+        Msg.wParam := 221;
+      // 3. Reihe ü ¨
+      if RunningWine then
+      begin
+        if (Msg.lParam and $fff0000) = $01b0000 then
+          Msg.wParam := 192;
+        if (Msg.lParam and $fff0000) = $0600000 then
+          Msg.wParam := 186;
+        // 2. Reihe ö ä $
+        if (Msg.lParam and $fff0000) = $0610000 then
+          Msg.wParam := 222;
+        if (Msg.lParam and $fff0000) = $0620000 then
+          Msg.wParam := 220;
+        if (Msg.lParam and $fff0000) = $0630000 then
+          Msg.wParam := $29;
+      end else begin
+        if (Msg.lParam and $fff0000) = $01a0000 then
+          Msg.wParam := 186;
+        // 2. Reihe ö ä
+ //       if (Msg.lParam and $fff0000) = $0270000 then
+ //         Msg.wParam := 222;
+        if (Msg.lParam and $fff0000) = $0280000 then
+          Msg.wParam := 126;
+        if (Msg.lParam and $fff0000) = $01b0000 then
+          Msg.wParam := 192;
+      end;
+      // 2. Reihe  $
+      if (Msg.lParam and $fff0000) = $0270000 then
+        Msg.wParam := 222;
+      if (Msg.lParam and $fff0000) = $0280000 then
+        Msg.wParam := 220;
+      if (Msg.lParam and $fff0000) = $02b0000 then
+        Msg.wParam := 223;
+      // 1. Reihe , . -
+      if (Msg.lParam and $fff0000) = $0330000 then
+        Msg.wParam := 188;
+      if (Msg.lParam and $fff0000) = $0340000 then
+        Msg.wParam := 190;
+      if (Msg.lParam and $fff0000) = $0350000 then
+        Msg.wParam := 189;
+      if (Msg.lParam and $fff0000) = $0560000 then
+        Msg.wParam := 226;
+    end;
+  end;
+end;
 
 end.

@@ -12,8 +12,8 @@ object frmAmpel: TfrmAmpel
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  KeyPreview = True
   OldCreateOrder = False
-  Position = poDesigned
   Touch.InteractiveGestures = []
   Touch.InteractiveGestureOptions = []
   Touch.ParentTabletOptions = False
@@ -24,6 +24,7 @@ object frmAmpel: TfrmAmpel
   OnDestroy = FormDestroy
   OnDeactivate = FormDeactivate
   OnKeyDown = FormKeyDown
+  OnKeyPress = FormKeyPress
   OnKeyUp = FormKeyUp
   OnMouseDown = FormMouseDown
   OnMouseMove = FormMouseMove
