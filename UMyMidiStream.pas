@@ -21,116 +21,6 @@ interface
 uses
   SysUtils, Classes, Types,
   UMyMemoryStream, UMidiEvent;
-{
-Const
-  cSimpleHeader = AnsiString('Header');
-  cSimpleTrackHeader = AnsiString('New_Track');
-  cSimpleMetaEvent = AnsiString('Meta-Event');
-  cPush = AnsiString('Push');
-  cPull = AnsiString('Pull');
-
-  PushTest = true;
-  CrossTest = true;
-
-  HexOutput = true;
-
-  MidiC0 = 12;
-  FlatNotes  : array [0..11] of string = ('C', 'Des', 'D', 'Es', 'E', 'F', 'Ges', 'G', 'As', 'A', 'B', 'H');
-  SharpNotes : array [0..11] of string = ('C', 'Cis', 'D', 'Dis', 'E', 'F', 'Fis', 'G', 'Gis', 'A', 'B', 'H');
-
-  Dur: array [-6..6] of string = ('Ges', 'Des','As', 'Es', 'B', 'F', 'C', 'G', 'D', 'A', 'E', 'H', 'Fis');
-
-//  SustainPitch    = 26;
-  ControlSustain  = $1f;   // + 3 für TRepeat
-
-type
-  TInt4 = array [0..3] of integer;
-
-  eTranslate = (nothing, toGriff, toSound); 
-
-  TPushPullSet = set of (push, pull);
-
-
-  TMidiEvent = record
-    command: byte;
-    d1, d2: byte;
-    var_len: integer;
-    bytes: array of byte;
-
-    constructor Create(a, b, c, l: integer);
-    procedure Clear;
-    function Event: byte;
-    function Channel: byte;
-    function IsSustain: boolean;
-    function MakeNewSustain: boolean;
-    function IsPush: boolean;
-    procedure MakeSustain(Push: boolean);
-    function IsEndOfTrack: boolean;
-    function IsEqualEvent(const Event: TMidiEvent): boolean;
-    procedure SetEvent(c, d1_, d2_: integer);
-    procedure AppendByte(b: byte);
-    procedure MakeMetaEvent(EventNr: byte; b: AnsiString);
-    procedure FillBytes(const b: AnsiString);
-    function GetBytes: string;
-    function GetAnsi: AnsiString;
-    function GetInt: cardinal;
-    function GetAnsiChar(Idx: integer): AnsiChar;
-
-    property str: String read GetBytes;
-    property ansi: AnsiString read GetAnsi;
-    property int: cardinal read GetInt;
-    property char_[Idx: integer]: Ansichar read GetAnsiChar; default;
-  end;
-  PMidiEvent = ^TMidiEvent;
-
-  TDetailHeader = record
-    IsSet: boolean;
-    // delta-time ticks pro Viertelnote
-    DeltaTimeTicks: word;
-    // Beats/min.  Viertelnoten/Min.
-    beatsPerMin: integer;
-    smallestFraction: integer;
-    measureFact: integer;
-    measureDiv: integer;
-    CDur: integer;  // f-Dur: -1; g-Dur: +1
-    Minor: boolean;
-
-    procedure Clear;
-    function GetMeasureDiv: double;
-    function GetRaster(p: integer): integer;
-    procedure SetRaster(var rect: TRect);
-    function GetTicks: double;
-    function GetSmallestTicks: integer;
-    function MsDelayToTicks(MsDelay: integer): integer;
-    function TicksPerMeasure: integer;
-    function TicksToSec(Ticks: integer): integer;
-    function TicksToString(Ticks: integer): string;
-    function SetTimeSignature(const Event: TMidiEvent; const Bytes: array of byte): boolean;
-    function SetBeatsPerMin(const Event: TMidiEvent; const Bytes: array of byte): boolean;
-    function SetDurMinor(const Event: TMidiEvent; const Bytes: array of byte): boolean;
-    function SetParams(const Event: TMidiEvent; const Bytes: array of byte): boolean;
-    function GetMetaBeats51: AnsiString;
-    function GetMetaMeasure58: AnsiString;
-    function GetMetaDurMinor59: AnsiString;
-    function GetDur: string;
-    function GetChordTicks(duration, dots: string): integer;
-
-    property smallestNote: integer read GetSmallestTicks;
-  end;
-  PDetailHeader = ^TDetailHeader;
-
-  TMidiHeader = record
-    FileFormat: word;
-    TrackCount: word;
-    Details: TDetailHeader;
-    procedure Clear;
-  end;
-
-  TTrackHeader = record
-    ChunkSize: cardinal;
-    DeltaTime: cardinal;
-  end;
-  }
 type
 
   TMyMidiStream = class(TMyMemoryStream)
@@ -143,6 +33,7 @@ type
     function ReadByte: byte;
     procedure StartMidi;
     procedure MidiWait(Delay: integer);
+    procedure WriteVariableLen(c: cardinal);
   {$if defined(CONSOLE)}
     function Compare(Stream: TMyMidiStream): integer;
   {$endif}
@@ -215,6 +106,27 @@ begin
   system.writeln('Err: ', Err);
 end;
 {$endif}
+
+procedure TMyMidiStream.WriteVariableLen(c: cardinal);
+var
+  buffer: cardinal;
+begin
+  buffer := c and $7f;
+  while (c shr 7) <> 0 do
+  begin
+    c := c shr 7;
+    buffer := (buffer shl 8) + (c and $7f) + $80;
+  end;
+  while (true) do
+  begin
+    WriteByte(buffer and $ff);
+    if (buffer and $80) <> 0 then
+      buffer := buffer shr 8
+    else
+      break;
+  end;
+end;
+
 
 class function TMyMidiStream.IsEndOfTrack(const d: TInt4): boolean;
 begin

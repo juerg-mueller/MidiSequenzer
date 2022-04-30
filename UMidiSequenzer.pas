@@ -298,6 +298,18 @@ var
     SetLength(PartiturFileName, Length(PartiturFileName) - Length(ExtractFileExt(PartiturFileName)));
   end;
 
+  procedure ChangeInstrument(Name: AnsiString);
+  begin
+    i := InstrumentIndex(Name);
+    if (i >= 0) and (cbTransInstrument.ItemIndex <> i) and
+       (i < cbTransInstrument.Items.Count) then
+    begin
+      cbTransInstrument.ItemIndex := i;
+      cbTransInstrumentChange(nil);
+    end;
+
+  end;
+
 begin
   frmGriff.Hide;
   GriffPartitur_.Clear;
@@ -319,13 +331,7 @@ begin
   begin
     GriffPartitur_.LoadFromGriffFile(PartiturFileName);
     PrepareFinally;
-    Index := InstrumentIndex(GriffPartitur_.Instrument.Name);
-    if Index >= 0 then
-    begin
-      cbTransInstrument.ItemIndex := Index;
-      frmAmpel.ChangeInstrument(@GriffPartitur_.Instrument);
-      SelectedChanges(nil);
-    end;
+    ChangeInstrument(GriffPartitur_.Instrument.Name);
     Index := 11 + GriffPartitur_.Instrument.TransposedPrimes;
     if (Index  >= 0) and (Index < cbxTransInstrument.Items.Count) then
       cbxTransInstrument.ItemIndex := Index;
@@ -370,7 +376,11 @@ begin
 
     Partitur.SaveSimpleMidiToFile('test.txt', Partitur.TrackArr, Partitur.DetailHeader, false);
     Partitur.SaveMidiToFile('test.mid', false);
-
+    if Partitur.Copyright = 'VirtualHarmonica' then
+    begin
+      ChangeInstrument(Partitur.Instrument);
+      GriffPartitur_.LoadFromVirtualHarmonicaPartitur(Partitur);
+    end else
     if //(ExtractFileExt(PartiturFileName) <> '.txt') and
        (FileOpenDialog1.FilterIndex = 6) or
        (Partitur.GetCopyright in [noCopy]) then
@@ -383,13 +393,7 @@ begin
     end else begin
       if not cbxLoadAsGriff.Checked then
       begin
-        i := InstrumentIndex(Partitur.Instrument);
-        if (i >= 0) and (cbTransInstrument.ItemIndex <> i) and
-           (i < cbTransInstrument.Items.Count) then
-        begin
-          cbTransInstrument.ItemIndex := i;
-          cbTransInstrumentChange(nil);
-        end;
+        ChangeInstrument(Partitur.Instrument);
       end;
 
       if not GriffPartitur_.Instrument.BassDiatonic and
@@ -1221,8 +1225,6 @@ begin
 end;
 
 procedure TfrmSequenzer.MessageEvent(var Msg: TMsg; var Handled: Boolean);
-var
-  w: word;
 begin
   if (Msg.message = WM_KEYDOWN) and
      GriffPartitur_.PlayControl(Msg.wParam, Msg.lParam) then
@@ -1379,6 +1381,4 @@ end;
 begin
 //  writeln('TGriffEvent ', sizeof(TGriffEvent));
 end.
-{
 
-  }
