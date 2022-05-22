@@ -1,4 +1,4 @@
-# Griffschrift-Sequenzer
+# Griffschrift-MIDI-Sequenzer
 Griffschrift-Midi-Sequenzer (Steirische Harmonika &amp; Schwyzerörgeli)
 
 read Sequenzer-Doku.txt
