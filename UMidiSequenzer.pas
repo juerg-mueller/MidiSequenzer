@@ -376,8 +376,10 @@ begin
 
     Partitur.SaveSimpleMidiToFile('test.txt', Partitur.TrackArr, Partitur.DetailHeader, false);
     Partitur.SaveMidiToFile('test.mid', false);
-    if Partitur.Copyright = 'VirtualHarmonica' then
+    if Partitur.CheckMysOergeli then
     begin
+      if Partitur.Instrument = '' then
+        Partitur.Instrument := cbTransInstrument.Text;
       ChangeInstrument(Partitur.Instrument);
       GriffPartitur_.LoadFromVirtualHarmonicaPartitur(Partitur);
     end else
@@ -676,10 +678,6 @@ begin
   cbxTransInstrumentChange(nil);
 
   frmAmpel.ChangeInstrument(@GriffPartitur_.Instrument);
-  if GriffPartitur_.Instrument.Accordion then
-    MidiInstr := $15  // Akkordeon
-  else
-    MidiInstr := $16; // Harmonika
   if Sender <> nil then
     Midi.OpenMidiMicrosoft;
 
@@ -1261,7 +1259,7 @@ begin
           frmGriff.HorzScrollBar.Position := 0;
           frmGriff.HorzScrollBar.Range := 0;
           SelectedChanges(GriffPartitur_.SelectedEvent);
-          Show;
+          frmGriff.Show;
         end;
       vk_F2:
         if frmGriff.Visible then

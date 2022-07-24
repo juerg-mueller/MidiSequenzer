@@ -64,6 +64,7 @@ type
     function GetCopyright: TCopyright;
     procedure SetNewTrackCount(Count: integer);
     function TrackCount: integer;
+    function CheckMysOergeli: boolean;
 
     property TrackName: TAnsiStringArray read TrackName_;
     property TrackArr: TTrackEventArray read TrackArr_;
@@ -370,6 +371,38 @@ begin
   else
   if (Length(TrackName_) = 2) {and ((LowerCase(TrackName[0]) = 'melodie') or (LowerCase(TrackName[1]) = 'bass'))} then
     result := prepCopy;
+end;
+
+function TEventArray.CheckMysOergeli: boolean;
+var
+  event: TMidiEvent;
+  i, k: integer;
+  count: array [0..15] of integer;
+begin
+  result := Copyright = 'VirtualHarmonica';
+  if not result then
+  begin
+    for i := 0 to 15 do
+      count[i] := 0;
+    for i := 0 to Length(TrackArr_)-1 do
+      for k := 0 to Length(TrackArr_[i])-1 do
+      begin
+        event := TrackArr_[i][k];
+        case (event.command shr 4) of
+          8, 9: inc(count[event.command and $f]);
+          11:   if (event.command = $b7) and (event.d1 = $1f) then
+                  inc(count[7]);
+          else begin
+
+          end;
+        end;
+      end;
+    result := true; //count[7] > 0;
+    for i := 0 to 15 do
+      if (i in [0, 8..10, 12..15]) and (count[i] > 0) then
+        result := false;
+  end;
+
 end;
 
 
@@ -1131,6 +1164,8 @@ begin
   result := Terminated;
 end;
 {$endif}
+
+
 
 end.
 

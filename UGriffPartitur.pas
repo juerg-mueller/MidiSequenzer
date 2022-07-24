@@ -928,6 +928,7 @@ var
   Index: integer;
   Vocal: TVocalArray;
   Bass: TBassArray;
+  FirstOn: boolean;
 begin
   Clear;
 
@@ -938,6 +939,7 @@ begin
   delay := 0;
   In_Push := true;
   GriffHeader.Details := EventPartitur.DetailHeader;
+  FirstOn := true;
   for iEvent := 1 to Length(EventPartitur.Track[0])-1 do
   begin
     Event := EventPartitur.Track[0][iEvent];
@@ -953,6 +955,7 @@ begin
       GriffEvent.AbsRect.Width := TEventArray.GetDelayEvent(EventPartitur.Track[0], iEvent);
 
       GriffEvent.InPush := In_Push;
+      Index := -1;
       if Event.Channel in [1..4] then
       begin
         GriffEvent.NoteType := ntDiskant;
@@ -991,10 +994,11 @@ begin
       if Index >= 0 then
       begin
         GriffEvent.AbsRect.Height := 1;
+        FirstOn := false;
         AppendGriffEvent(GriffEvent);
       end;
     end;
-    if Event.Event in [8..14] then
+    if (Event.Event in [8..14]) and not FirstOn then
       inc(delay, Event.var_len);
   end;
 
@@ -1909,6 +1913,8 @@ begin
     for i := 0 to 127 do
       Dur[Row, i].d := 0;
   DurRest := 0;
+
+        // 41 9  73
 
   Sound := 0;
   TickOffset := GriffHeader.Details.GetTicks;
