@@ -26,11 +26,12 @@ uses
 
 const
   CopyrightGriff = AnsiString('Griffschrift - Copyright by juerg5524.ch');
+  CopyrightNewGriff = AnsiString('new Griffschrift - Copyright by juerg5524.ch');
   Copyrightreal  = AnsiString('real Griffschrift Noten - Copyright by juerg5524.ch');
 
 
 type
-  TCopyright = (noCopy, prepCopy, griffCopy, realCopy);
+  TCopyright = (noCopy, prepCopy, griffCopy, realCopy, newCopy);
 
   TMidiEventArray = array of TMidiEvent;
   PMidiEventArray = ^TMidiEventArray;
@@ -365,6 +366,9 @@ begin
   else
   if AnsiStrings.AnsiStrLComp(PAnsiChar(Copyright), PAnsiChar(CopyrightGriff), Length('Griffschrift - Copyright')) = 0 then
     result := griffCopy
+  else
+  if AnsiStrings.AnsiStrLComp(PAnsiChar(Copyright), PAnsiChar(CopyrightNewGriff), Length('Griffschrift - Copyright')) = 0 then
+    result := newCopy
   else
   if Copyright = CopyPrep then
     result := prepCopy

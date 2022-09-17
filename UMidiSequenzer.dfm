@@ -721,7 +721,7 @@ object frmSequenzer: TfrmSequenzer
   object SaveDialog1: TSaveDialog
     Filter = 
       'Midi File|*.mid|MuseScore|*.mscz; *.mscx|LilyPond|*.ly|Standard ' +
-      'MusicXML|*.xml;*.musicxml'
+      'MusicXML|*.xml;*.musicxml|new Midi File|*.mid'
     Left = 624
     Top = 83
   end

@@ -95,6 +95,7 @@ type
     function SoundToGriff(const Instrument: TInstrument): boolean;
     function SetGriff(const Instrument: TInstrument; UsePush, FromGriffPartitur: boolean): integer;
     function SetGriffEvent(const Instrument: TInstrument; UsePush, FromGriffPartitur: boolean): boolean;
+    function SetNewGriffEvent(const Instrument: TInstrument; const Event: TMidiEvent): boolean;
     function SoundToGriffBass(const Instrument: TInstrument; UsePush: boolean): integer; overload;
     function SoundToGriffBass(const Instrument: TInstrument): integer; overload;
     function SetEvent(Row, Index: integer; Push: boolean; const Instrument: TInstrument): boolean;
@@ -614,6 +615,58 @@ begin
       result := true;
     end;
   end;
+{$if defined(CONSOLE)}
+  if not result then
+    writeln('Pitch failed ', SoundPitch, '  ( Note ', MidiOnlyNote(SoundPitch), ')');
+{$endif}
+
+end;
+
+function TGriffEvent.SetNewGriffEvent(const Instrument: TInstrument; const Event: TMidiEvent): boolean;
+var
+  index: integer;
+  Pitches: TPitchArray;
+  Bass: TBassArr;
+begin
+  result := false;
+  if not (Event.Channel in [1..6]) then
+    exit;
+
+  result := true;
+  Cross := Event.Channel in [3, 4, 6];
+  AbsRect.Top := -1;
+
+  SoundPitch := Event.d1;
+  if Event.Channel in [1..4] then
+  begin
+    NoteType := ntDiskant;
+    if InPush then
+      Pitches := Instrument.Push.Col[Event.Channel]
+    else
+      Pitches := Instrument.Pull.Col[Event.Channel];
+    index := 2*GetIndexToPitchInArray(SoundPitch, Pitches);
+    result := index >= 0;
+    if result then
+    begin
+      if not odd(Event.Channel) then
+        inc(index);
+      GriffPitch := IndexToGriff(index);
+      AbsRect.Top := GetPitchLine(GriffPitch);
+    end;
+  end else begin
+    NoteType := ntBass;
+    if InPush or not Instrument.BassDiatonic then
+      Bass := Instrument.Bass[Event.Channel = 6]
+    else
+      Bass := Instrument.PullBass[Event.Channel = 6];
+    Index := High(Bass);
+    while (Index >= 0) and (Bass[Index] <> SoundPitch) do
+      dec(Index);
+    result := Index >= 0;
+    if Index >= 0 then
+      GriffPitch := Index;
+  end;
+  AbsRect.Height := 1;
 {$if defined(CONSOLE)}
   if not result then
     writeln('Pitch failed ', SoundPitch, '  ( Note ', MidiOnlyNote(SoundPitch), ')');

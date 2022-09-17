@@ -125,6 +125,7 @@ type
     function SaveToGriffFile(const FileName: string): boolean;
 //    function SavePasFile(const FileName: string): boolean;
     function SaveToMidiFile(const FileName: string; realGriffschrift: boolean): boolean;
+    function SaveToNewMidiFile(const FileName: string): boolean;
 
     function AppendFile(const FileName: string): boolean;
     procedure PurgeBass;
@@ -893,6 +894,15 @@ begin
               AppendGriffEvent(GriffEvent);
               _Repeat := rRegular;
             end else
+////////////////////////////////////////////////////// ==>
+            if copyright = newCopy then begin
+              GriffEvent.InPush := In_Push;
+              GriffEvent.SetNewGriffEvent(Instrument, Event);
+              GriffEvent.Repeat_ := _Repeat;
+              AppendGriffEvent(GriffEvent);
+              _Repeat := rRegular;
+            end else
+/////////////////////////////////////
             if GriffEvent.SetGriffEvent(Instrument, In_Push, false) then
               AppendGriffEvent(GriffEvent)
             else begin
@@ -932,7 +942,7 @@ var
 begin
   Clear;
 
-  result := EventPartitur.TrackCount = 1;
+  result := (EventPartitur.TrackCount = 1);
   if not result then
     exit;
 
@@ -2294,6 +2304,19 @@ begin
   SortEvents;
 
   TGriffArray.SaveMidiToFile(FileName, GriffEvents, Instrument, GriffHeader.Details, realGriffschrift);
+  result := true;
+end;
+
+
+function TGriffPartitur.SaveToNewMidiFile(const FileName: string): boolean;
+begin
+  result := false;
+  if not PartiturLoaded then
+    exit;
+
+  SortEvents;
+
+  TGriffArray.SaveNewMidiToFile(FileName, GriffEvents, Instrument, GriffHeader.Details);
   result := true;
 end;
 

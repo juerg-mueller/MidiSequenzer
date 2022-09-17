@@ -376,13 +376,13 @@ begin
 
     Partitur.SaveSimpleMidiToFile('test.txt', Partitur.TrackArr, Partitur.DetailHeader, false);
     Partitur.SaveMidiToFile('test.mid', false);
-    if Partitur.CheckMysOergeli then
+ {   if Partitur.CheckMysOergeli then
     begin
       if Partitur.Instrument = '' then
-        Partitur.Instrument := cbTransInstrument.Text;
+        Partitur.Instrument := AnsiString(cbTransInstrument.Text);
       ChangeInstrument(Partitur.Instrument);
       GriffPartitur_.LoadFromVirtualHarmonicaPartitur(Partitur);
-    end else
+    end else  }
     if //(ExtractFileExt(PartiturFileName) <> '.txt') and
        (FileOpenDialog1.FilterIndex = 6) or
        (Partitur.GetCopyright in [noCopy]) then
@@ -618,12 +618,13 @@ begin
            Stream.Free;
          end;
       4: ok := GriffPartitur_.SaveToMusicXML(s, true);
+      5: ok := GriffPartitur_.SaveToNewMidiFile(s);
       else begin
         ok := GriffPartitur_.SaveToMidiFile(s, realSound);
-        if ok then
-          frmGriff.Caption := ExtractFilename(s);
       end;
     end;
+    if ok and (SaveDialog1.FilterIndex in [1, 5]) then
+      frmGriff.Caption := ExtractFilename(s);
     if not ok then
       Warning('File "' + s + '" nicht gespeichert')
     else begin

@@ -1136,6 +1136,7 @@ begin
   Event.Row_ := 1;
   Event.Index_ := -1;
   Event.Push_ := ShiftUsed;
+  writeln(aStatus, '  ', aData1, '  ', aData2);
 
   CriticalMidiIn.Acquire;
   try
