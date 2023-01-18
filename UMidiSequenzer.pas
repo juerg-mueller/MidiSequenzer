@@ -374,8 +374,10 @@ begin
     Partitur.Transpose(cbxTranspose.ItemIndex - 11);
     cbxSmallestNoteChange(nil);
 
+  {$if defined(DEBUG)}
     Partitur.SaveSimpleMidiToFile('test.txt', Partitur.TrackArr, Partitur.DetailHeader, false);
     Partitur.SaveMidiToFile('test.mid', false);
+  {$endif}
  {   if Partitur.CheckMysOergeli then
     begin
       if Partitur.Instrument = '' then
@@ -398,17 +400,16 @@ begin
         ChangeInstrument(Partitur.Instrument);
       end;
 
-      if not GriffPartitur_.Instrument.BassDiatonic and
-         (Partitur.GetCopyright = prepCopy) then
-      begin
-        TGriffArray.ReduceBass(Partitur.TrackArr[1], $1);
-      end;
       GriffPartitur_.GriffHeader.Details := Partitur.DetailHeader;
-      GriffPartitur_.LoadFromEventPartitur(Partitur, cbxLoadAsGriff.Checked);
       if Partitur.GetCopyright = prepCopy then
       begin
-        GriffPartitur_.CheckSustain;
-      end;
+        if not GriffPartitur_.Instrument.BassDiatonic then
+          TGriffArray.ReduceBass(Partitur.TrackArr[1], $1);
+        if not GriffPartitur_.LoadFromRecorded(Partitur) then
+          Application.MessageBox('Partitur nicht korrekt geladen', 'Fehler');
+//        GriffPartitur_.CheckSustain;
+      end else
+        GriffPartitur_.LoadFromEventPartitur(Partitur, cbxLoadAsGriff.Checked);
       GriffPartitur_.RepeatToRest;
     end;
 
@@ -496,7 +497,7 @@ begin
       GriffPartitur_.IsPlaying := true;
       try
         GriffPartitur_.PlayAmpel(GriffPartitur_.PlayEvent,
-                                                StrToIntDef(edtPlayDelay.Text, 0));
+                                 StrToIntDef(edtPlayDelay.Text, 0));
         while not Player.Terminated_ do
         begin
         ProcessMessages;
@@ -1159,7 +1160,7 @@ begin
   cbxMidiOut.Items.Assign(MidiOutput.DeviceNames);
   Midi.OpenMidiMicrosoft;
   cbxMidiOut.ItemIndex := MicrosoftIndex;
-  MidiInput.OnMidiData := OnMidiInData;
+  MidiInput.OnMidiData := frmAmpel.OnMidiInData;
   cbxMidiInput.Visible := MidiInput.DeviceNames.Count > 0;
   lblKeyboard.Visible := cbxMidiInput.Visible;
   if cbxMidiInput.Visible then
@@ -1199,7 +1200,7 @@ begin
   cbTransInstrument.Items.Clear;
   for i := 0 to High(InstrumentsList) do
     cbTransInstrument.Items.Add(string(InstrumentsList[i].Name));
-  cbTransInstrument.ItemIndex := 2; //2;// 8;
+  cbTransInstrument.ItemIndex := 0; //2;// 8;
   if FileExists('UMidiSequenzer.pas') then
   begin
     if not RunningWine then

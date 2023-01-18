@@ -1052,8 +1052,12 @@ begin
     canvas.Brush.Color := TColors.Cyan;
   canvas.Ellipse(rect);
 
-  if (index = 5) and
-     (row = 2) {and (Instrument.Columns = 3)} then   // Kreuz
+ if ((index = 5) and (row = 2)) or
+     ( Instrument.BassDiatonic and
+       (((index = 6) and (row = 1)) or
+        ((index = 6) and (row = 3)) or
+        ((index = 6) and (row = 4)))
+      ) then   // Kreuz
   begin
     canvas.Pen.Color := $ffffff;
     canvas.MoveTo(rect.Left + 5, rect.Top + 5);
@@ -1136,7 +1140,6 @@ begin
   Event.Row_ := 1;
   Event.Index_ := -1;
   Event.Push_ := ShiftUsed;
-  writeln(aStatus, '  ', aData1, '  ', aData2);
 
   CriticalMidiIn.Acquire;
   try

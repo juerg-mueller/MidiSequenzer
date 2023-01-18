@@ -107,7 +107,7 @@ type
 
     constructor Create;
     destructor Destroy; override;
-    
+
     procedure AppendGriffEvent(GriffEvent: TGriffEvent);
     procedure InsertNewEvent(Index: Integer; Mute: boolean = false);
     procedure DeleteGriffEvent(Index: integer);
@@ -119,6 +119,7 @@ type
 
     function LoadFromVirtualHarmonicaPartitur(const EventPartitur: TEventArray): boolean;
     function LoadFromEventPartitur(const EventPartitur: TEventArray; AsGriffPartitur: boolean = false): boolean;
+    function LoadFromRecorded(const EventPartitur: TEventArray): boolean;
     function AppendEventArray(const Events: TMidiEventArray): boolean;
     function LoadFromGriffFile(const FileName: string): boolean;
     procedure LoadChanges;
@@ -774,7 +775,6 @@ var
   IsCross: boolean;
   copyright: TCopyright;
   _Repeat: TRepeat;
-  BassTrack: boolean;
   PTrack: PMidiEventArray;
   Event: TMidiEvent;
 begin
@@ -788,7 +788,7 @@ begin
   iMidiTrack := 0;
 
   copyright := EventPartitur.GetCopyright;
-      
+
   GriffHeader.Details := EventPartitur.DetailHeader;
 
   Guard := 0;
@@ -798,7 +798,6 @@ begin
     begin
       PTrack := @EventPartitur.Track[iMidiTrack];
       begin
-        BassTrack := (EventPartitur.TrackCount = 2) and (iMidiTrack = 1); //EventPartitur.TrackName[iMidiTrack] = 'Bass';
         delay := PTrack^[0].var_len;
         In_Push := LoadStartPush;
         for iEvent := 1 to Length(PTrack^)-1 do
@@ -847,7 +846,7 @@ begin
             GriffEvent.Clear;
             if (copyright = prepCopy) then
             begin
-              if BassTrack then
+              if Event.Channel in [5,6] then
                 GriffEvent.NoteType := ntBass;
             end else
             if Event.Channel > 0 then
@@ -924,6 +923,74 @@ begin
     PartiturLoaded := false;
   end;
   SortEvents;
+  PartiturLoaded := true;
+  LoadChanges;
+end;
+
+////////////////////////////////////////////////////////////////////////////////
+
+function TGriffPartitur.LoadFromRecorded(const EventPartitur: TEventArray): boolean;
+var
+  iEvent: integer;
+  delay: integer;
+  GriffEvent: TGriffEvent;
+  In_Push: boolean;
+  iMidiTrack: integer;
+  _Repeat: TRepeat;
+  PTrack: PMidiEventArray;
+  Event: TMidiEvent;
+begin
+  Clear;
+
+  result := EventPartitur.TrackCount > 0;
+  if not result then
+    exit;
+
+  iMidiTrack := 0;
+
+  GriffHeader.Details := EventPartitur.DetailHeader;
+
+  _Repeat := rRegular;
+  try
+    while iMidiTrack < EventPartitur.TrackCount do
+    begin
+      PTrack := @EventPartitur.Track[iMidiTrack];
+      begin
+        delay := PTrack^[0].var_len;
+        In_Push := LoadStartPush;
+        for iEvent := 1 to Length(PTrack^)-1 do
+        begin
+          Event := PTrack^[iEvent];
+          if Event.IsSustain then
+            In_Push := Event.IsPush
+          else
+          if Event.Event = 9 then
+          begin
+            GriffEvent.Clear;
+            if Event.Channel in [5,6] then
+              GriffEvent.NoteType := ntBass;
+            GriffEvent.SoundPitch := Event.d1;
+            GriffEvent.AbsRect.Create(0,0,0,0);
+            GriffEvent.AbsRect.Left := delay;
+            GriffEvent.AbsRect.Width := TEventArray.GetDelayEvent(PTrack^, iEvent);
+            GriffEvent.InPush := In_Push;
+            GriffEvent.SoundPitch := Event.d1;
+            if GriffEvent.UniqueSoundToGriff(Instrument, Event.Channel) then
+              AppendGriffEvent(GriffEvent)
+            else begin
+              result := false
+            end;
+          end;
+          if Event.Event in [8..14] then
+            inc(delay, Event.var_len);
+        end;
+      end;
+      inc(iMidiTrack);
+    end;
+  finally
+    PartiturLoaded := false;
+  end;
+//  SortEvents;
   PartiturLoaded := true;
   LoadChanges;
 end;
@@ -1850,7 +1917,8 @@ var
   Sound: byte;
   TickOffset, Ticks, offset: double;
   Max, MaxBass: byte;
- 
+  LastPush: boolean;
+
   procedure SetAmpelToOff(Row, index: integer);
   begin
     if Dur[Row, index].d > 0 then
@@ -1918,6 +1986,8 @@ begin
   if (PlayEvent.iEvent < 0) or (PlayEvent.iEvent >= UsedEvents) then
     PlayEvent.Clear;
   offset := GriffEvents[PlayEvent.iEvent].AbsRect.Left;
+  LastPush := GriffEvents[PlayEvent.iEvent].InPush;
+  MidiOutput.Send(MicrosoftIndex, $B0, ControlSustain, ord(LastPush));
 
   for Row := 1 to High(Dur) do
     for i := 0 to 127 do
@@ -1969,6 +2039,11 @@ begin
           if not noSound and
             (NoteType in [ntDiskant, ntBass]) then
           begin
+            if InPush <> LastPush then
+            begin
+              LastPush := InPush;
+              MidiOutput.Send(MicrosoftIndex, $B0, ControlSustain, ord(LastPush));
+            end;
             Max := trunc($7e*Volume);
             MaxBass := trunc($7e*Volume);
             case AmpelRect.row of

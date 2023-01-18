@@ -93,6 +93,7 @@ type
     function InSet(const Instrument: TInstrument): TPushPullSet;
     function GetSoundPitch(const Instrument: TInstrument): byte;
     function SoundToGriff(const Instrument: TInstrument): boolean;
+    function UniqueSoundToGriff(const Instrument: TInstrument; Channel: byte): boolean;
     function SetGriff(const Instrument: TInstrument; UsePush, FromGriffPartitur: boolean): integer;
     function SetGriffEvent(const Instrument: TInstrument; UsePush, FromGriffPartitur: boolean): boolean;
     function SetNewGriffEvent(const Instrument: TInstrument; const Event: TMidiEvent): boolean;
@@ -778,4 +779,50 @@ begin
   result := AbsRect.Width = GriffHeader.Details.DeltaTimeTicks div 8 - 1
 end;
 
+function TGriffEvent.UniqueSoundToGriff(const Instrument: TInstrument; Channel: byte): boolean;
+var
+  index: integer;
+  arr: TPitchArray;
+begin
+  index := -1;
+  Cross := Channel in [3, 4, 6];
+  AbsRect.Top := -1;
+  AbsRect.Height := 1;
+  if Channel in [5, 6] then begin
+    if Instrument.BassDiatonic and not InPush then
+      index := GetBassIndex(Instrument.PullBass[InPush], SoundPitch)
+    else
+      index := GetBassIndex(Instrument.PullBass[false], SoundPitch)
+  end else
+  if Channel in [1..4] then begin
+    if InPush then
+      arr := Instrument.Push.Col[Channel]
+    else
+      arr := Instrument.Pull.Col[Channel];
+    index := GetIndexToPitchInArray(SoundPitch, arr);
+    if (index >= 0) then
+    begin
+      if Channel in [1, 4] then
+        index := IndexToGriff(2*index+1)
+      else
+        index := IndexToGriff(2*index);
+      if index > 0 then
+      begin
+        AbsRect.Top := GetPitchLine(GriffPitch);
+        AbsRect.Height := 1;
+      end;
+    end;
+  end;
+  result := index >= 0;
+  if result then
+  begin
+    GriffPitch := index
+  end;
+end;
+
 end.
+
+
+
+
+
