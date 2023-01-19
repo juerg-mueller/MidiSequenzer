@@ -511,6 +511,7 @@ begin
         iEvent := GriffPartitur_.iSkipEvent;
     until GriffPartitur_.iSkipEvent < 0;
     btnPlay.Caption := 'Play Partitur';
+    frmGriff.Repaint;
   end else begin
     GriffPartitur_.StopPlay := true;
     Sleep(100);

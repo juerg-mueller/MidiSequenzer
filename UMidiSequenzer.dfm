@@ -53,8 +53,8 @@ object frmSequenzer: TfrmSequenzer
       OnClick = btnOpenClick
     end
     object btnLoadPartitur: TButton
-      Left = 771
-      Top = 29
+      Left = 775
+      Top = 28
       Width = 99
       Height = 25
       Anchors = [akTop, akRight]

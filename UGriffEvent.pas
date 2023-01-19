@@ -783,6 +783,7 @@ function TGriffEvent.UniqueSoundToGriff(const Instrument: TInstrument; Channel: 
 var
   index: integer;
   arr: TPitchArray;
+  bassArr: TBassArray;
 begin
   index := -1;
   Cross := Channel in [3, 4, 6];
@@ -790,9 +791,12 @@ begin
   AbsRect.Height := 1;
   if Channel in [5, 6] then begin
     if Instrument.BassDiatonic and not InPush then
-      index := GetBassIndex(Instrument.PullBass[InPush], SoundPitch)
+      bassArr := Instrument.PullBass
     else
-      index := GetBassIndex(Instrument.PullBass[false], SoundPitch)
+      bassArr := Instrument.Bass;
+    index := GetBassIndex(bassArr[Channel = 6], SoundPitch);
+    if index >= 0 then
+      GriffPitch := index;
   end else
   if Channel in [1..4] then begin
     if InPush then
@@ -802,7 +806,7 @@ begin
     index := GetIndexToPitchInArray(SoundPitch, arr);
     if (index >= 0) then
     begin
-      if Channel in [1, 4] then
+      if Channel in [2, 4] then
         index := IndexToGriff(2*index+1)
       else
         index := IndexToGriff(2*index);
