@@ -112,6 +112,7 @@ type
 
 const
   MicrosoftSync = 'Microsoft GS Wavetable Synth';
+  UM_ONE = 'UM-ONE';
   
 var
   MicrosoftIndex: integer = 0;
@@ -389,7 +390,8 @@ begin
          (midiOutOpen(@lHandle, i, 0, 0, CALLBACK_NULL) = 0) then
       begin
         s := lOutCaps.szPname;                       
-        if s = MicrosoftSync then
+        if (s = MicrosoftSync) or
+           (Copy(s, 1, Length(UM_ONE)) = UM_ONE) then
         begin
           MicrosoftIndex := fDeviceNames.Count;
           TrueMicrosoftIndex := MicrosoftIndex;
@@ -410,9 +412,9 @@ begin
       end;
     end;
   end;
-  if (fDeviceNames.Count > 1) and
+{  if (fDeviceNames.Count > 1) and
      (fDeviceNames.IndexOf('Midi Through Port-0') = 0) then
-    MicrosoftIndex := 1
+    MicrosoftIndex := 1   }
 
 end;
 
@@ -457,11 +459,15 @@ procedure TMidiOutput.Send(const aDeviceIndex: TDeviceIndex; const aStatus, aDat
 var
   lMsg: cardinal;
 begin
-  if not assigned(fDeviceNames.Objects[ aDeviceIndex ]) then
+  if (aDeviceIndex < 0) or
+     not assigned(fDeviceNames.Objects[ aDeviceIndex ]) then
     exit;
 
   lMsg := aStatus + (aData1 * $100) + (aData2 * $10000);
   MidiResult := midiOutShortMsg(GetHandle(aDeviceIndex), lMsg);
+{$ifdef CONSOLE}
+  writeln(Format('$%2.2x  $%2.2x  $%2.2x' ,[aStatus, aData1, aData2]));
+{$endif}
 end;
 
 

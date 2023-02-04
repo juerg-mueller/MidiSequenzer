@@ -1121,7 +1121,7 @@ var
         Vocal := Instrument.Push
       else
         Vocal := Instrument.Pull;
-      Event.Index_ := GetIndexToPitchInArray(Event.Pitch, Vocal.Col[Event.Row_]);
+      Event.Index_ := GetPitchIndex(Event.Pitch, Vocal.Col[Event.Row_]);
     end else
     if Event.Row_ in [5..6] then
     begin
@@ -1129,7 +1129,7 @@ var
         Bass := Instrument.PullBass
       else
         Bass := Instrument.Bass;
-      Event.Index_ := GetBassIndex(Bass[Event.Row_ = 6], Event.Pitch);
+      Event.Index_ := GetPitchIndex(Event.Pitch, Bass[Event.Row_ = 6]);
     end;
     result := Event.Index_ >= 0;
   end;

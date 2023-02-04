@@ -627,7 +627,7 @@ function TGriffEvent.SetNewGriffEvent(const Instrument: TInstrument; const Event
 var
   index: integer;
   Pitches: TPitchArray;
-  Bass: TBassArr;
+  Bass: TPitchArray;
 begin
   result := false;
   if not (Event.Channel in [1..6]) then
@@ -645,7 +645,7 @@ begin
       Pitches := Instrument.Push.Col[Event.Channel]
     else
       Pitches := Instrument.Pull.Col[Event.Channel];
-    index := 2*GetIndexToPitchInArray(SoundPitch, Pitches);
+    index := 2*GetPitchIndex(SoundPitch, Pitches);
     result := index >= 0;
     if result then
     begin
@@ -794,7 +794,7 @@ begin
       bassArr := Instrument.PullBass
     else
       bassArr := Instrument.Bass;
-    index := GetBassIndex(bassArr[Channel = 6], SoundPitch);
+    index := GetPitchIndex(SoundPitch, bassArr[Channel = 6]);
     if index >= 0 then
       GriffPitch := index;
   end else
@@ -803,7 +803,7 @@ begin
       arr := Instrument.Push.Col[Channel]
     else
       arr := Instrument.Pull.Col[Channel];
-    index := GetIndexToPitchInArray(SoundPitch, arr);
+    index := GetPitchIndex(SoundPitch, arr);
     if (index >= 0) then
     begin
       if Channel in [2, 4] then

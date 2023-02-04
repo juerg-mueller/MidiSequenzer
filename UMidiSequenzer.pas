@@ -371,13 +371,14 @@ begin
     if not Ok then
       raise Exception.Create('File not read!');
 
-    Partitur.Transpose(cbxTranspose.ItemIndex - 11);
-    cbxSmallestNoteChange(nil);
-
   {$if defined(DEBUG)}
     Partitur.SaveSimpleMidiToFile('test.txt', Partitur.TrackArr, Partitur.DetailHeader, false);
     Partitur.SaveMidiToFile('test.mid', false);
   {$endif}
+
+    Partitur.Transpose(cbxTranspose.ItemIndex - 11);
+    cbxSmallestNoteChange(nil);
+
  {   if Partitur.CheckMysOergeli then
     begin
       if Partitur.Instrument = '' then
@@ -387,7 +388,7 @@ begin
     end else  }
     if //(ExtractFileExt(PartiturFileName) <> '.txt') and
        (FileOpenDialog1.FilterIndex = 6) or
-       (Partitur.GetCopyright in [noCopy]) then
+       (Partitur.GetCopyright = noCopy) then
     begin
       GriffPartitur_.LoadFromTrackEventArray(Partitur);
       if ext = '.txt' then

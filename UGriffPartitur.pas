@@ -1040,7 +1040,7 @@ begin
           Vocal := Instrument.Push
         else
           Vocal := Instrument.Pull;
-        Index := GetIndexToPitchInArray(Event.d1, Vocal.Col[Event.Channel]);
+        Index := GetPitchIndex(Event.d1, Vocal.Col[Event.Channel]);
         if Index >= 0 then
         begin
           GriffEvent.Cross := Event.Channel > 2;
@@ -1060,7 +1060,7 @@ begin
           Bass := Instrument.Bass;
           GriffEvent.InPush := true;
         end;
-        Index := GetBassIndex(Bass[Event.Channel = 6], Event.d1);
+        Index := GetPitchIndex(Event.d1, Bass[ Event.Channel = 6]);
         if Index >= 0 then
         begin
           GriffEvent.GriffPitch := Index;
@@ -1626,7 +1626,7 @@ begin
         vk_Up:
           if NoteType = ntBass then
           begin
-            if (GriffPitch < High(TBassArr)) and
+            if (GriffPitch < High(TPitchArray)) and
                (Instrument.Bass[Cross, GriffPitch+1] > 0) then
             begin
               inc(GriffPitch);
@@ -1659,7 +1659,7 @@ begin
         vk_Down:
           if NoteType = ntBass then
           begin
-            if (GriffPitch > Low(TBassArr)) and
+            if (GriffPitch > Low(TPitchArray)) and
                (Instrument.Bass[Cross, GriffPitch-1] > 0) then
             begin
               dec(GriffPitch);
