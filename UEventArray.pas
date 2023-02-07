@@ -371,9 +371,6 @@ begin
     result := newCopy
   else
   if Copyright = CopyPrep then
-    result := prepCopy
-  else
-  if (Length(TrackName_) = 2) {and ((LowerCase(TrackName[0]) = 'melodie') or (LowerCase(TrackName[1]) = 'bass'))} then
     result := prepCopy;
 end;
 

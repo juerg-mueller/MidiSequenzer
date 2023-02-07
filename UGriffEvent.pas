@@ -815,7 +815,8 @@ begin
         GriffPitch := Index;
         AbsRect.Top := GetPitchLine(GriffPitch);
         AbsRect.Height := 1;
-      end;
+      end else
+        index := -1;
     end;
   end;
   result := index >= 0;

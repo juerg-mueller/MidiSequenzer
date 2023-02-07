@@ -372,22 +372,16 @@ begin
       raise Exception.Create('File not read!');
 
   {$if defined(DEBUG)}
-    Partitur.SaveSimpleMidiToFile('test.txt', Partitur.TrackArr, Partitur.DetailHeader, false);
-    Partitur.SaveMidiToFile('test.mid', false);
+    s := ExtractFilePath(ParamStr(0)) + 'test.txt';
+    Partitur.SaveSimpleMidiToFile(s, Partitur.TrackArr, Partitur.DetailHeader, false);
+    s := ExtractFilePath(ParamStr(0)) + 'test.mid';
+    Partitur.SaveMidiToFile(s, false);
   {$endif}
 
     Partitur.Transpose(cbxTranspose.ItemIndex - 11);
     cbxSmallestNoteChange(nil);
 
- {   if Partitur.CheckMysOergeli then
-    begin
-      if Partitur.Instrument = '' then
-        Partitur.Instrument := AnsiString(cbTransInstrument.Text);
-      ChangeInstrument(Partitur.Instrument);
-      GriffPartitur_.LoadFromVirtualHarmonicaPartitur(Partitur);
-    end else  }
-    if //(ExtractFileExt(PartiturFileName) <> '.txt') and
-       (FileOpenDialog1.FilterIndex = 6) or
+    if (FileOpenDialog1.FilterIndex = 6) or
        (Partitur.GetCopyright = noCopy) then
     begin
       GriffPartitur_.LoadFromTrackEventArray(Partitur);

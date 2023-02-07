@@ -117,7 +117,6 @@ type
     procedure Unselect;
     procedure SetRubberOff;
 
-    function LoadFromVirtualHarmonicaPartitur(const EventPartitur: TEventArray): boolean;
     function LoadFromEventPartitur(const EventPartitur: TEventArray; AsGriffPartitur: boolean = false): boolean;
     function LoadFromRecorded(const EventPartitur: TEventArray): boolean;
     function AppendEventArray(const Events: TMidiEventArray): boolean;
@@ -994,96 +993,6 @@ begin
   PartiturLoaded := true;
   LoadChanges;
 end;
-
-function TGriffPartitur.LoadFromVirtualHarmonicaPartitur(const EventPartitur: TEventArray): boolean;
-var
-  iEvent: integer;
-  delay: integer;
-  GriffEvent: TGriffEvent;
-  In_Push: boolean;
-  Event: TMidiEvent;
-  Index: integer;
-  Vocal: TVocalArray;
-  Bass: TBassArray;
-  FirstOn: boolean;
-begin
-  Clear;
-
-  result := (EventPartitur.TrackCount = 1);
-  if not result then
-    exit;
-
-  delay := 0;
-  In_Push := true;
-  GriffHeader.Details := EventPartitur.DetailHeader;
-  FirstOn := true;
-  for iEvent := 1 to Length(EventPartitur.Track[0])-1 do
-  begin
-    Event := EventPartitur.Track[0][iEvent];
-    if Event.IsSustain then
-      In_Push := Event.IsPush
-    else
-    if Event.Event = 9 then
-    begin
-      GriffEvent.Clear;
-      GriffEvent.SoundPitch := Event.d1;
-      GriffEvent.Velocity :=  Event.d2;
-      GriffEvent.AbsRect.Left := delay;
-      GriffEvent.AbsRect.Width := TEventArray.GetDelayEvent(EventPartitur.Track[0], iEvent);
-
-      GriffEvent.InPush := In_Push;
-      Index := -1;
-      if Event.Channel in [1..4] then
-      begin
-        GriffEvent.NoteType := ntDiskant;
-        if In_Push then
-          Vocal := Instrument.Push
-        else
-          Vocal := Instrument.Pull;
-        Index := GetPitchIndex(Event.d1, Vocal.Col[Event.Channel]);
-        if Index >= 0 then
-        begin
-          GriffEvent.Cross := Event.Channel > 2;
-          GriffEvent.GriffPitch := RowIndexToGriff(Event.Channel, Index);
-          Index := 2*Index;
-          if not odd(Event.Channel) then
-            inc(Index);
-          GriffEvent.AbsRect.Top := Index;
-        end;
-      end else
-      if Event.Channel in [5..6] then
-      begin
-        GriffEvent.NoteType := ntBass;
-        if not In_Push and Instrument.BassDiatonic then
-          Bass := Instrument.PullBass
-        else begin
-          Bass := Instrument.Bass;
-          GriffEvent.InPush := true;
-        end;
-        Index := GetPitchIndex(Event.d1, Bass[ Event.Channel = 6]);
-        if Index >= 0 then
-        begin
-          GriffEvent.GriffPitch := Index;
-          GriffEvent.AbsRect.Top := -1;
-        end;
-      end;
-
-      if Index >= 0 then
-      begin
-        GriffEvent.AbsRect.Height := 1;
-        FirstOn := false;
-        AppendGriffEvent(GriffEvent);
-      end;
-    end;
-    if (Event.Event in [8..14]) and not FirstOn then
-      inc(delay, Event.var_len);
-  end;
-
-  SortEvents;
-  PartiturLoaded := true;
-  LoadChanges;
-end;
-
 
 function TGriffPartitur.LoadFromGriffFile(const FileName: string): boolean;
 var
