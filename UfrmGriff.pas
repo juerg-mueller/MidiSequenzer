@@ -799,15 +799,20 @@ type
 
  // if Instrument.bigInstrument then
     NotenVersatz := 460;
+  // waagrechte Striche zeichnen
   canvas.Pen.Color := 0;
   for i := 1 to 5 do
   begin
     canvas.MoveTo(ClipRect.Left - Horz_pos, i*8 + MoveVert + NotenVersatz);
     canvas.LineTo(ClipRect.Right - Horz_pos, i*8 + MoveVert + NotenVersatz);
   end;
+
+  // senkrechte Striche zeichnen
   for i := clipRect.Left div pitch_width to (w div pitch_width) do
   begin
     j := i*pitch_width;
+
+    // Taktstrich zeicnen
     if (i mod GriffPartitur_.GriffHeader.Details.MeasureFact) = 0 then
     begin
       if (clipRect.Left <= j) and (j < clipRect.Right) then
@@ -817,11 +822,12 @@ type
         Canvas.LineTo(j - Horz_pos, 5*8 + MoveVert + NotenVersatz);
       end;
 
-    end;// else begin
-      canvas.Pen.Color := $ff7f7f;
-      Canvas.MoveTo(j - Horz_pos, 8 + MoveVert + NotenVersatz);
-      Canvas.LineTo(j - Horz_pos, 8 + MoveVert + NotenVersatz - 10);
-   // end;
+    end;
+    // oben blaue Striche
+    canvas.Pen.Color := $ff7f7f;
+    Canvas.MoveTo(j - Horz_pos, 8 + MoveVert + NotenVersatz);
+    Canvas.LineTo(j - Horz_pos, 8 + MoveVert + NotenVersatz - 10);
+
     if j > clipRect.Right then
       break;
   end;

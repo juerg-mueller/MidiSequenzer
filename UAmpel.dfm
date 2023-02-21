@@ -111,4 +111,10 @@ object frmAmpel: TfrmAmpel
     OnKeyDown = FormKeyDown
     OnKeyUp = FormKeyUp
   end
+  object Timer1: TTimer
+    Interval = 1
+    OnTimer = Timer1Timer
+    Left = 272
+    Top = 224
+  end
 end

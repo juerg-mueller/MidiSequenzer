@@ -263,6 +263,7 @@ var
   Ok: boolean;
   Index: integer;
   Partitur: TEventArray;
+  s: string;
 
   procedure PrepareFinally;
   begin
@@ -398,8 +399,8 @@ begin
       GriffPartitur_.GriffHeader.Details := Partitur.DetailHeader;
       if Partitur.GetCopyright = prepCopy then
       begin
-        if not GriffPartitur_.Instrument.BassDiatonic then
-          TGriffArray.ReduceBass(Partitur.TrackArr[1], $1);
+     //   if not GriffPartitur_.Instrument.BassDiatonic then    !!!
+     //     TGriffArray.ReduceBass(Partitur.TrackArr[1], $1);
         if not GriffPartitur_.LoadFromRecorded(Partitur) then
           Application.MessageBox('Partitur nicht korrekt geladen', 'Fehler');
 //        GriffPartitur_.CheckSustain;
@@ -1145,7 +1146,7 @@ begin
   GriffPartitur_.DoPlay := btnPlayClick;
   GriffPartitur_.DoSave := btnSaveGriffClick;
   GriffPartitur_.DoPlayRect := frmGriff.SetPlayRect;
-  GriffPartitur_.SetInstrument(InstrumentsList[cbTransInstrument.ItemIndex].Name);
+  GriffPartitur_.SetInstrument(InstrumentsList_[cbTransInstrument.ItemIndex].Name);
 
   cbTransInstrumentChange(nil);
   frmAmpel.PlayControl := GriffPartitur_.PlayControl;
@@ -1194,8 +1195,8 @@ begin
   Caption := Caption + ' (32)';
 {$endif}
   cbTransInstrument.Items.Clear;
-  for i := 0 to High(InstrumentsList) do
-    cbTransInstrument.Items.Add(string(InstrumentsList[i].Name));
+  for i := 0 to High(InstrumentsList_) do
+    cbTransInstrument.Items.Add(string(InstrumentsList_[i].Name));
   cbTransInstrument.ItemIndex := 0; //2;// 8;
   if FileExists('UMidiSequenzer.pas') then
   begin
@@ -1207,8 +1208,8 @@ begin
 //    btnRealSound.Visible := true;
   end;
 {$if defined(CONSOLE)}
-  if not RunningWine then
-    ShowWindow(GetConsoleWindow, SW_SHOWMINIMIZED);
+//  if not RunningWine then
+//    ShowWindow(GetConsoleWindow, SW_SHOWMINIMIZED);
   SetConsoleTitle('MidiSequenzer - Trace Window');
 {$endif}
   Application.OnMessage := MessageEvent;

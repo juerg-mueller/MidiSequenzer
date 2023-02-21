@@ -1238,7 +1238,7 @@ begin
   MidiFile := TMidiDataStream.Create;
   NewMidi := TMidiDataStream.Create;
   try
-    Instrument := @Gwerder_b_Oergeli;
+    Instrument := @b_Oergeli;
     writeln(Text, '---> ' + Filename);
     MidiFile.LoadFromFile(FileName);
     if not SimpleFile.MakeSimpleFile(MidiFile, toSound, Instrument) then

@@ -196,17 +196,10 @@ uses
 
 ////////////////////////////////////////////////////////////////////////////////
 
-procedure SetAmpel_(Row: byte; Index: integer; Push: boolean; On_: boolean);
-begin
-{$if defined(__AMPEL__)}
-  frmAmpel.PaintAmpel(Row, Index, Push and On_, On_);
-{$endif}
-end;
-
 procedure SetAmpel(Event: TGriffEvent; On_: boolean);
 begin
   with Event do
-    SetAmpel_(GetRow, GetIndex, InPush and On_, On_);
+    frmAmpel.AmpelEvents.SetAmpel(GetRow, GetIndex, InPush and On_, On_);
 end;
 
 
@@ -626,7 +619,7 @@ begin
 
   Clear;
 
-  SetInstrument(InstrumentsList[0].Name);
+  SetInstrument(InstrumentsList_[0].Name);
   StopPlay := false;
   noSound := false;
   noBass := false;
@@ -965,19 +958,22 @@ begin
           else
           if Event.Event = 9 then
           begin
-            GriffEvent.Clear;
-            if Event.Channel in [5,6] then
-              GriffEvent.NoteType := ntBass;
-            GriffEvent.SoundPitch := Event.d1;
-            GriffEvent.AbsRect.Create(0,0,0,0);
-            GriffEvent.AbsRect.Left := delay;
-            GriffEvent.AbsRect.Width := TEventArray.GetDelayEvent(PTrack^, iEvent);
-            GriffEvent.InPush := In_Push;
-            GriffEvent.SoundPitch := Event.d1;
-            if GriffEvent.UniqueSoundToGriff(Instrument, Event.Channel) then
-              AppendGriffEvent(GriffEvent)
-            else begin
-              result := false
+            if Event.Channel <= 6 then
+            begin
+              GriffEvent.Clear;
+              if Event.Channel in [5,6] then
+                GriffEvent.NoteType := ntBass;
+              GriffEvent.SoundPitch := Event.d1;
+              GriffEvent.AbsRect.Create(0,0,0,0);
+              GriffEvent.AbsRect.Left := delay;
+              GriffEvent.AbsRect.Width := TEventArray.GetDelayEvent(PTrack^, iEvent);
+              GriffEvent.InPush := In_Push;
+              GriffEvent.SoundPitch := Event.d1;
+              if GriffEvent.UniqueSoundToGriff(Instrument, Event.Channel) then
+                AppendGriffEvent(GriffEvent)
+              else begin
+                result := false
+              end;
             end;
           end;
           if Event.Event in [8..14] then
@@ -990,6 +986,7 @@ begin
     PartiturLoaded := false;
   end;
 //  SortEvents;
+
   PartiturLoaded := true;
   LoadChanges;
 end;
@@ -1057,7 +1054,7 @@ begin
   result := index >= 0;
   if result then
   begin
-    Instrument := InstrumentsList[index]^;
+    Instrument := InstrumentsList_[index];
     if PartiturLoaded then
     begin
       if (OldInstrument.BassDiatonic <> Instrument.BassDiatonic) or
@@ -2037,8 +2034,8 @@ end;
 
 procedure TGriffPartitur.PlayAmpel(var PlayEvent: TPlayRecord; PlayDelay: integer);
 var
-  i: integer;
-  Dur: array [0..127] of record
+  i, k: integer;
+  Dur: array [1..6, 0..15] of record
          d: integer;
          rec: TAmpelRec;
        end;
@@ -2050,19 +2047,19 @@ var
   PlayDelta: integer;
   Ticks, TickOffset, Offset: double;
 
-  procedure SetAmpelToOff(index: integer);
+  procedure SetAmpelToOff(Row, Index: integer);
   begin
-    if Dur[index].d > 0 then
+    if Dur[Row, Index].d > 0 then
     begin
-      with Dur[index].rec do
-        SetAmpel_(row, index, false, false);
-      Dur[index].d := 0;
+      with Dur[Row, Index].rec do
+        frmAmpel.AmpelEvents.SetAmpel(Row, Index, false, false);
+      Dur[Row, Index].d := 0;
     end;
   end;
 
   procedure AllVoicesOff;
   var
-    i, t: integer;
+    i, k, t: integer;
   begin
     ProcessMessages;
     sleep(10);
@@ -2078,15 +2075,16 @@ var
     screenRect.Left := playLocation - 1;
 
     all_done := true;
-    for i := 0 to 127 do
-      if (Dur[i].d > 0) then
-      begin
-        if (Dur[i].d < t) then
+    for k := 1 to 6 do
+      for i := 0 to 15 do
+        if (Dur[k, i].d > 0) then
         begin
-          SetAmpelToOff(i);
-        end else
-          all_done := false;
-      end;
+          if (Dur[k, i].d < t) then
+          begin
+            SetAmpelToOff(k, i);
+          end else
+            all_done := false;
+        end;
       if DurRest > 0 then
       begin
         if DurRest <= t then
@@ -2124,8 +2122,9 @@ begin
   PlayDelta := GriffHeader.Details.MsDelayToTicks(PlayDelay);
   Offset := Offset - PlayDelta;
 
-  for i := 0 to 127 do
-    Dur[i].d := 0;
+  for k := 1 to 6 do
+    for i := 0 to 15 do
+      Dur[k, i].d := 0;
   DurRest := 0;
 
   screenRect.Create(0, 0, 1, 25*row_height);
@@ -2138,6 +2137,7 @@ begin
     while (PlayEvent.iEvent < UsedEvents) and
           (round(Offset) >= GriffEvents[PlayEvent.iEvent].AbsRect.Left) do
     begin
+      // zum Loop-Anfang
       if (iAEvent >= 0) and (iBEvent > iAEvent + 2) and (PlayEvent.iEvent >= iBEvent) then
       begin
         SkipEvent(iAEvent, true);
@@ -2161,10 +2161,10 @@ begin
             Sound := SoundPitch
           else
             Sound := GetSoundPitch(Instrument);
-          SetAmpelToOff(Sound);
+          SetAmpelToOff(GetRow, GetIndex);
 
-          Dur[Sound].d := AbsRect.Right - 40;
-          Dur[Sound].rec := GetAmpelRec;
+          Dur[GetRow, GetIndex].d := AbsRect.Right - 40;
+          Dur[GetRow, GetIndex].rec := GetAmpelRec;
           SetAmpel(GriffEvents[PlayEvent.iEvent], true);
         end else
         if NoteType = ntRest then
@@ -2215,8 +2215,9 @@ begin
   until ((PlayEvent.iEvent >= UsedEvents) and all_done) or StopPlay;
 
   PlayLocation := -1;
-  for i := 0 to 127 do
-    SetAmpelToOff(i);
+  for k := 1 to 6 do
+    for i := 0 to 15 do
+      SetAmpelToOff(k, i);
 
 {$if defined(__AMPEL__)}
   frmAmpel.FormPaint(nil);

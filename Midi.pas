@@ -32,7 +32,7 @@ const
 type
   
   // event if data is received
-  TOnMidiInData = procedure (aDeviceIndex: integer; aStatus, aData1, aData2: byte; Timestamp: integer) of object;
+  TOnMidiInData = procedure (aDeviceIndex: integer; aStatus, aData1, aData2: byte; Timestamp: Int64) of object;
   // event of system exclusive data is received
   TOnSysExData = procedure (aDeviceIndex: integer; const aStream: TMemoryStream) of object;
 
@@ -391,7 +391,7 @@ begin
       begin
         s := lOutCaps.szPname;                       
         if (s = MicrosoftSync) or
-           (Copy(s, 1, Length(UM_ONE)) = UM_ONE) then
+           (Pos(UM_ONE, s) > 0) then
         begin
           MicrosoftIndex := fDeviceNames.Count;
           TrueMicrosoftIndex := MicrosoftIndex;
@@ -466,7 +466,7 @@ begin
   lMsg := aStatus + (aData1 * $100) + (aData2 * $10000);
   MidiResult := midiOutShortMsg(GetHandle(aDeviceIndex), lMsg);
 {$ifdef CONSOLE}
-  writeln(Format('$%2.2x  $%2.2x  $%2.2x' ,[aStatus, aData1, aData2]));
+  writeln(Format('$%2.2x  $%2.2x (%d)  $%2.2x' ,[aStatus, aData1, aData1, aData2]));
 {$endif}
 end;
 
@@ -508,7 +508,6 @@ begin
     if MidiOutput.IsOpen(MicrosoftIndex) then
       for i := 0 to 15 do
       begin
-        Sleep(5);
         MidiOutput.Send(MicrosoftIndex, $B0 + i, 120, 0);  // all sound off
       end;
     Sleep(5);
@@ -516,19 +515,15 @@ begin
 end;
 
 procedure OpenMidiMicrosoft;
+var
+  i: integer;
 begin
   if MicrosoftIndex >= 0 then
   begin
     MidiOutput.Open(MicrosoftIndex);
     try
-//      ResetMidi;
-      MidiOutput.Send(MicrosoftIndex, $c0, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c1, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c2, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c3, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c4, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c5, MidiInstr, $00);
-      MidiOutput.Send(MicrosoftIndex, $c6, MidiInstr, $00);
+      for i := 0 to 8 do
+        MidiOutput.Send(MicrosoftIndex, $c0 + i, MidiInstr, $00);
     finally
     end;
   {$if defined(CONSOLE)}
