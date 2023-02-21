@@ -1200,8 +1200,8 @@ begin
   cbTransInstrument.ItemIndex := 0; //2;// 8;
   if FileExists('UMidiSequenzer.pas') then
   begin
-    if not RunningWine then
-      edtPlayDelay.Text := '350';
+//    if not RunningWine then
+//      edtPlayDelay.Text := '350';
 //    btnLongerPitches.Visible := true;
 //    btnBassSynch.Visible := true;
 //    cbxLoadAsGriff.Visible := true;

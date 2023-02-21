@@ -499,6 +499,8 @@ begin
           SendMidiOut($80 + 7, Event.SoundPitch + OergeliBassZusatz[idx, 0], 40);
           SendMidiOut($80 + 7, Event.SoundPitch + OergeliBassZusatz[idx, 1], 40);
         end;
+        if row_ = 6 then
+          writeln('------------------------');
       end;
     end;
 
@@ -523,8 +525,7 @@ begin
   CriticalAmpel.Acquire;
   try
     for i := 0 to UsedEvents-1 do
-      if ((MouseEvents[i].Row_ = Event.Row_) and (MouseEvents[i].Index_ = Event.Index_)) or
-         ((MouseEvents[i].Pitch = Event.Pitch) and (Event.Pitch > 0)) then
+      if (MouseEvents[i].Row_ = Event.Row_) and (MouseEvents[i].Index_ = Event.Index_) then
       begin
         DoAmpel(i, false);
         for j := i+1 to UsedEvents-1 do
