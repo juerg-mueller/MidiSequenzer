@@ -94,6 +94,7 @@ type
     btnRealSound: TButton;
     cbxVirtual: TComboBox;
     lbVirtual: TLabel;
+    btnRemoveSmall: TButton;
     procedure FormCreate(Sender: TObject);
     procedure btnOpenClick(Sender: TObject);
     procedure btnLoadPartiturClick(Sender: TObject);
@@ -142,6 +143,7 @@ type
     procedure cbxVoltaKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
     procedure cbxVirtualChange(Sender: TObject);
+    procedure btnRemoveSmallClick(Sender: TObject);
   private
     InitDone: boolean;
     procedure SelectedChanges(SelectedEvent: PGriffEvent);
@@ -654,6 +656,12 @@ end;
 procedure TfrmSequenzer.Button1Click(Sender: TObject);
 begin
   GriffPartitur_.CheckSustain;
+  frmGriff.Invalidate;
+end;
+
+procedure TfrmSequenzer.btnRemoveSmallClick(Sender: TObject);
+begin
+  GriffPartitur_.RemoveSmallestNote;
   frmGriff.Invalidate;
 end;
 

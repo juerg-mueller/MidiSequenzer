@@ -4,7 +4,7 @@ object frmSequenzer: TfrmSequenzer
   HorzScrollBar.Smooth = True
   HorzScrollBar.Tracking = True
   ActiveControl = btnOpen
-  Caption = 'Midi Sequenzer'
+  Caption = 'MIDI Griffschrift-Sequenzer'
   ClientHeight = 442
   ClientWidth = 898
   Color = clBtnFace
@@ -385,6 +385,17 @@ object frmSequenzer: TfrmSequenzer
       OnClick = Button1Click
       OnEnter = edtStopEnter
     end
+    object btnRemoveSmall: TButton
+      Left = 27
+      Top = 300
+      Width = 99
+      Height = 25
+      Anchors = [akLeft, akBottom]
+      Caption = 'Remove Small'
+      TabOrder = 5
+      OnClick = btnRemoveSmallClick
+      OnEnter = edtStopEnter
+    end
   end
   object Panel1: TPanel
     Left = 250
@@ -631,7 +642,7 @@ object frmSequenzer: TfrmSequenzer
         Top = 83
         Width = 100
         Height = 25
-        Caption = 'Reset Synth.'
+        Caption = 'Clear Synth.'
         TabOrder = 7
         OnClick = btnResetMidiClick
       end

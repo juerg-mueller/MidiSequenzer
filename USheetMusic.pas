@@ -69,6 +69,7 @@ type
     procedure SetIEnd(var SaveRec: TSaveRec);
     function HasEvenGriff(var SaveRec: TSaveRec): boolean;
     procedure MakeSmallestNote;
+    procedure RemoveSmallestNote;
 
 
     function IsTriole(iEvent: integer; Ticks: integer): boolean;
@@ -186,6 +187,25 @@ end;
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+procedure TSheetMusicHelper.RemoveSmallestNote;
+var
+  iEvent, i: integer;
+  newUsed: integer;
+begin
+  iEvent := 0;
+  newUsed := 0;
+  while iEvent < UsedEvents do
+  begin
+    if GriffEvents[iEvent].AbsRect.Width >= GriffHeader.Details.smallestNote div 2 then
+    begin
+      GriffEvents[newUsed] := GriffEvents[iEvent];
+      inc(newUsed);
+    end;
+    inc(iEvent);
+  end;
+  GriffHeader.UsedEvents := newUsed;
+end;
 
 
 procedure TSheetMusicHelper.MakeSmallestNote;

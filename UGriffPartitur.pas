@@ -205,8 +205,6 @@ end;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-
 procedure TGriffPartitur.AppendEvent(const Event: TGriffEvent);
 begin
   if Length(GriffEvents) < 1000 then

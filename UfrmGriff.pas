@@ -680,6 +680,8 @@ end;
 procedure TfrmGriff.DrawGriff(ClipRect: TRect; Horz_pos: integer);
 type
   TNotenWeight = (nwFullDot, nwFull, nwHalfDot, nwHalf, nwQuarterDot, nwQuarter, nwEightDot, nwEight, nwShort);
+const
+  abstandKleineNoten = 16;
 
   procedure DrawCross(rect: TRect);
   var
@@ -803,8 +805,8 @@ type
   canvas.Pen.Color := 0;
   for i := 1 to 5 do
   begin
-    canvas.MoveTo(ClipRect.Left - Horz_pos, i*8 + MoveVert + NotenVersatz);
-    canvas.LineTo(ClipRect.Right - Horz_pos, i*8 + MoveVert + NotenVersatz);
+    canvas.MoveTo(ClipRect.Left - Horz_pos, i*abstandKleineNoten + MoveVert + NotenVersatz);
+    canvas.LineTo(ClipRect.Right - Horz_pos, i*abstandKleineNoten + MoveVert + NotenVersatz);
   end;
 
   // senkrechte Striche zeichnen
@@ -818,15 +820,15 @@ type
       if (clipRect.Left <= j) and (j < clipRect.Right) then
       begin
         canvas.Pen.Color := 0;
-        Canvas.MoveTo(j - Horz_pos, 8 + MoveVert + NotenVersatz);
-        Canvas.LineTo(j - Horz_pos, 5*8 + MoveVert + NotenVersatz);
+        Canvas.MoveTo(j - Horz_pos, abstandKleineNoten + MoveVert + NotenVersatz);
+        Canvas.LineTo(j - Horz_pos, 5*abstandKleineNoten + MoveVert + NotenVersatz);
       end;
 
     end;
     // oben blaue Striche
     canvas.Pen.Color := $ff7f7f;
-    Canvas.MoveTo(j - Horz_pos, 8 + MoveVert + NotenVersatz);
-    Canvas.LineTo(j - Horz_pos, 8 + MoveVert + NotenVersatz - 10);
+    Canvas.MoveTo(j - Horz_pos, abstandKleineNoten + MoveVert + NotenVersatz);
+    Canvas.LineTo(j - Horz_pos, abstandKleineNoten + MoveVert + NotenVersatz - 10);
 
     if j > clipRect.Right then
       break;
@@ -852,7 +854,7 @@ type
         continue;
 
       rect.Offset(-Horz_pos + 9, 0);
-      rect.Top := (MaxGriffIndex - AbsRect.Top - 1)*4 - 28 + + MoveVert + NotenVersatz;
+      rect.Top := (MaxGriffIndex - AbsRect.Top - 8)*abstandKleineNoten div 2 + 4 + MoveVert + NotenVersatz;
 
       // Zusatzstriche
       for j := 20 to AbsRect.Top+3 do
@@ -1197,7 +1199,8 @@ begin
     GriffEvent.InPush := Event.Push_;
     GriffPartitur_.InsertNewSelected(GriffEvent);
 
-    frmGriff.ShowSelected;
+    ShowSelected;
+    Invalidate;
   end;
 end;
 
