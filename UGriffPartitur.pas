@@ -27,7 +27,7 @@ uses
 {$if defined(DCC)}
   AnsiStrings,
 {$endif}
-  Classes, SysUtils, Types, Variants, Windows,
+  Classes, SysUtils, Types, Variants, Windows, Graphics,
   UInstrument, UMyMemoryStream, UMyMidiStream, UEventArray,
   UGriffEvent, UFormHelper, UMidiEvent;
 
@@ -126,6 +126,9 @@ type
 //    function SavePasFile(const FileName: string): boolean;
     function SaveToMidiFile(const FileName: string; realGriffschrift: boolean): boolean;
     function SaveToNewMidiFile(const FileName: string): boolean;
+{$ifdef __FRM_GRIFF__}
+    function SaveToZip(const FileName: string): boolean;
+{$endif}
 
     function AppendFile(const FileName: string): boolean;
     procedure PurgeBass;
@@ -168,9 +171,13 @@ type
     function DeleteMp3(VelocityDelta: byte): boolean;
     procedure DeleteDouble;
     procedure BassSynch;
+    function TrimTakt: double;
 
+    function SaveTest(const Filename: string): boolean;
+    procedure BassGleichlang;
     // not used
     procedure NewVelocity;
+    function PartiturLength: integer;
 
     property UsedEvents: integer read GriffHeader.UsedEvents;
     property Selected: integer read fSelected write SetSelected;
@@ -280,7 +287,7 @@ begin
   if iMax > 300 then
     iMax := iMax div 2;
 
-  if (abs(GriffHeader.Details.DeltaTimeTicks - iMax) > 4) and
+  if (abs(quarterNote - iMax) > 4) and
      (count > 10) and (iMax > 60) then
   begin
     GriffHeader.Details.DeltaTimeTicks := 192;
@@ -381,7 +388,7 @@ begin
       GriffPitch := 71;
       AbsRect.Top := 11;
       AbsRect.Height := 1;
-      AbsRect.Width := GriffHeader.Details.DeltaTimeTicks;
+      AbsRect.Width := quarterNote;
     end;
     AppendEvent(Event);
   end else begin
@@ -406,7 +413,7 @@ begin
       if (GetKeyState(vk_capital) <> 1) then
       begin
         if NoteType = ntBass then
-          AbsRect.Offset(GriffHeader.Details.DeltaTimeTicks, 0)
+          AbsRect.Offset(quarterNote, 0)
         else
           AbsRect.Offset(AbsRect.Width, 0);
       end;
@@ -1111,14 +1118,67 @@ begin
 {$endif}
 end;
 
+function TGriffPartitur.TrimTakt: double;
+var
+  i, k: integer;
+  Last, Left, d, delta: integer;
+  a: array of record
+      sum: integer;
+      count: integer;
+     end;
+begin
+  Last := -1;
+  delta := round(quarterNote/2.5);
+  i := 0;
+  while i < UsedEvents do
+  begin
+    if GriffEvents[i].NoteType = ntBass then
+    begin
+      Left := GriffEvents[i].AbsRect.Left;
+      if Last = -1 then
+        Last := Left
+      else begin
+        d := Left - Last;
+        Last := Left;
+        k := -1;
+        if Length(a) > 0 then
+        begin
+          k := Length(a)-1;
+          while (k >= 0) and (abs((a[k].sum div a[k].count)-d) > delta) do
+            dec(k);
+        end;
+        if k >= 0 then
+        begin
+          inc(a[k].sum, d);
+          inc(a[k].count);
+        end else begin
+          k := Length(a);
+          SetLength(a, k+1);
+          a[k].sum := d;
+          a[k].count := 1;
+        end;
+      end;
+    end;
+    inc(i);
+  end;
+  k := 0;
+  for i := 1 to Length(a)-1 do
+  begin
+    if a[i].count > a[k].count then
+      k := i;
+  end;
+  result := a[k].sum;
+  result := result / a[k].count;
+end;
+
 procedure TGriffPartitur.BassSynch;
 var
   i, k: integer;
   d, delta: integer;
   takt: integer;
 begin
-  takt := GriffHeader.Details.DeltaTimeTicks*GriffHeader.Details.measureFact;
-  delta := GriffHeader.Details.DeltaTimeTicks div 3;
+  takt := quarterNote*GriffHeader.Details.measureFact;
+  delta := quarterNote div 3;
   i := 0;
   while i < UsedEvents do
   begin
@@ -1287,7 +1347,7 @@ function TGriffPartitur.KeyDown(var Key: Word; Shift: TShiftState): boolean;
       NoteType := ntBass;
       AbsRect.Top := -1;
       AbsRect.Height := 1;
-      AbsRect.Width := GriffHeader.Details.DeltaTimeTicks div 3;
+      AbsRect.Width := quarterNote div 3;
       GriffPitch := Key - ord('0');
     end;
   end;
@@ -1680,13 +1740,13 @@ begin
             DoSoundPitchs(EventPitchs);
           end;
         ord('T'): // Triole
-          if abs(AbsRect.Width - GriffHeader.Details.DeltaTimeTicks) < 10 then
+          if abs(AbsRect.Width - quarterNote) < 10 then
           begin
-            AbsRect.Width := GriffHeader.Details.DeltaTimeTicks div 3;
+            AbsRect.Width := quarterNote div 3;
             NewEvent := SelectedEvent^;
-            NewEvent.AbsRect.Offset(GriffHeader.Details.DeltaTimeTicks div 3, 0);
+            NewEvent.AbsRect.Offset(quarterNote div 3, 0);
             AppendEvent(NewEvent);
-            NewEvent.AbsRect.Offset(GriffHeader.Details.DeltaTimeTicks div 3, 0);
+            NewEvent.AbsRect.Offset(quarterNote div 3, 0);
             AppendEvent(NewEvent);
             SortEvents;
             result := true;
@@ -1901,6 +1961,7 @@ begin
         // 41 9  73
 
   Sound := 0;
+  GriffHeader.Details.Write_;
   TickOffset := GriffHeader.Details.GetTicks;
   try
     repeat
@@ -2130,6 +2191,7 @@ begin
   screenRect.Left := TickToScreen(playStart);
   screenRect.Width := 10;
 
+  GriffHeader.Details.Write_;
   TickOffset := GriffHeader.Details.GetTicks;
   repeat
     while (PlayEvent.iEvent < UsedEvents) and
@@ -2302,6 +2364,44 @@ begin
   TGriffArray.SaveNewMidiToFile(FileName, GriffEvents, Instrument, GriffHeader.Details);
   result := true;
 end;
+
+{$ifdef __FRM_GRIFF__}
+function TGriffPartitur.SaveToZip(const FileName: string): boolean;
+const
+  rand = 40;
+  yAbstand = 250;
+  breite = 4*6*pitch_width;
+var
+  bitmap: TBitmap;
+  rect: TRect;
+  i: integer;
+  quarter, line: integer;
+begin
+  result := false;
+  if not PartiturLoaded then
+    exit;
+
+  SortEvents;
+
+  quarter := trunc(PartiturLength/quarterNote) + 1;
+  line := quarter div 24;
+  if (quarter mod 24) > 0 then
+    inc(line);
+  bitmap := TBitmap.Create(2*rand + breite, line*yAbstand);
+
+  for i := 0 to line-1 do
+  begin
+    rect := TRect.Create(i*breite, 0, (i+1)*breite+1, bitmap.Height);
+    frmGriff.DrawSmallNotes(bitmap.Canvas, rect, i*breite, 60 + i*yAbstand, rand);
+    frmGriff.DrawBalg(bitmap.Canvas, rect, i*breite, -210 + i*yAbstand, rand);
+  end;
+
+  bitmap.SaveToFile(FileName);
+  bitmap.Free;
+
+  result := true;
+end;
+{$endif}
 
 procedure TGriffPartitur.DoStopPlay;
 begin
@@ -2857,6 +2957,70 @@ begin
 end;
 
 
+function TGriffPartitur.SaveTest(const Filename: string): boolean;
+var
+  i: integer;
+  event: TGriffEvent;
+  s: string;
+  fout: System.TextFile;
+  f: double;
+begin
+  result := false;
+  if not PartiturLoaded then
+    exit;
+
+  f := 1.0/(quarterNote*GriffHeader.Details.measureFact);
+  if GriffHeader.Details.measureDiv = 8 then
+    f := 2*f;
+  s := '';
+  for i := 0 to UsedEvents-1 do
+  begin
+    event := GriffEvents[i];
+    s := s + Format('%3d  Takt: %.2f, ', [i, f * event.AbsRect.Left + 1]);
+    case event.NoteType of
+      ntDiskant: s := s + 'Diskant';
+      ntBass:    s := s + 'Bass';
+      ntRest:    s := s + 'Rest';
+      ntRepeat:  s := s + 'Repeat';
+    end;
+    s := s + ', SoundPitch: ' + IntToStr(event.SoundPitch) +
+             ', GriffPitch: ' + IntToStr(event.GriffPitch);
+    if event.Cross then
+      s := s + ', Cross';
+    if event.InPush then
+      s := s + ', InPush';
+    s := s + ', AbsRect: (' + IntToStr(event.AbsRect.left) + ', ' + IntToStr(event.AbsRect.Right) +
+                       ', ' +IntToStr(event.AbsRect.Top) + ', ' +IntToStr(event.AbsRect.Bottom) + ')' + #13#10;
+  end;
+  System.Assign(fout, Filename);
+  System.Rewrite(fout);
+
+  System.Write(fout, s);
+  System.Close(fout);
+  result := true;
+end;
+
+procedure TGriffPartitur.BassGleichlang;
+var
+  i: integer;
+  d: integer;
+begin
+  d := quarterNote div 2;
+  for i := 0 to UsedEvents-1 do
+    if GriffEvents[i].NoteType = ntBass then
+      GriffEvents[i].AbsRect.Width := d;
+  SortEvents;
+end;
+
+function TGriffPartitur.PartiturLength: integer;
+var
+  i: integer;
+begin
+  result := 0;
+  for i := 0 to UsedEvents-1 do
+    if GriffEvents[i].AbsRect.Right > result then
+      result := GriffEvents[i].AbsRect.Right;
+end;
 
 
 ////////////////////////////////////////////////////////////////////////////////

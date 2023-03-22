@@ -499,8 +499,6 @@ begin
           SendMidiOut($80 + 7, Event.SoundPitch + OergeliBassZusatz[idx, 0], 40);
           SendMidiOut($80 + 7, Event.SoundPitch + OergeliBassZusatz[idx, 1], 40);
         end;
-        if row_ = 6 then
-          writeln('------------------------');
       end;
     end;
 
@@ -521,18 +519,33 @@ end;
 procedure TAmpelEvents.EventOff(const Event: TMouseEvent);
 var
   i, j: integer;
+  r: integer;
 begin
   CriticalAmpel.Acquire;
   try
+    r := -1;
     for i := 0 to UsedEvents-1 do
       if (MouseEvents[i].Row_ = Event.Row_) and (MouseEvents[i].Index_ = Event.Index_) then
       begin
-        DoAmpel(i, false);
-        for j := i+1 to UsedEvents-1 do
-          MouseEvents[j-1] := MouseEvents[j];
-        dec(fUsedEvents);
+        r := i;
         break;
       end;
+
+    if r = -1 then
+      for i := 0 to UsedEvents-1 do
+        if (MouseEvents[i].Pitch = Event.Pitch) and (Event.Pitch > 0) then
+        begin
+          r := i;
+          break;
+        end;
+
+    if r >= 0 then
+    begin
+      DoAmpel(i, false);
+      for j := r+1 to UsedEvents-1 do
+        MouseEvents[j-1] := MouseEvents[j];
+      dec(fUsedEvents);
+    end;
   finally
     CriticalAmpel.Release;
   end;
@@ -673,7 +686,6 @@ var
   rectMin, rectMax: TRect;
   i: integer;
   Mitte: integer;
-  d: integer;
 begin
   if FlippedHorz then
     lbUnten.Caption := 'Fuss'
@@ -1107,7 +1119,7 @@ procedure TfrmAmpel.FormResize(Sender: TObject);
 var
   w1, w2: integer;
 begin
-  w1 := GetWidth;
+{  w1 := GetWidth;
   repeat
     if w1 > Width then
     begin
@@ -1126,7 +1138,7 @@ begin
     end else
       break;
   until (w1 < Width) and (w2 >= Width);
-  cbSizeChange(nil);
+  cbSizeChange(nil); }
 end;
 
 procedure TfrmAmpel.FormShortCut(var Msg: TWMKey; var Handled: Boolean);

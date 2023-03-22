@@ -1646,6 +1646,7 @@ begin
 
     StaffNode := AddStaff(p, Score);
     Staff3 := StaffNode;
+    StaffNode.SaveToXmlFile('staff3.xml');
     // Measure
     AppendStaff(true, ntBass);  // Lyrics
 

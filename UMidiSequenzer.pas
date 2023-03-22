@@ -95,6 +95,8 @@ type
     cbxVirtual: TComboBox;
     lbVirtual: TLabel;
     btnRemoveSmall: TButton;
+    btnSaveTest: TButton;
+    Button2: TButton;
     procedure FormCreate(Sender: TObject);
     procedure btnOpenClick(Sender: TObject);
     procedure btnLoadPartiturClick(Sender: TObject);
@@ -144,6 +146,8 @@ type
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
     procedure cbxVirtualChange(Sender: TObject);
     procedure btnRemoveSmallClick(Sender: TObject);
+    procedure btnSaveTestClick(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     InitDone: boolean;
     procedure SelectedChanges(SelectedEvent: PGriffEvent);
@@ -272,7 +276,7 @@ var
     with GriffPartitur_ do
     begin
       SortEvents;
-      edtDeltaTimeTicks.Text := IntToStr(GriffHeader.Details.DeltaTimeTicks);
+      edtDeltaTimeTicks.Text := IntToStr(quarterNote);
       if GriffHeader.Details.IsSet then
       begin
         edtBPM.Text := IntToStr(GriffHeader.Details.beatsPerMin);
@@ -587,10 +591,12 @@ begin
     case SaveDialog1.FilterIndex of
       2: if (ext <> '.mscx') and (ext <> '.mscz') then
            ext1 := '_.mscz';
-      3: if ext <> '.ly' then
-           ext1 := '.ly';
+      3: ext1 := '.ly';
       4: if (ext <> '.xml') and (ext <> '.musicxml') then
            ext1 := '.musicxml';
+      6: begin
+           ext1 := '.bmp';
+         end;
       else
          if ext <> '.mid' then
            ext1 := '.mid';
@@ -619,6 +625,7 @@ begin
          end;
       4: ok := GriffPartitur_.SaveToMusicXML(s, true);
       5: ok := GriffPartitur_.SaveToNewMidiFile(s);
+      6: ok := GriffPartitur_.SaveToZip(s);
       else begin
         ok := GriffPartitur_.SaveToMidiFile(s, realSound);
       end;
@@ -633,6 +640,14 @@ begin
 {$endif}
     end;
   end;
+end;
+
+procedure TfrmSequenzer.btnSaveTestClick(Sender: TObject);
+const
+  Filename = 'savetest.txt';
+begin
+  if GriffPartitur_.SaveTest(Filename) then
+    writeln('File "', Filename, '" saved');
 end;
 
 procedure TfrmSequenzer.btnShowGriffClick(Sender: TObject);
@@ -659,6 +674,12 @@ begin
   frmGriff.Invalidate;
 end;
 
+procedure TfrmSequenzer.Button2Click(Sender: TObject);
+begin
+  GriffPartitur_.BassGleichlang;
+  frmGriff.Invalidate;
+end;
+
 procedure TfrmSequenzer.btnRemoveSmallClick(Sender: TObject);
 begin
   GriffPartitur_.RemoveSmallestNote;
@@ -666,8 +687,16 @@ begin
 end;
 
 procedure TfrmSequenzer.btnBassSynchClick(Sender: TObject);
+var
+  t, d1, d2: double;
 begin
-  GriffPartitur_.BassSynch;
+  d1 := StrToIntDef(edtDeltaTimeTicks.text, 192);
+  d2 := StrToIntDef(edtBPM.text, 120);
+  t := GriffPartitur_.TrimTakt; //BassSynch;
+  edtDeltaTimeTicks.text := IntToStr(round(t));
+  edtBPM.text := IntToStr(round(d1*d2/t));
+  edtDeltaTimeTicksExit(Sender);
+  edtBPMExit(Sender);
   frmGriff.Invalidate;
 end;
 
@@ -757,7 +786,7 @@ begin
             SoundPitch := Instrument.Bass[false, GriffPitch];
             AbsRect.Top := -1;
             AbsRect.Height := 1;
-            AbsRect.Width := GriffPartitur_.GriffHeader.Details.DeltaTimeTicks div 3;
+            AbsRect.Width := GriffPartitur_.quarterNote div 3;
           end;
         ord(ntRest):
           NoteType := ntRest;
@@ -1255,11 +1284,11 @@ begin
             end;
           frmGriff.Caption := 'unbekannt';
           GriffPartitur_.Clear;
+          GriffPartitur_.PartiturLoaded := true;
           edtDeltaTimeTicksExit(self);
           cbxTaktChange(self);
           cbxViertelChange(Self);
           edtBPMExit(nil);
-          GriffPartitur_.PartiturLoaded := true;
           cbTransInstrumentChange(nil);
           GriffPartitur_.InsertNewEvent(-1);
           GriffPartitur_.Selected := 0;

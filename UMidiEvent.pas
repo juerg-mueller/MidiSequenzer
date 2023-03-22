@@ -46,6 +46,7 @@ Const
 
 //  SustainPitch    = 26;
   ControlSustain  = $1f;   // + 3 für TRepeat
+  ControlPartiturStart = $1e;
 
 type
   TInt4 = array [0..3] of integer;
@@ -118,6 +119,7 @@ type
     function GetMetaDurMinor59: AnsiString;
     function GetDur: string;
     function GetChordTicks(duration, dots: string): integer;
+    procedure Write_;
 
     property smallestNote: integer read GetSmallestTicks;
   end;
@@ -449,6 +451,14 @@ begin
     dec(d);
   end;
 end;
+
+procedure TDetailHeader.Write_;
+begin
+{$ifdef CONSOLE}
+  writeln('quarterNote: ', DeltaTimeTicks, ', Beats/min.', beatsPerMin);
+{$endif}
+end;
+
 
 
 ////////////////////////////////////////////////////////////////////////////////

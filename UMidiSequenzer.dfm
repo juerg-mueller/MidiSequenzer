@@ -130,7 +130,7 @@ object frmSequenzer: TfrmSequenzer
       TabOrder = 5
     end
     object btnRealSound: TButton
-      Left = 158
+      Left = 150
       Top = 59
       Width = 100
       Height = 25
@@ -138,6 +138,16 @@ object frmSequenzer: TfrmSequenzer
       TabOrder = 6
       Visible = False
       OnClick = btnSaveMidiClick
+      OnEnter = edtStopEnter
+    end
+    object btnSaveTest: TButton
+      Left = 150
+      Top = 19
+      Width = 100
+      Height = 25
+      Caption = 'Save Test-Partitur'
+      TabOrder = 7
+      OnClick = btnSaveTestClick
       OnEnter = edtStopEnter
     end
   end
@@ -338,7 +348,6 @@ object frmSequenzer: TfrmSequenzer
       Anchors = [akLeft, akBottom]
       Caption = 'Bass Synch.'
       TabOrder = 0
-      Visible = False
       OnClick = btnBassSynchClick
       OnEnter = edtStopEnter
     end
@@ -394,6 +403,17 @@ object frmSequenzer: TfrmSequenzer
       Caption = 'Remove Small'
       TabOrder = 5
       OnClick = btnRemoveSmallClick
+      OnEnter = edtStopEnter
+    end
+    object Button2: TButton
+      Left = 27
+      Top = 176
+      Width = 99
+      Height = 25
+      Anchors = [akLeft, akBottom]
+      Caption = 'B'#228'sse gleichlang'
+      TabOrder = 6
+      OnClick = Button2Click
       OnEnter = edtStopEnter
     end
   end
@@ -498,9 +518,9 @@ object frmSequenzer: TfrmSequenzer
         Width = 70
         Height = 21
         Style = csDropDownList
-        ItemIndex = 1
+        ItemIndex = 0
         TabOrder = 2
-        Text = '16th'
+        Text = '8th'
         OnChange = cbxSmallestNoteChange
         OnEnter = edtStopEnter
         Items.Strings = (
@@ -732,7 +752,8 @@ object frmSequenzer: TfrmSequenzer
   object SaveDialog1: TSaveDialog
     Filter = 
       'Midi File|*.mid|MuseScore|*.mscz; *.mscx|LilyPond|*.ly|Standard ' +
-      'MusicXML|*.xml;*.musicxml|new Midi File|*.mid'
+      'MusicXML|*.xml;*.musicxml|new Midi File|*.mid|Sequenzer Noten|*.' +
+      'zip'
     Left = 624
     Top = 83
   end

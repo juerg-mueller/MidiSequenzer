@@ -116,7 +116,7 @@ function GetFraction_(const sLen: string): integer; overload;
 function GetFraction_(const sLen: integer): string; overload;
 function GetLen_(var t32: integer; var dot: boolean; t32Takt: integer): integer;
 function GetLen2_(var t32: integer; var dot: boolean; t32Takt: integer): integer;
-
+function MakeDuration(const rect: TRect): TGriffDuration;
 
 function GetLen2(var t32: integer; var dot: boolean; t32Takt: integer): string;
 
@@ -441,6 +441,14 @@ begin
   Left := rect.Left;
   Right := rect.Right;
 end;
+
+function MakeDuration(const rect: TRect): TGriffDuration;
+begin
+  result.Left := rect.Left;
+  result.Right := rect.Right;
+end;
+
+////////////////////////////////////////////////////////////////////////////////
 
 function TGriffEvent.GetDuration: TGriffDuration;
 begin
