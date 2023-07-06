@@ -178,6 +178,7 @@ type
     MidiBufferHead, MidiBufferTail: word;
     MidiInBuffer: array [0..1023] of TMidiInData;
     PRecordMidiIn: TRecordMidiIn;
+    UseTurboSound: boolean;
 
     procedure ChangeInstrument(Instrument_: PInstrument);
     function KnopfRect(Row: byte {1..6}; index: byte {0..10}): TRect;
@@ -1290,7 +1291,6 @@ var
   end;
 
 begin
-//  MidiBufferTail := MidiBufferHead;
   while MidiBufferHead <> MidiBufferTail do
   begin
     Tail := -1;
@@ -1321,43 +1321,57 @@ begin
           Sustain_ := Data.Data2 > 0;
           Key := 0;
           frmAmpel.FormKeyDown(self, Key, []);
-        end; { else
-        if (Data.Data1 = 11) and (Scene <= 0) then  // Expression Pedal
-        begin
-          for i := 1 to 6 do
-            MidiOutput.Send(MicrosoftIndex, $b0 + i, Data.Data1, Data.Data2);
-        end;  }
-      {$ifdef CONSOLE}
-          // writeln(Format('MIDI IN: $%2.2x  $%2.2x  $%2.2x' ,[Data.Status, Data.Data1, Data.Data2]));
-      {$endif}
+        end;
       end else
       if ((Data.Status and $f) = 9) then
       begin
         // Drum Kit
         MidiOutput.Send(MicrosoftIndex, Data.Status, Data.Data1, Data.Data2);
       end else
-      if Data.Status = $80 then
+      if (Data.Status = $80) or (UseTurboSound and ((Data.Status shr 4) = 8)) then
       begin
         AmpelEvents.EventOff(Event);
       end else
-      if Data.Status = $90 then
+      if (Data.Status = $90) or (UseTurboSound and ((Data.Status shr 4) = 9)) then
       begin
+        if (Data.Status and 15) = 1 then  // Akkord Noten
+          exit;
+
         GriffEvent.Clear;
         GriffEvent.InPush := Event.Push_;
         GriffEvent.SoundPitch := Data.Data1;
-        if GriffEvent.SoundToGriff(Instrument^) and
-           (GriffEvent.InPush = Event.Push_) then
+        if (Data.Status and 15) = 0 then
         begin
-          Event.Row_ := GriffEvent.GetRow;
-          Event.Index_ := GriffEvent.GetIndex;
-          if (Event.Row_ > 0) and (Event.Index_ >= 0) then
+          if GriffEvent.SoundToGriff(Instrument^) and
+             (GriffEvent.InPush = Event.Push_) then
+          begin
+            Event.Row_ := GriffEvent.GetRow;
+            Event.Index_ := GriffEvent.GetIndex;
+            if (Event.Row_ > 0) and (Event.Index_ >= 0) then
+            begin
+              Event.Velocity := round(Event.Velocity);
+              AmpelEvents.NewEvent(Event);
+      {$if not defined(__VIRTUAL__) and defined(dcc)}
+     //         if (GetKeyState(vk_scroll) = 1) then // numlock pause scroll
+     //           frmGriff.GenerateNewNote(Event);
+      {$endif}
+            end;
+          end;
+        end else
+        if (Data.Status and 15) = 2 then
+        begin
+          GriffEvent.NoteType := ntBass;
+          if GriffEvent.SoundToGriff(Instrument^) then
           begin
             Event.Velocity := round(Event.Velocity);
+            if Instrument.BassDiatonic then
+              Event.Push_ := GriffEvent.InPush;
+            if UseTurboSound then
+            begin
+              Event.Index_ := GriffEvent.GriffPitch;
+              Event.Row_ := GriffEvent.GetRow;
+            end;
             AmpelEvents.NewEvent(Event);
-    {$if not defined(__VIRTUAL__) and defined(dcc)}
-   //         if (GetKeyState(vk_scroll) = 1) then // numlock pause scroll
-   //           frmGriff.GenerateNewNote(Event);
-    {$endif}
           end;
         end;
       end else
@@ -1375,7 +1389,7 @@ begin
         end;
       end else begin
     {$ifdef CONSOLE}
-        writeln(Format('MIDI IN: $%2.2x %3d  $%2.2x' ,[Data.Status, Data.Data1, Data.Data2]));
+    //    writeln(Format('MIDI IN: $%2.2x %3d  $%2.2x' ,[Data.Status, Data.Data1, Data.Data2]));
     {$endif}
       end;
     end;
@@ -1400,8 +1414,10 @@ begin
       Data1 := aData1;
       Data2 := aData2;
       Timestamp := aTimestamp;  // ms
-//      if (Status shr 4) <> 11 then
-//        writeln(Format('$%2.2x  $%2.2x  $%2.2x --' ,[Status, Data1, Data2]));
+    {$ifdef CONSOLE}
+      if (Status shr 4) <> 11 then
+        writeln(Format('MIDI IN: $%2.2x  $%2.2x  $%2.2x --' ,[Status, Data1, Data2]));
+    {$endif}
     end;
   finally
     CriticalMidiIn.Release;

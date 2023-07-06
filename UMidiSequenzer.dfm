@@ -5,7 +5,7 @@ object frmSequenzer: TfrmSequenzer
   HorzScrollBar.Tracking = True
   ActiveControl = btnOpen
   Caption = 'MIDI Griffschrift-Sequenzer'
-  ClientHeight = 442
+  ClientHeight = 490
   ClientWidth = 898
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -25,7 +25,7 @@ object frmSequenzer: TfrmSequenzer
   TextHeight = 13
   object gbLoadSave: TGroupBox
     Left = 0
-    Top = 332
+    Top = 380
     Width = 898
     Height = 110
     Align = alBottom
@@ -155,7 +155,7 @@ object frmSequenzer: TfrmSequenzer
     Left = 0
     Top = 0
     Width = 250
-    Height = 332
+    Height = 380
     Align = alLeft
     Caption = 'Selected Griff Event'
     Enabled = False
@@ -333,16 +333,16 @@ object frmSequenzer: TfrmSequenzer
     Left = 748
     Top = 0
     Width = 150
-    Height = 332
+    Height = 380
     Align = alRight
     Caption = 'Optimization'
     TabOrder = 2
     DesignSize = (
       150
-      332)
+      380)
     object btnBassSynch: TButton
       Left = 27
-      Top = 207
+      Top = 255
       Width = 99
       Height = 25
       Anchors = [akLeft, akBottom]
@@ -353,7 +353,7 @@ object frmSequenzer: TfrmSequenzer
     end
     object btnSmallest: TButton
       Left = 27
-      Top = 269
+      Top = 317
       Width = 99
       Height = 25
       Anchors = [akLeft, akBottom]
@@ -364,7 +364,7 @@ object frmSequenzer: TfrmSequenzer
     end
     object btnLongerPitches: TButton
       Left = 27
-      Top = 238
+      Top = 286
       Width = 99
       Height = 25
       Anchors = [akLeft, akBottom]
@@ -396,7 +396,7 @@ object frmSequenzer: TfrmSequenzer
     end
     object btnRemoveSmall: TButton
       Left = 27
-      Top = 300
+      Top = 348
       Width = 99
       Height = 25
       Anchors = [akLeft, akBottom]
@@ -407,7 +407,7 @@ object frmSequenzer: TfrmSequenzer
     end
     object Button2: TButton
       Left = 27
-      Top = 176
+      Top = 224
       Width = 99
       Height = 25
       Anchors = [akLeft, akBottom]
@@ -421,7 +421,7 @@ object frmSequenzer: TfrmSequenzer
     Left = 250
     Top = 0
     Width = 498
-    Height = 332
+    Height = 380
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 3
@@ -556,7 +556,7 @@ object frmSequenzer: TfrmSequenzer
       Left = 0
       Top = 141
       Width = 498
-      Height = 119
+      Height = 167
       Align = alClient
       Caption = 'Midi / Sound'
       TabOrder = 1
@@ -675,10 +675,20 @@ object frmSequenzer: TfrmSequenzer
         TabOrder = 8
         OnChange = cbxVirtualChange
       end
+      object cbxTurboSound: TCheckBox
+        Left = 24
+        Top = 118
+        Width = 84
+        Height = 17
+        Alignment = taLeftJustify
+        Caption = 'Turbo Sound'
+        TabOrder = 9
+        OnClick = cbxTurboSoundClick
+      end
     end
     object gbInstrument: TGroupBox
       Left = 0
-      Top = 260
+      Top = 308
       Width = 498
       Height = 72
       Align = alBottom
