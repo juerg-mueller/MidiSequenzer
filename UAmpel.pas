@@ -266,9 +266,26 @@ begin
 end;
 
 procedure TAmpelEvents.SendMidiOut(const Status, Data1, Data2: byte);
+var
+  b: byte;
 begin
+  b := Status;
   if (MicrosoftIndex >= 0) then
-  MidiOutput.Send(MicrosoftIndex, Status, Data1, Data2);
+  begin
+    if frmAmpel.UseTurboSound then
+    begin
+      if (Status shr 4) in [8, 9] then
+      begin
+        case Status and 15 of
+          1..4: b := Status and $f0;
+          5, 6: b := (Status and $f0) + 2;
+          7:    b := (Status and $f0) + 1;
+          else begin end;
+        end;
+      end;
+    end;
+    MidiOutput.Send(MicrosoftIndex, b, Data1, Data2);
+  end;
 //  if @PRecordMidiOut <> nil then
 //    PRecordMidiOut(Status, Data1, Data2, trunc(24*3600*1000*now));
 end;
@@ -506,7 +523,7 @@ begin
     SetAmpel(Row_, Index_, Push_, On_);
     UseVirtualMidi(MouseEvents[Index], On_);
 
-    if assigned(frmAmpel.SelectedChanges) then
+    if assigned(frmAmpel.SelectedChanges) and not frmAmpel.UseTurboSound then
     begin
       if not On_ then
       begin
@@ -1399,7 +1416,9 @@ end;
 procedure TfrmAmpel.OnMidiInData(aDeviceIndex: integer; aStatus, aData1, aData2: byte; aTimestamp: Int64);
 var
   old: word;
+  t: int64;
 begin
+  t := trunc(Now*24000*3600);
   CriticalMidiIn.Acquire;
   try
     old := MidiBufferHead;
@@ -1413,17 +1432,15 @@ begin
       Status := aStatus;
       Data1 := aData1;
       Data2 := aData2;
-      Timestamp := aTimestamp;  // ms
-    {$ifdef CONSOLE}
-      if (Status shr 4) <> 11 then
-        writeln(Format('MIDI IN: $%2.2x  $%2.2x  $%2.2x --' ,[Status, Data1, Data2]));
-    {$endif}
+      Timestamp := t; // ms
+//      if (Status shr 4) <> 11 then
+//        writeln(Format('$%2.2x  $%2.2x  $%2.2x --' ,[Status, Data1, Data2]));
     end;
   finally
     CriticalMidiIn.Release;
   end;
   if @PRecordMidiIn <> nil then
-    PRecordMidiIn(aStatus, aData1, aData2, aTimestamp);
+    PRecordMidiIn(aStatus, aData1, aData2, t);
 end;
 
 procedure TfrmAmpel.KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);

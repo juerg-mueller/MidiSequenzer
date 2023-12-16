@@ -1192,6 +1192,9 @@ begin
   GriffPartitur_.DoPlayRect := frmGriff.SetPlayRect;
   GriffPartitur_.SetInstrument(InstrumentsList_[cbTransInstrument.ItemIndex].Name);
 
+  i := cbTransInstrument.Items.IndexOf('b-Oergeli');
+  if i >= 0 then
+    cbTransInstrument.ItemIndex := i;
   cbTransInstrumentChange(nil);
   frmAmpel.PlayControl := GriffPartitur_.PlayControl;
   frmAmpel.SelectedChanges := SelectedChanges;
