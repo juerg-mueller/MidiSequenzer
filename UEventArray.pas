@@ -39,6 +39,7 @@ type
   TTrackEventArray = array of TMidiEventArray;
   TAnsiStringArray = array of AnsiString;
 
+
   TEventArray = class
   protected
     TrackName_: TAnsiStringArray; // 03
@@ -54,6 +55,8 @@ type
     constructor Create;
     destructor Destroy; override;
     function LoadMidiFromFile(FileName: string; Lyrics: boolean): boolean;
+    function LoadMidiFromSimpleFile(FileName: string; Lyrics: boolean): boolean;
+    function LoadMidiFromDataStream(Midi: TMyMidiStream; Lyrics: boolean): boolean;
     function SaveMidiToFile(FileName: string; Lyrics: boolean): boolean;
     function SaveSimpleMidiToFile(FileName: string; Lyrics: boolean = false): boolean; overload;
     class function SaveSimpleMidiToFile(FileName: string;
@@ -184,16 +187,46 @@ begin
   Midi := TMidiDataStream.Create;
   try
     Midi.LoadFromFile(FileName);
-    result := Midi.MakeEventArray(self, Lyrics);
+    result := LoadMidiFromDataStream(Midi, Lyrics);
+  finally
+    Midi.Free;
+  end;
+end;
+
+function TEventArray.LoadMidiFromSimpleFile(FileName: string; Lyrics: boolean): boolean;
+var
+  Midi: TMidiDataStream;
+  SimpleFile: TSimpleDataStream;
+begin
+  result := false;
+  try
+    Midi := TMidiDataStream.Create;
+    SimpleFile := TSimpleDataStream.Create;
+    SimpleFile.LoadFromFile(FileName);
+    result := Midi.MakeMidiFile(SimpleFile, nothing, nil);
+    if result then
+      result := LoadMidiFromDataStream(Midi, Lyrics);
+  finally
+    SimpleFile.Free;
+    Midi.Free;
+  end;
+end;
+
+function TEventArray.LoadMidiFromDataStream(Midi: TMyMidiStream; Lyrics: boolean): boolean;
+begin
+  result := false;
+  try
+    with Midi as TMidiDataStream do
+    begin
+      result := MakeEventArray(self, Lyrics);
+    end;
     MakeSingleTrack(SingleTrack, TrackArr);
     SplitEventArray(ChannelArray, SingleTrack, Length(SingleTrack));
   finally
-    Midi.Free;
     if not result then
       Clear;
   end;
 end;
-
 
 class function TEventArray.SaveSimpleMidiToFile(FileName: string;
   const TrackArr: TTrackEventArray; const DetailHeader: TDetailHeader; Lyrics: boolean): boolean;

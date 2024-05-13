@@ -652,11 +652,16 @@ end;
 
 function TAmpelEvents.Paint(Row, Index: integer): boolean;
 begin
-  result := AmpelOn[Row, Index].On_;
-  if result then
-    frmAmpel.PaintAmpel_(Row, Index, AmpelOn[Row, Index].Push, true)
-  else
-    frmAmpel.PaintAmpel_(Row, Index, false, false);
+  result := false;
+  if (Row in [1..6]) and (Index in [Low(TPitchArray) .. High(TPitchArray)]) then
+  begin
+    result := AmpelOn[Row, Index].On_;
+    if result then
+      frmAmpel.PaintAmpel_(Row, Index, AmpelOn[Row, Index].Push, true)
+    else
+      frmAmpel.PaintAmpel_(Row, Index, false, false);
+  end;
+
 end;
 
 procedure TAmpelEvents.SetAmpel(Row: byte; Index: integer; Push: boolean; On_: boolean);

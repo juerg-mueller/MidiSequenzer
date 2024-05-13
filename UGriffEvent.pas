@@ -100,6 +100,7 @@ type
     function SoundToGriffBass(const Instrument: TInstrument; UsePush: boolean): integer; overload;
     function SoundToGriffBass(const Instrument: TInstrument): integer; overload;
     function SetEvent(Row, Index: integer; Push: boolean; const Instrument: TInstrument): boolean;
+    function DoSound(const Instrument: TInstrument; On_: boolean): boolean;
   {$endif}
   end;
   PGriffEvent = ^TGriffEvent;
@@ -124,6 +125,8 @@ function GetLyricLen(Len: string): integer;
 
 implementation
 
+uses
+  Midi;
 
 function GetFraction_(const sLen: string): integer; overload;
 var
@@ -309,6 +312,23 @@ begin
   Cross := Row in [3, 4, 6];
   AbsRect.Height := 1;
   result := true;
+end;
+
+function TGriffEvent.DoSound(const Instrument: TInstrument; On_: boolean): boolean;
+var
+  Pitch: integer;
+  Channel: integer;
+begin
+  Pitch := GetSoundPitch(Instrument);
+  Channel := GetRow;
+  if (Pitch > 20) and (Channel > 0) and (MicrosoftIndex >= 0) then
+  begin
+    if On_ then
+    begin
+      MidiOutput.Send(MicrosoftIndex, $90 + (Channel and 15), Pitch, $4f);
+    end else
+      MidiOutput.Send(MicrosoftIndex, $80 + (Channel and 15), Pitch, $40);
+  end;
 end;
 
 function TGriffEvent.GetRow: byte;
@@ -686,6 +706,7 @@ end;
 function TGriffEvent.GetSoundPitch(const Instrument: TInstrument): byte;
 var
   res: integer;
+  Row, Index: byte;
 begin
   result := 0;
   if NoteType = ntDiskant then
@@ -694,7 +715,13 @@ begin
     if res >= 0 then
       result := res;
   end else
-    result := SoundPitch;
+  if NoteType = ntBass then
+  begin
+    Row := 5;
+    if Cross then Row := 6;
+    Index := self.GriffPitch;
+    result := Instrument.RowIndexToSound(Row, Index, InPush);
+  end;
 end;
 
 function TGriffEvent.GetAmpelRec: TAmpelRec;
@@ -804,7 +831,9 @@ begin
       bassArr := Instrument.Bass;
     index := GetPitchIndex(SoundPitch, bassArr[Channel = 6]);
     if index >= 0 then
-      GriffPitch := index;
+      GriffPitch := index
+    else
+      index := -1;
   end else
   if Channel in [1..4] then begin
     if InPush then

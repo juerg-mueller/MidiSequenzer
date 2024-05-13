@@ -98,6 +98,8 @@ type
     btnSaveTest: TButton;
     Button2: TButton;
     cbxTurboSound: TCheckBox;
+    sbVolumeOut: TScrollBar;
+    lbBegleitung: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure btnOpenClick(Sender: TObject);
     procedure btnLoadPartiturClick(Sender: TObject);
@@ -150,6 +152,7 @@ type
     procedure btnSaveTestClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure cbxTurboSoundClick(Sender: TObject);
+    procedure sbVolumeOutChange(Sender: TObject);
   private
     InitDone: boolean;
     procedure SelectedChanges(SelectedEvent: PGriffEvent);
@@ -257,6 +260,22 @@ begin
           frmGriff.GenerateNewNote(Event);
       end;
     end;
+  end;
+end;
+
+procedure TfrmSequenzer.sbVolumeOutChange(Sender: TObject);
+var
+  s: string;
+  p: double;
+begin
+  with Sender as TScrollBar do
+  begin
+    s := Format('Vol. Synth.  (%d %%)', [Position]);
+    p := Position / 100.0;
+  end;
+  if Sender = sbVolumeOut then begin
+    lbBegleitung.Caption := s;
+    VolumeOut := p;
   end;
 end;
 
@@ -372,7 +391,7 @@ begin
 
     if ext = '.txt' then
     begin
-      Ok := false; //Partitur.L.LoadSimpleFromFile(PartiturFileName)
+      Ok := Partitur.LoadMidiFromSimpleFile(PartiturFileName, false);
     end else
     begin
       Ok := Partitur.LoadMidiFromFile(PartiturFileName, false);
@@ -627,7 +646,7 @@ begin
          end;
       4: ok := GriffPartitur_.SaveToMusicXML(s, true);
       5: ok := GriffPartitur_.SaveToNewMidiFile(s);
-      6: ok := GriffPartitur_.SaveToZip(s);
+// !!!!      6: ok := GriffPartitur_.SaveToZip(s);
       else begin
         ok := GriffPartitur_.SaveToMidiFile(s, realSound);
       end;
@@ -1267,6 +1286,7 @@ begin
   InstallLoopback;
   Sleep(10);
   Application.ProcessMessages;
+  sbVolumeOutChange(sbVolumeOut);
 end;
 
 procedure TfrmSequenzer.MessageEvent(var Msg: TMsg; var Handled: Boolean);

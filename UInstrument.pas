@@ -143,7 +143,8 @@ const
       // doubles: 58 (B3: 3 - 3), 70 (B4: 6 - 6), 82 (B5: 9 - 9),   oben/Kopf                                            unten/Fuss
       Col: (( 0,50,53,58,62,65,70,74,77,82,86, 0, 0, 0, 0, 0),  //   D3   F3   B3   D4   F4   B4   D5   F5   B5   D6
             (64,55,58,63,67,70,75,79,82,87,91, 0, 0, 0, 0, 0),  //   E4   G3   B3  Es4   G4   B4  Es5   G5   B5  Es6   G6
-            ( 0,54,71,61,72,68,73,80,84,85,83, 0, 0, 0, 0, 0),  // Ges3   H4 Des4   C5  As4 Des5  As5   C6 Des6   H5
+//            ( 0,54,71,61,72,68,73,80,84,85,83, 0, 0, 0, 0, 0),  // Ges3   H4 Des4   C5  As4 Des5  As5   C6 Des6   H5
+            ( 0,66,71,61,72,68,73,80,84,85,83, 0, 0, 0, 0, 0),  // Ges3   H4 Des4   C5  As4 Des5  As5   C6 Des6   H5
             ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
            );
           );
@@ -151,8 +152,9 @@ const
       // doubles: 72 (C5: 7 - 6),
       Col: (( 0,53,57,60,63,67,69,72,75,79,81, 0, 0, 0, 0, 0),  //   F3   A3   C4  Es4   G4   A4   C5  Es5   G5   A5
             (64,58,62,65,68,72,74,77,80,84,86, 0, 0, 0, 0, 0),  //   E4   B3   D4   F4  As4   C5   D5   F5  As5   C6   D6
-            ( 0,49,71,56,66,73,70,78,82,85,88, 0, 0, 0, 0, 0),  // Des3   H4  As3 Ges4 Des5   B4 Ges5   B5 Des6   E6
-            ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+//            ( 0,61,71,56,66,73,70,78,82,85,87, 0, 0, 0, 0, 0),  // Des3   H4  As3 Ges4 Des5   B4 Ges5   B5 Des6   E6
+              ( 0,61,71,56,66,73,70,78,82,85,76, 0, 0, 0, 0, 0),  // Des3   H4  As3 Ges4 Des5   B4 Ges5   B5 Des6   E6
+          ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
            );
           );
                // g   c   f   b  es  as des ges   h
@@ -351,13 +353,15 @@ end;
 
 function GetPitchIndex(pitch: byte; const arr: TPitchArray): integer;
 begin
-  result := High(arr);
-  while result >= 0 do
+  result := 0;
+  while (result >= 0) and (result <= High(arr)) do
   begin 
     if pitch = arr[result] then
       break;
-    dec(result);
+    inc(result);
   end;
+  if result > High(arr) then
+    result := -1;
 end;
 
 function TInstrument.GriffToSound(Pitch: byte; Push: boolean; Cross: boolean): integer;

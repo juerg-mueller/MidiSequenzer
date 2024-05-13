@@ -310,9 +310,9 @@ begin
      (Event.NoteType in [ntDiskant, ntBass]) then
   begin
     SetAmpel(Event, true); // Selected: Ampel wird in Wine nicht angezeigt!
-    Midi.DoSoundPitch(Event.GetSoundPitch(Instrument), true);
+    Event.DoSound(Instrument, true);
     Sleep(200);
-    Midi.DoSoundPitch(Event.GetSoundPitch(Instrument), false);
+    Event.DoSound(Instrument, false);
     SetAmpel(Event, false);
   end
 end;
@@ -977,7 +977,8 @@ begin
               if GriffEvent.UniqueSoundToGriff(Instrument, Event.Channel) then
                 AppendGriffEvent(GriffEvent)
               else begin
-                result := false
+                //if not (Event.Channel in [5,6]) then
+                  result := false
               end;
             end;
           end;
@@ -1888,14 +1889,13 @@ var
     if Dur[Row, index].d > 0 then
     begin
 //      if not noSound then
-      MidiOutput.Send(MicrosoftIndex, $80 + Row - 1, index, $40);
+      MidiOutput.Send(MicrosoftIndex, $80 + Row, index, $40);
       case Row of
-        5:    begin
-                MidiOutput.Send(MicrosoftIndex, $84, index+12, $40);
-              end;
-        6:    begin
-                MidiOutput.Send(MicrosoftIndex, $85, index+4, $40);
-                MidiOutput.Send(MicrosoftIndex, $85, index+7, $40);
+        6:    if PolyphonBass and
+                 not Instrument.BassDiatonic then
+              begin
+                MidiOutput.Send(MicrosoftIndex, $87, index+4, $40);
+                MidiOutput.Send(MicrosoftIndex, $87, index+7, $40);
               end;
         else begin end;
       end;
@@ -1990,10 +1990,7 @@ begin
 
           if NoteType in [ntDiskant, ntBass] then
           begin
-            if NoteType = ntBass then
-              Sound := SoundPitch
-            else
-              Sound := GetSoundPitch(Instrument);
+            Sound := GetSoundPitch(Instrument);
             AmpelRect := GetAmpelRec;
             SetAmpelToOff(AmpelRect.row, Sound);
             Dur[AmpelRect.row, Sound].d := AbsRect.Right;
@@ -2008,28 +2005,26 @@ begin
             begin
               LastPush := InPush;
               MidiOutput.Send(MicrosoftIndex, $B0, ControlSustain, ord(LastPush));
+              frmAmpel.PaintBalg(LastPush);
             end;
             Max := trunc($7e*Volume);
             MaxBass := trunc($7e*Volume);
             case AmpelRect.row of
               1..4:
                  if not noTreble then
-                   MidiOutput.Send(MicrosoftIndex, $90 + AmpelRect.row - 1, Sound, Max);
+                   MidiOutput.Send(MicrosoftIndex, $90 + AmpelRect.row, Sound, Max);
               5: if not noBass then
                  begin
-                   MidiOutput.Send(MicrosoftIndex, $94, Sound, MaxBass);
-                   if PolyphonBass and
-                      not Instrument.BassDiatonic then
-                     MidiOutput.Send(MicrosoftIndex, $94, Sound+12, MaxBass - 10);
+                   MidiOutput.Send(MicrosoftIndex, $95, Sound, MaxBass);
                  end;
               6: if not NoBass then
                  begin
-                   MidiOutput.Send(MicrosoftIndex, $95, Sound, MaxBass);
+                   MidiOutput.Send(MicrosoftIndex, $96, Sound, MaxBass);
                    if PolyphonBass and
                       not Instrument.BassDiatonic then
                    begin
-                     MidiOutput.Send(MicrosoftIndex, $95, Sound+4, MaxBass - 10);
-                     MidiOutput.Send(MicrosoftIndex, $95, Sound+7, MaxBass - 10);
+                     MidiOutput.Send(MicrosoftIndex, $97, Sound+4, MaxBass - 10);
+                     MidiOutput.Send(MicrosoftIndex, $97, Sound+7, MaxBass - 10);
                    end;
                  end;
             end;

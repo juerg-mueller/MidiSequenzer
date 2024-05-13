@@ -118,6 +118,8 @@ var
   MicrosoftIndex: integer = 0;
   TrueMicrosoftIndex: integer = -1;
   MidiInstr: byte = $15; // Akkordeon
+  VolumeOut: double = 1.0;
+
 
 procedure OpenMidiMicrosoft;
 
@@ -458,12 +460,23 @@ end;
 procedure TMidiOutput.Send(const aDeviceIndex: TDeviceIndex; const aStatus, aData1, aData2: byte);
 var
   lMsg: cardinal;
+  b: byte;
+  d: double;
 begin
   if (aDeviceIndex < 0) or
      not assigned(fDeviceNames.Objects[ aDeviceIndex ]) then
     exit;
 
-  lMsg := aStatus + (aData1 * $100) + (aData2 * $10000);
+  b := aStatus shr 4;
+  if b = 9 then
+  begin
+    d := VolumeOut*aData2;
+    if d > 127 then
+      d := 127;
+    b := trunc(d);
+  end else
+    b := aData2;
+  lMsg := aStatus + (aData1 * $100) + (b * $10000);
   MidiResult := midiOutShortMsg(GetHandle(aDeviceIndex), lMsg);
 {$ifdef CONSOLE}
   writeln(Format('$%2.2x  $%2.2x (%d)  $%2.2x' ,[aStatus, aData1, aData1, aData2]));

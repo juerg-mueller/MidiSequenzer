@@ -13,7 +13,6 @@ object frmAmpel: TfrmAmpel
   Font.Name = 'Tahoma'
   Font.Style = []
   KeyPreview = True
-  OldCreateOrder = False
   Touch.InteractiveGestures = []
   Touch.InteractiveGestureOptions = []
   Touch.ParentTabletOptions = False
@@ -33,7 +32,6 @@ object frmAmpel: TfrmAmpel
   OnResize = FormResize
   OnShortCut = FormShortCut
   OnShow = FormShow
-  PixelsPerInch = 96
   TextHeight = 13
   object lbUnten: TLabel
     Left = 310

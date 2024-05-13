@@ -1251,7 +1251,7 @@ begin
       writeln(Text, 'File not converted to midi file: ' + Filename);
       exit;
     end;
-    pos := NewMidi.Compare(MidiFile);
+// !!!!!!!!!    pos := NewMidi.Compare(MidiFile);
     if (pos < NewMidi.Size) or (pos < MidiFile.Size) then
       writeln(Text, Format('%x (%d) %x  %x', [pos, pos, NewMidi.size, MidiFile.Size]));
   finally

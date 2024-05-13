@@ -24,6 +24,11 @@ uses
   UFormHelper in 'UFormHelper.pas',
   UMidiEvent in 'UMidiEvent.pas';
 
+
+{$ifdef DEBUG}
+  {$APPTYPE CONSOLE}
+{$endif}
+
 {$R *.res}
 
 var
