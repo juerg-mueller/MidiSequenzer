@@ -96,6 +96,7 @@ type
     class function MakeSingleTrack(var MidiEventArray: TMidiEventArray; const TrackArr: TTrackEventArray): boolean; overload;
     class function GetDelayEvent(const EventTrack: TMidiEventArray; iEvent: integer): integer;
     class procedure MoveLyrics(var Events: TMidiEventArray);
+    class function EraseFirst(var MidiEventArray: TMidiEventArray): boolean;
   end;
 
   PSetEvent = procedure (const Event: TMidiEvent) of object;
@@ -216,11 +217,9 @@ function TEventArray.LoadMidiFromDataStream(Midi: TMyMidiStream; Lyrics: boolean
 begin
   result := false;
   try
-    with Midi as TMidiDataStream do
-    begin
-      result := MakeEventArray(self, Lyrics);
-    end;
+    result := (Midi as TMidiDataStream).MakeEventArray(self, Lyrics);
     MakeSingleTrack(SingleTrack, TrackArr);
+    EraseFirst(SingleTrack);
     SplitEventArray(ChannelArray, SingleTrack, Length(SingleTrack));
   finally
     if not result then
@@ -1098,6 +1097,36 @@ begin
       end;
     end;
     inc(i);
+  end;
+end;
+
+// Löscht alle MIDI-Events bis zum ersten Push/Pull
+class function TEventArray.EraseFirst(var MidiEventArray: TMidiEventArray): boolean;
+var
+  i, k, j: integer;
+begin
+  result := false;
+  i := 0;
+  while (i < Length(MidiEventArray)) and not result do
+  begin
+    result := MidiEventArray[i].IsSustain;
+    inc(i);
+  end;
+  if result then
+  begin
+    dec(i);
+    k := 0;
+    while (k < i) do
+      if MidiEventArray[k].Event = 9 then
+        break
+      else
+        inc(k);
+    if k < i then
+    begin
+      for j := 0 to Length(MidiEventArray)-1-i do
+        MidiEventArray[k+j] := MidiEventArray[i+j];
+      SetLength(MidiEventArray, Length(MidiEventArray)-i+k);
+    end;
   end;
 end;
 

@@ -35,7 +35,7 @@ object frmSequenzer: TfrmSequenzer
       898
       110)
     object Label12: TLabel
-      Left = 578
+      Left = 574
       Top = 33
       Width = 92
       Height = 13
@@ -44,7 +44,7 @@ object frmSequenzer: TfrmSequenzer
       ExplicitLeft = 590
     end
     object btnOpen: TButton
-      Left = 763
+      Left = 759
       Top = 60
       Width = 99
       Height = 25
@@ -52,10 +52,10 @@ object frmSequenzer: TfrmSequenzer
       Caption = 'Choose mid-File'
       TabOrder = 0
       OnClick = btnOpenClick
-      ExplicitLeft = 759
+      ExplicitLeft = 755
     end
     object btnLoadPartitur: TButton
-      Left = 763
+      Left = 759
       Top = 28
       Width = 99
       Height = 25
@@ -63,7 +63,7 @@ object frmSequenzer: TfrmSequenzer
       Caption = 'Load Partitur'
       TabOrder = 1
       OnClick = btnLoadPartiturClick
-      ExplicitLeft = 759
+      ExplicitLeft = 755
     end
     object btnSaveMidi: TButton
       Left = 24
@@ -76,18 +76,17 @@ object frmSequenzer: TfrmSequenzer
       OnEnter = edtStopEnter
     end
     object cbxLoadAsGriff: TCheckBox
-      Left = 340
-      Top = 32
+      Left = 336
+      Top = 34
       Width = 148
       Height = 17
       Alignment = taLeftJustify
       Anchors = [akTop, akRight]
       Caption = 'Load as Griff Partitur'
       TabOrder = 3
-      ExplicitLeft = 336
     end
     object cbxTranspose: TComboBox
-      Left = 692
+      Left = 688
       Top = 30
       Width = 61
       Height = 21
@@ -124,16 +123,16 @@ object frmSequenzer: TfrmSequenzer
         '13'
         '14'
         '15')
-      ExplicitLeft = 688
+      ExplicitLeft = 684
     end
     object edtMidiFile: TComboBox
-      Left = 340
+      Left = 336
       Top = 62
       Width = 413
       Height = 21
       Anchors = [akTop, akRight]
       TabOrder = 5
-      ExplicitLeft = 336
+      ExplicitLeft = 332
     end
     object btnRealSound: TButton
       Left = 150
@@ -577,8 +576,8 @@ object frmSequenzer: TfrmSequenzer
       Align = alClient
       Caption = 'Midi / Sound'
       TabOrder = 1
-      ExplicitWidth = 494
-      ExplicitHeight = 186
+      ExplicitLeft = -6
+      ExplicitTop = 136
       DesignSize = (
         498
         187)
@@ -611,7 +610,7 @@ object frmSequenzer: TfrmSequenzer
         Caption = 'Virtual Device'
       end
       object lbBegleitung: TLabel
-        Left = 28
+        Left = 24
         Top = 153
         Width = 69
         Height = 13
@@ -641,7 +640,7 @@ object frmSequenzer: TfrmSequenzer
       object cbxMuteBass: TCheckBox
         Left = 24
         Top = 87
-        Width = 84
+        Width = 90
         Height = 17
         Alignment = taLeftJustify
         Caption = 'Mute Bass'
@@ -651,7 +650,7 @@ object frmSequenzer: TfrmSequenzer
       object cbxNoSound: TCheckBox
         Left = 24
         Top = 33
-        Width = 84
+        Width = 90
         Height = 17
         Alignment = taLeftJustify
         Caption = 'Mute'
@@ -679,7 +678,7 @@ object frmSequenzer: TfrmSequenzer
       object cbxMuteTreble: TCheckBox
         Left = 24
         Top = 60
-        Width = 84
+        Width = 90
         Height = 17
         Alignment = taLeftJustify
         Caption = 'Mute Descant'
@@ -704,29 +703,28 @@ object frmSequenzer: TfrmSequenzer
         TabOrder = 8
         OnChange = cbxVirtualChange
       end
-      object cbxTurboSound: TCheckBox
-        Left = 24
-        Top = 118
-        Width = 84
-        Height = 17
-        Alignment = taLeftJustify
-        Caption = 'Turbo Sound'
-        TabOrder = 9
-        OnClick = cbxTurboSoundClick
-      end
       object sbVolumeOut: TScrollBar
         Left = 136
         Top = 151
-        Width = 230
+        Width = 226
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Max = 120
         Min = 20
         PageSize = 0
         Position = 100
-        TabOrder = 10
+        TabOrder = 9
         OnChange = sbVolumeOutChange
-        ExplicitWidth = 226
+        ExplicitWidth = 222
+      end
+      object cbxTurboSound: TCheckBox
+        Left = 24
+        Top = 118
+        Width = 90
+        Height = 17
+        Alignment = taLeftJustify
+        Caption = 'Turbo Sound'
+        TabOrder = 10
       end
     end
     object gbInstrument: TGroupBox

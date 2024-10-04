@@ -548,12 +548,12 @@ end;
 function SoundToGriff_(Pitch: byte; const Bass: TBassArray; var Sixth: boolean): integer;
 begin
   result := GetPitchIndex(Pitch, Bass[Sixth]);
-  if result > 0 then
+ { if result > 0 then
     exit;
 
   result := GetPitchIndex(Pitch, Bass[not Sixth]);
   if result > 0 then
-    Sixth := not Sixth;
+    Sixth := not Sixth;}
 end;
 {
 function TInstrument._SoundToGriffBass(Pitch: byte; var InPush, Sixth: boolean): integer;

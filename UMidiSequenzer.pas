@@ -97,9 +97,9 @@ type
     btnRemoveSmall: TButton;
     btnSaveTest: TButton;
     Button2: TButton;
-    cbxTurboSound: TCheckBox;
     sbVolumeOut: TScrollBar;
     lbBegleitung: TLabel;
+    cbxTurboSound: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure btnOpenClick(Sender: TObject);
     procedure btnLoadPartiturClick(Sender: TObject);
@@ -151,7 +151,6 @@ type
     procedure btnRemoveSmallClick(Sender: TObject);
     procedure btnSaveTestClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
-    procedure cbxTurboSoundClick(Sender: TObject);
     procedure sbVolumeOutChange(Sender: TObject);
   private
     InitDone: boolean;
@@ -954,11 +953,6 @@ end;
 procedure TfrmSequenzer.cbxTrimNoteClick(Sender: TObject);
 begin
   GriffPartitur_.trimNote := cbxTrimNote.Checked;
-end;
-
-procedure TfrmSequenzer.cbxTurboSoundClick(Sender: TObject);
-begin
-  frmAmpel.UseTurboSound := cbxTurboSound.Checked;
 end;
 
 procedure TfrmSequenzer.cbxViertelChange(Sender: TObject);

@@ -863,7 +863,7 @@ var
     result.AppendChildNode('sigD', IntToStr(GriffPartitur.GriffHeader.Details.measureDiv));
   end;
 
-  procedure AddRest(Len: integer; Lyrics, Visible: boolean; Bellows: boolean = false);
+  function AddRest(Len: integer; Lyrics, Visible: boolean; Bellows: boolean = false): boolean;
   var
     t, t1: integer;
     RestNode, Child, Child1: KXmlNode;
@@ -871,8 +871,10 @@ var
     s: string;
   begin
     t := 8*Len div GriffPartitur.quarterNote;
+    result := false;
     while t > 0 do
     begin
+      result := true;
       t1 := t;
       if Lyrics then
       begin
@@ -1067,7 +1069,8 @@ var
           // Pausen einfügen
           while (SaveRec.Rest(GriffHeader.Details.GetRaster(GriffEvents[SaveRec.iEvent].AbsRect.Left - offset),
                    (nt = ntBass) and (NoteType <> ntBass))) do
-             AddRest(Len, Lyrics, nt = ntDiskant);
+             if not AddRest(Len, Lyrics, nt = ntDiskant) then
+               break;
 
           if (GriffEvents[iEvent].Repeat_ <> rRegular) {and (nt = ntDiskant)} then
             LastRepeat := GriffEvents[iEvent].Repeat_;

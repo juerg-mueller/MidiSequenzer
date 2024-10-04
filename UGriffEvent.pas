@@ -559,8 +559,6 @@ begin
     end else begin
       dec(SoundPitch, 12);
       result := SoundToGriffBass(Instrument, InPush);
-      if result <= 0 then
-        inc(SoundPitch, 12);
     end;
   end;
   if result > 0 then
@@ -615,11 +613,10 @@ begin
 
   if NoteType = ntBass then
   begin
-    result := true;
     Cross := false;
     if Instrument.BassDiatonic then
       InPush := UsePush;
-    SoundToGriffBass(Instrument);
+    result := SoundToGriffBass(Instrument) >= 0;
 
     AbsRect.Top := -1;
     AbsRect.Height := 1;

@@ -304,6 +304,13 @@ begin
       if (SimpleFile.NextByte = ord('N')) then
         break;
 
+      d[0] := 0;
+      if SimpleFile.NextByte in [ord('0')..ord('9')] then
+        d[0] := SimpleFile.ReadNumber; // delay
+      while SimpleFile.NextByte = ord(' ') do
+        SimpleFile.ReadByte;
+
+
       if (SimpleFile.NextByte = ord('M')) then
       begin
         if not SimpleFile.ReadSimpleMidiEvent(d) then
@@ -315,11 +322,18 @@ begin
         end else
           WriteByte(d[2]);
         WriteVariableLen(d[3]);
-        for t := 1 to d[3] do
-          WriteByte(SimpleFile.ReadNumber);
-        t := SimpleFile.ReadNumber;
+        if (d[1] = 255) and (d[2] = 2) then // Copyright
+        begin
+          while SimpleFile.NextByte = ord(' ') do
+            SimpleFile.ReadByte;
+          for t := 1 to d[3] do
+            WriteByte(SimpleFile.ReadByte);
+        end else
+          for t := 1 to d[3] do
+            WriteByte(SimpleFile.ReadNumber);
+{        t := SimpleFile.ReadNumber;
         if t >= 0 then
-          WriteVariableLen(t);
+          WriteVariableLen(t); }
         SimpleFile.ReadLine;
         if IsEndOfTrack(d) then
           break;
@@ -343,12 +357,12 @@ begin
         WriteVariableLen(d[0]);
       end;
 
-      repeat
+   {   repeat
         t := SimpleFile.ReadNumber;
         if (t < 0) then
           break;
         WriteByte(t);
-      until false;
+      until false;  }
       SimpleFile.Readline;
     until SimpleFile.NextByte = 0;
     if not IsEndOfTrack(d) then
@@ -941,13 +955,11 @@ var
   i: integer;
 begin
   result := true;
-  
+
   if NextByte = ord('M') then
   begin
     SkipBytes(length(cSimpleMetaEvent));
-    d[0] := 0;
-  end else
-    d[0] := ReadNumber; // delay
+  end;
   d[1] := ReadNumber;   // command
   d[2] := ReadNumber;   // d1
   d[3] := 0;

@@ -864,6 +864,7 @@ begin
                   GriffEvent.InPush := In_Push;
                 end;
                 GriffEvent.Cross := IsCross;
+                GriffEvent.GetSoundPitch(Instrument);
               end else begin
                 if Guard = 0 then
                 begin
@@ -978,7 +979,10 @@ begin
                 AppendGriffEvent(GriffEvent)
               else begin
                 //if not (Event.Channel in [5,6]) then
-                  result := false
+                result := false;
+                GriffEvent.InPush := not In_Push;
+                if GriffEvent.UniqueSoundToGriff(Instrument, Event.Channel) then
+                  AppendGriffEvent(GriffEvent)
               end;
             end;
           end;

@@ -272,18 +272,6 @@ begin
   b := Status;
   if (MicrosoftIndex >= 0) then
   begin
-    if frmAmpel.UseTurboSound then
-    begin
-      if (Status shr 4) in [8, 9] then
-      begin
-        case Status and 15 of
-          1..4: b := Status and $f0;
-          5, 6: b := (Status and $f0) + 2;
-          7:    b := (Status and $f0) + 1;
-          else begin end;
-        end;
-      end;
-    end;
     MidiOutput.Send(MicrosoftIndex, b, Data1, Data2);
   end;
 //  if @PRecordMidiOut <> nil then
