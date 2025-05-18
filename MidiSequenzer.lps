@@ -7,11 +7,11 @@
       <Unit>
         <Filename Value="MidiSequenzer.dpr"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="4"/>
-        <CursorPos X="3" Y="22"/>
+        <EditorIndex Value="10"/>
+        <TopLine Value="4"/>
+        <CursorPos X="24" Y="13"/>
         <UsageCount Value="25"/>
         <Loaded Value="True"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="UMidiSequenzer.pas"/>
@@ -20,8 +20,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="175"/>
-        <CursorPos X="9" Y="194"/>
+        <TopLine Value="183"/>
+        <CursorPos X="4" Y="196"/>
         <UsageCount Value="25"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -48,14 +48,17 @@
         <Filename Value="UfrmGriff.pas"/>
         <IsPartOfProject Value="True"/>
         <HasResources Value="True"/>
-        <EditorIndex Value="-1"/>
+        <EditorIndex Value="8"/>
+        <TopLine Value="24"/>
+        <CursorPos X="14" Y="34"/>
         <UsageCount Value="25"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="UGriffPartitur.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="7"/>
+        <EditorIndex Value="14"/>
         <TopLine Value="2382"/>
         <CursorPos X="74" Y="2388"/>
         <UsageCount Value="25"/>
@@ -73,10 +76,11 @@
       <Unit>
         <Filename Value="UMidiDataStream.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="662"/>
-        <CursorPos X="15" Y="680"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="114"/>
+        <CursorPos X="12" Y="119"/>
         <UsageCount Value="25"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -85,10 +89,11 @@
         <ComponentName Value="frmAmpel"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="34"/>
-        <CursorPos X="9" Y="54"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="46"/>
+        <CursorPos X="4" Y="58"/>
         <UsageCount Value="25"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -104,10 +109,11 @@
       <Unit>
         <Filename Value="UEventArray.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="1205"/>
-        <CursorPos X="15" Y="1223"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="125"/>
+        <CursorPos X="4" Y="134"/>
         <UsageCount Value="25"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -139,7 +145,7 @@
       <Unit>
         <Filename Value="UXmlNode.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="6"/>
+        <EditorIndex Value="13"/>
         <TopLine Value="39"/>
         <CursorPos X="22" Y="55"/>
         <UsageCount Value="25"/>
@@ -165,9 +171,9 @@
       <Unit>
         <Filename Value="UMuseScore.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="5"/>
-        <TopLine Value="1649"/>
-        <CursorPos X="40" Y="1655"/>
+        <EditorIndex Value="12"/>
+        <TopLine Value="224"/>
+        <CursorPos X="12" Y="234"/>
         <UsageCount Value="25"/>
         <Loaded Value="True"/>
       </Unit>
@@ -182,20 +188,19 @@
       <Unit>
         <Filename Value="UVirtual.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
-        <CursorPos X="68" Y="18"/>
+        <CursorPos X="42" Y="14"/>
         <UsageCount Value="25"/>
         <Loaded Value="True"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="UFormHelper.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="46"/>
-        <CursorPos Y="82"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="60"/>
+        <CursorPos X="12" Y="79"/>
         <UsageCount Value="25"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -219,10 +224,11 @@
         <Filename Value="umidi.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="UMidi"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="48"/>
-        <CursorPos X="23" Y="59"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="11"/>
+        <CursorPos X="6" Y="11"/>
         <UsageCount Value="25"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -245,8 +251,8 @@
       <Unit>
         <Filename Value="IMusicXmlHelper.pas"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="778"/>
-        <CursorPos Y="815"/>
+        <TopLine Value="539"/>
+        <CursorPos X="12" Y="550"/>
         <UsageCount Value="11"/>
         <Loaded Value="True"/>
       </Unit>
@@ -292,108 +298,18 @@
         <CursorPos X="3" Y="1354"/>
         <UsageCount Value="10"/>
       </Unit>
+      <Unit>
+        <Filename Value="rtmidi.pas"/>
+        <UnitName Value="RtMidi"/>
+        <EditorIndex Value="9"/>
+        <TopLine Value="254"/>
+        <CursorPos Y="268"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1548" TopLine="1526"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1549" TopLine="1526"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1547" TopLine="1526"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1548" TopLine="1526"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1549" TopLine="1526"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1547" TopLine="1526"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1548" TopLine="1526"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1547" TopLine="1526"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1548" TopLine="1526"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1676" TopLine="1643"/>
-      </Position>
-      <Position>
-        <Filename Value="UXmlNode.pas"/>
-        <Caret Line="404" Column="24" TopLine="398"/>
-      </Position>
-      <Position>
-        <Filename Value="UMidiSequenzer.pas"/>
-        <Caret Line="669" Column="49" TopLine="654"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1676" Column="18" TopLine="998"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1679" Column="42" TopLine="1643"/>
-      </Position>
-      <Position>
-        <Filename Value="IMusicXmlHelper.pas"/>
-        <Caret Line="578" TopLine="466"/>
-      </Position>
-      <Position>
-        <Filename Value="UXmlNode.pas"/>
-        <Caret Line="55" Column="22" TopLine="39"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1679" Column="10" TopLine="1251"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1679" Column="39" TopLine="1647"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="62" Column="15" TopLine="40"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1546" Column="15" TopLine="1520"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1681" Column="25" TopLine="1650"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1683" Column="49" TopLine="1650"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1682" Column="34" TopLine="1651"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1681" Column="33" TopLine="1650"/>
-      </Position>
-      <Position>
-        <Filename Value="UMuseScore.pas"/>
-        <Caret Line="1546" Column="12" TopLine="1525"/>
-      </Position>
       <Position>
         <Filename Value="UMuseScore.pas"/>
         <Caret Line="1684" Column="51" TopLine="1650"/>
@@ -414,10 +330,120 @@
         <Filename Value="UMidiSequenzer.pas"/>
         <Caret Line="194" Column="9" TopLine="175"/>
       </Position>
+      <Position>
+        <Filename Value="UVirtual.pas"/>
+        <Caret Line="14" Column="42"/>
+      </Position>
+      <Position>
+        <Filename Value="UFormHelper.pas"/>
+        <Caret Line="57" Column="12" TopLine="52"/>
+      </Position>
+      <Position>
+        <Filename Value="UFormHelper.pas"/>
+        <Caret Line="79" Column="12" TopLine="60"/>
+      </Position>
+      <Position>
+        <Filename Value="UEventArray.pas"/>
+        <Caret Line="140" Column="9" TopLine="125"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiDataStream.pas"/>
+        <Caret Line="119" Column="12" TopLine="114"/>
+      </Position>
+      <Position>
+        <Filename Value="UAmpel.pas"/>
+        <Caret Line="1163" Column="12" TopLine="1151"/>
+      </Position>
+      <Position>
+        <Filename Value="UAmpel.pas"/>
+        <Caret Line="1445" Column="12" TopLine="1435"/>
+      </Position>
+      <Position>
+        <Filename Value="UAmpel.pas"/>
+        <Caret Line="189" Column="12" TopLine="179"/>
+      </Position>
+      <Position>
+        <Filename Value="UfrmGriff.pas"/>
+        <Caret Line="647" Column="12" TopLine="635"/>
+      </Position>
+      <Position>
+        <Filename Value="IMusicXmlHelper.pas"/>
+        <Caret Line="550" Column="12" TopLine="539"/>
+      </Position>
+      <Position>
+        <Filename Value="UMuseScore.pas"/>
+        <Caret Line="234" Column="12" TopLine="224"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiSequenzer.pas"/>
+        <Caret Line="210" Column="12" TopLine="198"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiSequenzer.pas"/>
+        <Caret Line="1340" Column="12" TopLine="1328"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiSequenzer.pas"/>
+        <Caret Line="159" Column="14" TopLine="148"/>
+      </Position>
+      <Position>
+        <Filename Value="UMidiSequenzer.pas"/>
+        <Caret Line="196" Column="4" TopLine="183"/>
+      </Position>
+      <Position>
+        <Filename Value="MidiSequenzer.dpr"/>
+        <Caret Line="25" Column="4" TopLine="4"/>
+      </Position>
+      <Position>
+        <Filename Value="MidiSequenzer.dpr"/>
+        <Caret Line="19" Column="3" TopLine="6"/>
+      </Position>
+      <Position>
+        <Filename Value="MidiSequenzer.dpr"/>
+        <Caret Line="25" Column="4" TopLine="6"/>
+      </Position>
+      <Position>
+        <Filename Value="UEventArray.pas"/>
+        <Caret Line="134" Column="4" TopLine="125"/>
+      </Position>
+      <Position>
+        <Filename Value="UAmpel.pas"/>
+        <Caret Line="58" Column="4" TopLine="46"/>
+      </Position>
+      <Position>
+        <Filename Value="rtmidi.pas"/>
+      </Position>
+      <Position>
+        <Filename Value="rtmidi.pas"/>
+        <Caret Line="294" Column="5" TopLine="272"/>
+      </Position>
+      <Position>
+        <Filename Value="rtmidi.pas"/>
+        <Caret Line="22" Column="49" TopLine="9"/>
+      </Position>
+      <Position>
+        <Filename Value="rtmidi.pas"/>
+        <Caret Line="268" TopLine="254"/>
+      </Position>
+      <Position>
+        <Filename Value="umidi.pas"/>
+        <Caret Line="61" Column="31" TopLine="48"/>
+      </Position>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
       <Modes ActiveMode=""/>
     </RunParams>
   </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="rtmidi.pas"/>
+        <Line Value="268"/>
+      </Item>
+    </BreakPoints>
+  </Debugging>
 </CONFIG>

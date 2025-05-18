@@ -8,7 +8,7 @@ interface
 
 uses
   Classes, SysUtils,
-{$ifdef FPC}
+{$ifndef mswindows}
   Urtmidi;
 {$else}
   Midi;

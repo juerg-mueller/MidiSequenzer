@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (C) 2022 Jürg Müller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
@@ -156,7 +156,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure Button1Click(Sender: TObject);
     procedure cbxVoltaKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-  {$ifdef mswindows}
+  {$ifdef dcc}
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
   {$endif}
     procedure cbxVirtualChange(Sender: TObject);
@@ -207,7 +207,7 @@ begin
     Combo.AddItem(arr[i], nil);
 end;
 
-{$ifdef mswindows}
+{$ifdef dcc}
 function GetConsoleWindow: HWND; stdcall; external kernel32;
 
 procedure TfrmSequenzer.WMDropFiles(var Msg: TWMDropFiles);
@@ -1337,7 +1337,7 @@ begin
     exit;
   end;
 
-{$ifdef mswindows}
+{$ifdef dcc}
   frmAmpel.KeyMessageEvent(Msg, Handled);
 {$endif}
 
