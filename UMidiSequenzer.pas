@@ -1295,7 +1295,7 @@ var
 begin
 {$if defined(CPU64) or defined(WIN64)}
   Caption := Caption + ' (64)';
-{$else}
+{$elif defined(CPU32) or defined(WIN32)}
   Caption := Caption + ' (32)';
 {$endif}
   cbTransInstrument.Items.Clear;
