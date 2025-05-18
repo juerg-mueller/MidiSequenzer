@@ -1160,7 +1160,7 @@ procedure TfrmAmpel.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
 var
   KeyCode: word;
 begin
-{$ifdef mswindows}
+{$ifdef dcc}
   if (Msg.KeyData and $40000000) <> 0 then // auto repeat
   begin
     Handled := true;
@@ -1442,7 +1442,7 @@ begin
     PRecordMidiIn(aStatus, aData1, aData2, t);
 end;
 
-{$ifdef mswindows}
+{$ifdef dcc}
 procedure TfrmAmpel.KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);
 begin
   if ((Msg.message = WM_KEYDOWN) or (Msg.message = WM_KEYUP)) then
