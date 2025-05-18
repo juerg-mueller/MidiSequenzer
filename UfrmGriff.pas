@@ -644,7 +644,7 @@ var
   Key: word;
   Shift: TShiftState;
 begin
-{$ifdef mswindows}
+{$ifdef dcc}
   if (Msg.KeyData and $40000000) <> 0 then // auto repeat
   begin
     Handled := true;

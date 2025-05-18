@@ -231,7 +231,7 @@ var
   Bass2015: boolean;
   SteiBass_: TSteiBass;
   MeasureNr: integer;
-{$ifdef mswindows}
+{$ifdef dcc}
   Zip_: System.Zip.TZipFile;
 {$endif}
   Outp: TBytes;

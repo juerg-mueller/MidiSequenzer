@@ -54,7 +54,7 @@ begin
   result := result = shiftIsPush;
 end;
 
-{$ifdef mswindows}
+{$ifdef dcc}
 function IsRunningInWine: boolean;
 type
   TWineVers = function: PAnsiChar; cdecl;
@@ -76,7 +76,7 @@ end;
 {$endif}
 
 initialization
-{$ifdef mswindows}
+{$ifdef dcc}
   IsRunningInWine;
 {$endif}
 

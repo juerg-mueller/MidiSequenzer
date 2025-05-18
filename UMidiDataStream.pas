@@ -116,7 +116,7 @@ procedure MidiConverterDirTest(const DirName: string; var Text: System.Text);
 {$endif}
 implementation
 
-{$ifdef mswindows}
+{$ifdef dcc}
 function IsRunningInWine: boolean;
 type
   TWineVers = function: PAnsiChar; cdecl;

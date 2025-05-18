@@ -8,20 +8,22 @@ uses
 {$ifdef unix}
   cthreads,
   pthreads,
+{$endif}
+{$ifdef fpc}
   Interfaces,
 {$endif}
-  Forms, Interfaces,
+  Forms,
   UMidiSequenzer in 'UMidiSequenzer.pas' {frmSequenzer},
   UInstrument in 'UInstrument.pas',
   UMyMidiStream in 'UMyMidiStream.pas',
   UfrmGriff in 'UfrmGriff.pas' {frmGriff},
   UGriffPartitur in 'UGriffPartitur.pas',
-  umidi,
 {$ifdef mswindows}
   Midi in 'Midi.pas',
   teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
   UVirtual in 'UVirtual.pas',
 {$else}
+  umidi,
   urtmidi,
 {$endif}
   UMidiDataStream in 'UMidiDataStream.pas',

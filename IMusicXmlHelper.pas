@@ -547,7 +547,7 @@ var
   Volta: integer;
   Outp: TBytes;
   Ok: boolean;
-{$ifdef mswindows}
+{$ifdef dcc}
   Zip_: System.Zip.TZipFile;
 {$endif}
 

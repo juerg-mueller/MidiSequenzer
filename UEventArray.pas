@@ -130,11 +130,13 @@ implementation
 
 uses
   umidi,
-{$ifdef LINUX}
+{$ifndef mswindows}
   urtmidi,
 {$else}
-  AnsiStrings,
   Midi,
+{$endif}
+{$ifdef dcc}
+  AnsiStrings,
 {$endif}
   UMidiDataStream;
 

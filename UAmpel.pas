@@ -186,7 +186,7 @@ type
     procedure PaintBalg(Push: boolean);
     function GetKeyIndex(var Event: TMouseEvent; Key: word): boolean;
     procedure InitLastPush;
-{$ifdef mswindows}
+{$ifdef dcc}
     procedure KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);
 {$endif}
     procedure OnMidiInData(aDeviceIndex: integer; aStatus, aData1, aData2: byte; aTimestamp: Int64);
