@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (C) 2022 Jürg Müller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
@@ -1295,7 +1295,8 @@ var
 begin
 {$if defined(CPU64) or defined(WIN64)}
   Caption := Caption + ' (64)';
-{$elif defined(CPU32) or defined(WIN32)}
+{$endif}
+{$if defined(CPU32) or defined(WIN32)}
   Caption := Caption + ' (32)';
 {$endif}
   cbTransInstrument.Items.Clear;

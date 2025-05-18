@@ -29,8 +29,6 @@ object frmSequenzer: TfrmSequenzer
     Align = alBottom
     Caption = 'Load/Save Midi Partitur'
     TabOrder = 0
-    ExplicitTop = 399
-    ExplicitWidth = 894
     DesignSize = (
       898
       110)
@@ -52,7 +50,6 @@ object frmSequenzer: TfrmSequenzer
       Caption = 'Choose mid-File'
       TabOrder = 0
       OnClick = btnOpenClick
-      ExplicitLeft = 755
     end
     object btnLoadPartitur: TButton
       Left = 759
@@ -63,7 +60,6 @@ object frmSequenzer: TfrmSequenzer
       Caption = 'Load Partitur'
       TabOrder = 1
       OnClick = btnLoadPartiturClick
-      ExplicitLeft = 755
     end
     object btnSaveMidi: TButton
       Left = 24
@@ -84,7 +80,6 @@ object frmSequenzer: TfrmSequenzer
       Anchors = [akTop, akRight]
       Caption = 'Load as Griff Partitur'
       TabOrder = 3
-      ExplicitLeft = 332
     end
     object cbxTranspose: TComboBox
       Left = 688
@@ -124,7 +119,6 @@ object frmSequenzer: TfrmSequenzer
         '13'
         '14'
         '15')
-      ExplicitLeft = 684
     end
     object edtMidiFile: TComboBox
       Left = 336
@@ -133,7 +127,6 @@ object frmSequenzer: TfrmSequenzer
       Height = 21
       Anchors = [akTop, akRight]
       TabOrder = 5
-      ExplicitLeft = 332
     end
     object btnRealSound: TButton
       Left = 150
@@ -166,7 +159,6 @@ object frmSequenzer: TfrmSequenzer
     Caption = 'Selected Griff Event'
     Enabled = False
     TabOrder = 1
-    ExplicitHeight = 399
     object Label1: TLabel
       Left = 24
       Top = 50
@@ -344,8 +336,6 @@ object frmSequenzer: TfrmSequenzer
     Align = alRight
     Caption = 'Optimization'
     TabOrder = 2
-    ExplicitLeft = 744
-    ExplicitHeight = 399
     DesignSize = (
       150
       400)
@@ -359,7 +349,6 @@ object frmSequenzer: TfrmSequenzer
       TabOrder = 0
       OnClick = btnBassSynchClick
       OnEnter = edtStopEnter
-      ExplicitTop = 274
     end
     object btnSmallest: TButton
       Left = 27
@@ -371,7 +360,6 @@ object frmSequenzer: TfrmSequenzer
       TabOrder = 1
       OnClick = btnSmallestClick
       OnEnter = edtStopEnter
-      ExplicitTop = 336
     end
     object btnLongerPitches: TButton
       Left = 27
@@ -383,7 +371,6 @@ object frmSequenzer: TfrmSequenzer
       TabOrder = 2
       OnClick = btnLongerPitchesClick
       OnEnter = edtStopEnter
-      ExplicitTop = 305
     end
     object btnPurgeBass: TButton
       Left = 27
@@ -416,7 +403,6 @@ object frmSequenzer: TfrmSequenzer
       TabOrder = 5
       OnClick = btnRemoveSmallClick
       OnEnter = edtStopEnter
-      ExplicitTop = 367
     end
     object Button2: TButton
       Left = 27
@@ -428,7 +414,6 @@ object frmSequenzer: TfrmSequenzer
       TabOrder = 6
       OnClick = Button2Click
       OnEnter = edtStopEnter
-      ExplicitTop = 243
     end
   end
   object Panel1: TPanel
@@ -439,8 +424,6 @@ object frmSequenzer: TfrmSequenzer
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 3
-    ExplicitWidth = 494
-    ExplicitHeight = 399
     object gbHeader: TGroupBox
       Left = 0
       Top = 0
@@ -449,7 +432,6 @@ object frmSequenzer: TfrmSequenzer
       Align = alTop
       Caption = 'Partitur Header'
       TabOrder = 0
-      ExplicitWidth = 494
       object Label5: TLabel
         Left = 24
         Top = 32
@@ -577,8 +559,6 @@ object frmSequenzer: TfrmSequenzer
       Align = alClient
       Caption = 'Midi / Sound'
       TabOrder = 1
-      ExplicitWidth = 494
-      ExplicitHeight = 186
       DesignSize = (
         498
         187)
@@ -703,8 +683,8 @@ object frmSequenzer: TfrmSequenzer
         Height = 21
         Style = csDropDownList
         TabOrder = 8
-        OnChange = cbxVirtualChange
         Visible = False
+        OnChange = cbxVirtualChange
       end
       object sbVolumeOut: TScrollBar
         Left = 136
@@ -718,7 +698,6 @@ object frmSequenzer: TfrmSequenzer
         Position = 100
         TabOrder = 9
         OnChange = sbVolumeOutChange
-        ExplicitWidth = 222
       end
       object cbxTurboSound: TCheckBox
         Left = 24
@@ -739,8 +718,6 @@ object frmSequenzer: TfrmSequenzer
       Align = alBottom
       Caption = 'Schwyzer'#246'rgeli / Steirische Harmonika'
       TabOrder = 2
-      ExplicitTop = 327
-      ExplicitWidth = 494
       object Label13: TLabel
         Left = 24
         Top = 34
