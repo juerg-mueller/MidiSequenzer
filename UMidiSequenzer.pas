@@ -672,11 +672,7 @@ begin
         exit;
 
     case SaveDialog1.FilterIndex of
-    {$ifndef dcc}
       2: Ok := SaveToMscx(GriffPartitur_, s);
-    {$else}
-      2: Ok := SaveToXmlFile(GriffPartitur_, s);
-    {$endif}
       3: begin
            s1 := ExtractFileName(s);
            SetLength(s1, Length(s1)-Length(ExtractFileExt(s1)));
