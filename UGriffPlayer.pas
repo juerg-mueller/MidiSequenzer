@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 Jürg Müller, CH-5524
+// Copyright (C) 2022 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -15,6 +15,10 @@
 //
 unit UGriffPlayer;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
@@ -29,6 +33,7 @@ type
 
     GriffPartitur: TGriffPartitur;
 
+    constructor Create(CreateSuspended : boolean);
     procedure Execute; override;
     procedure StopPlay;
 
@@ -37,6 +42,11 @@ type
 
 
 implementation
+
+constructor TGriffPlayer.Create(CreateSuspended : boolean);
+begin
+  inherited Create(CreateSuspended);
+end;
 
 procedure TGriffPlayer.Execute;
 begin

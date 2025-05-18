@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 Jürg Müller, CH-5524
+// Copyright (C) 2022 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -15,12 +15,27 @@
 //
 unit UfrmGriff;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Menus,
+{$IFnDEF FPC}
+  Windows,
+{$ELSE}
+  LCLIntf, LCLType, LMessages,
+{$ENDIF}
+  Messages, SysUtils, Variants, Classes, Graphics, Menus,
   Controls, Forms, Dialogs, Types,
-  UGriffPartitur, UMyMidiStream, Midi, UGriffEvent, UAmpel;
+{$ifdef mswindows}
+  Midi,
+{$else}
+  urtmidi,
+{$endif}
+  UGriffPartitur, UMyMidiStream,
+  UGriffEvent, UAmpel;
 
 type
 
@@ -75,7 +90,11 @@ var
 
 implementation
 
-{$R *.dfm}
+{$IFnDEF FPC}
+  {$R *.dfm}
+{$ELSE}
+  {$R *.lfm}
+{$ENDIF}
 
 uses UInstrument, UMidiEvent;
 
@@ -574,7 +593,7 @@ procedure TfrmGriff.FormPaint(Sender: TObject);
 var rect, rectSource, rectFrame : TRect;
     w, h : integer;
 begin
-  if not GriffPartitur_.PartiturLoaded then
+  if GriffPartitur_.UsedEvents = 0 then
     exit;
     
   canvas.CopyMode:= cmSrcCopy;
@@ -625,6 +644,7 @@ var
   Key: word;
   Shift: TShiftState;
 begin
+{$ifdef mswindows}
   if (Msg.KeyData and $40000000) <> 0 then // auto repeat
   begin
     Handled := true;
@@ -651,6 +671,7 @@ begin
     end;
 
   Handled := true;
+  {$endif}
 end;
 
 procedure TfrmGriff.FormShow(Sender: TObject);
@@ -711,7 +732,7 @@ begin
         continue;
 
       if (pushDur > 0) and (noPushDur > 0) then
-        canvas_.Brush.Color := $c0c0c0  // grau: ungültig
+        canvas_.Brush.Color := $c0c0c0  // grau: ungÃ¼ltig
       else
         canvas_.Brush.Color := $000000; // blau: push
 
@@ -1008,7 +1029,7 @@ begin
   canvas.Pen.Width := 3;
 
   // senkrechte Striche zeichnen
-  canvas.Brush.Color := $ffffff; // für Nummerierung
+  canvas.Brush.Color := $ffffff; // fÃ¼r Nummerierung
   smallDiff := 0;
   if not GriffPartitur_.Instrument.bigInstrument then
     smallDiff := 2;

@@ -1,0 +1,27 @@
+object frmGriff: TfrmGriff
+  Left = 400
+  Top = 0
+  HorzScrollBar.Smooth = True
+  HorzScrollBar.Tracking = True
+  Caption = 'Griffschrift'
+  ClientHeight = 616
+  ClientWidth = 1084
+  Color = clBtnFace
+  Font.Charset = ANSI_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -13
+  Font.Name = 'Tahoma'
+  Font.Style = [fsBold]
+  Position = poDesigned
+  OnActivate = FormActivate
+  OnCreate = FormCreate
+  OnDeactivate = FormDeactivate
+  OnKeyDown = FormKeyDown
+  OnKeyUp = FormKeyUp
+  OnMouseDown = FormMouseDown
+  OnMouseMove = FormMouseMove
+  OnMouseUp = FormMouseUp
+  OnPaint = FormPaint
+  OnShortCut = FormShortCut
+  OnShow = FormShow
+end

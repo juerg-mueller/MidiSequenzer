@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2020 Jürg Müller, CH-5524
+// Copyright (C) 2020 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -15,6 +15,10 @@
 //
 
 unit UMidiEvent;
+
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
 
 interface
 
@@ -45,7 +49,7 @@ Const
   Dur: array [-6..6] of string = ('Ges', 'Des','As', 'Es', 'B', 'F', 'C', 'G', 'D', 'A', 'E', 'H', 'Fis');
 
 //  SustainPitch    = 26;
-  ControlSustain  = $1f;   // + 3 für TRepeat
+  ControlSustain  = $1f;   // + 3 fÃ¼r TRepeat
   ControlPartiturStart = $1e;
 
 type

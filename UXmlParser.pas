@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 Jürg Müller, CH-5524
+// Copyright (C) 2022 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -15,10 +15,19 @@
 //
 unit UXmlParser;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
-  SysUtils, System.Zip, Dialogs, Windows,
+{$IFnDEF FPC}
+  Windows,
+{$ELSE}
+  LCLIntf, LCLType, LMessages,
+{$ENDIF}
+  SysUtils, Zip, Dialogs,
   UMyMemoryStream, UXmlNode, Classes, UFormHelper;
 
 type
@@ -553,7 +562,9 @@ end;
 class function KXmlParser.ParseFile(FileName: string; var Root: KXmlNode): boolean;
 var
   Parser: KXmlParser;
+{$ifndef fpc}
   Zip_: TZipFile;
+{$endif}
   outp: TBytes;
   ext: string;
   i: integer;
@@ -572,6 +583,7 @@ begin
 
         result := Parser.ParseStream_(Root);
     end else begin
+    {$ifndef fpc}
       Zip_ := TZipFile.Create;
       try
         Zip_.Open(Filename, zmRead);
@@ -591,6 +603,7 @@ begin
       finally
         Zip_.Free;
       end;
+      {$endif}
       if result then
         result := Parser.ParseStream(Outp, Root);
       SetLength(Outp, 0);
