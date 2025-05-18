@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2021 Jürg Müller, CH-5524
+// Copyright (C) 2021 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -129,8 +129,9 @@ type
 implementation
 
 uses
+  umidi,
 {$ifdef LINUX}
-  Urtmidi,
+  urtmidi,
 {$else}
   AnsiStrings,
   Midi,
@@ -392,6 +393,20 @@ end;
 
 function TEventArray.GetCopyright: TCopyright;
 begin
+{$ifdef fpc}
+  result := noCopy;
+  if AnsiStrLComp(PAnsiChar(Copyright), PAnsiChar(Copyrightreal), Length('real Griffschrift - Copyright')) = 0 then
+    result := realCopy
+  else
+  if AnsiStrLComp(PAnsiChar(Copyright), PAnsiChar(CopyrightGriff), Length('Griffschrift - Copyright')) = 0 then
+    result := griffCopy
+  else
+  if AnsiStrLComp(PAnsiChar(Copyright), PAnsiChar(CopyrightNewGriff), Length('Griffschrift - Copyright')) = 0 then
+    result := newCopy
+  else
+  if Copyright = CopyPrep then
+    result := prepCopy;
+{$else}
   result := noCopy;
   if AnsiStrings.AnsiStrLComp(PAnsiChar(Copyright), PAnsiChar(Copyrightreal), Length('real Griffschrift - Copyright')) = 0 then
     result := realCopy
@@ -404,6 +419,7 @@ begin
   else
   if Copyright = CopyPrep then
     result := prepCopy;
+{$endif}
 end;
 
 function TEventArray.CheckMysOergeli: boolean;
@@ -574,12 +590,12 @@ var
   event: TMidiEvent;
   add: integer;
 begin
-  // Kanäle 0 und 3: diskant
-  // Kanäle 1 und 4: 3-Klang Bass
-  // Kanal 2:        Bass (monophon) / Grundton von Kanal 1 liegt eine Oktave höher
-  // Kanal 5:        Kanal 2 genau eine Oktave höher
+  // KanÃ¤le 0 und 3: diskant
+  // KanÃ¤le 1 und 4: 3-Klang Bass
+  // Kanal 2:        Bass (monophon) / Grundton von Kanal 1 liegt eine Oktave hÃ¶her
+  // Kanal 5:        Kanal 2 genau eine Oktave hÃ¶her
 
-  // kurze Töne entfernen
+  // kurze TÃ¶ne entfernen
   max := Length(ChannelEvents[Diskant]);
   i := 0;
   k := i;
@@ -1100,7 +1116,7 @@ begin
   end;
 end;
 
-// Löscht alle MIDI-Events bis zum ersten Push/Pull
+// LÃ¶scht alle MIDI-Events bis zum ersten Push/Pull
 class function TEventArray.EraseFirst(var MidiEventArray: TMidiEventArray): boolean;
 var
   i, k, j: integer;
@@ -1189,7 +1205,7 @@ begin
                   ' of ' + DetailHeader.TicksToString(len);
       sleep(4);
     {$ifdef LINUX}
-      UfrmSelector.Channel_Selection.lbPlayLength.Caption := Pos^;
+//      UfrmSelector.Channel_Selection.lbPlayLength.Caption := Pos^;
 //      Application.ProcessMessages;
     {$endif}
     end;
@@ -1204,11 +1220,8 @@ begin
       SetPlayEvent(Event);
     end;
 
-{$ifdef LINUX}
-  MidiOutput.Reset
-{$else}
-  ResetMidi;
-
+  ResetMidiOut;
+{$ifndef LINUX}
   Terminate;
   while not Terminated_ do
     Sleep(1);

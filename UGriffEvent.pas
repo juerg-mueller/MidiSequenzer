@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 Jürg Müller, CH-5524
+// Copyright (C) 2022 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -15,10 +15,20 @@
 //
 unit UGriffEvent;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
   SysUtils, Types,
+  umidi,
+{$ifdef mswindows}
+  Midi,
+{$else}
+  urtmidi,
+{$endif}
   UMidiEvent,  UInstrument;
 
 type
@@ -65,10 +75,10 @@ type
   TGriffEvent = record
     NoteType: TNoteType;
     SoundPitch: byte;
-    GriffPitch: byte; // für Bass 1..8
-    Cross: boolean;   // für Bass2 true
+    GriffPitch: byte; // fÃ¼r Bass 1..8
+    Cross: boolean;   // fÃ¼r Bass2 true
     InPush: boolean;
-    AbsRect: TRect;   // width = duration; für 5. und 6. Reihe: Height = 1  Top = -1
+    AbsRect: TRect;   // width = duration; fÃ¼r 5. und 6. Reihe: Height = 1  Top = -1
     Velocity: byte;
     Repeat_: TRepeat;
 
@@ -87,7 +97,7 @@ type
     procedure SetBass(NewBass: boolean);
     function GetSteiBass: string;
     function IsAppoggiatura(const GriffHeader: TGriffHeader): boolean;
-  {$if defined(__INSTRUMENTS__)}
+//  {$if defined(__INSTRUMENTS__)}
     function IsDiatonic(const Instrument: TInstrument): boolean;
     function GriffToSound(const Instrument: TInstrument; diff: integer = 0): boolean;
     function InSet(const Instrument: TInstrument): TPushPullSet;
@@ -101,7 +111,7 @@ type
     function SoundToGriffBass(const Instrument: TInstrument): integer; overload;
     function SetEvent(Row, Index: integer; Push: boolean; const Instrument: TInstrument): boolean;
     function DoSound(const Instrument: TInstrument; On_: boolean): boolean;
-  {$endif}
+//  {$endif}
   end;
   PGriffEvent = ^TGriffEvent;
 
@@ -124,9 +134,6 @@ function GetLen2(var t32: integer; var dot: boolean; t32Takt: integer): string;
 function GetLyricLen(Len: string): integer;
 
 implementation
-
-uses
-  Midi;
 
 function GetFraction_(const sLen: string): integer; overload;
 var

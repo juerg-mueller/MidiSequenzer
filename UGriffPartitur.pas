@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (C) 2022 Jürg Müller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,6 +15,10 @@
 //
 unit UGriffPartitur;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 {$if defined(LAZARUS)}
   {$mode Delphi, objfpc}{$H+}
 {$endif}
@@ -27,7 +31,12 @@ uses
 {$if defined(DCC)}
   AnsiStrings,
 {$endif}
-  Classes, SysUtils, Types, Variants, Windows, Graphics,
+{$IFnDEF FPC}
+  Windows,
+{$ELSE}
+  LCLIntf, LCLType, LMessages,
+{$ENDIF}
+  Classes, SysUtils, Types, Variants, Graphics,
   UInstrument, UMyMemoryStream, UMyMidiStream, UEventArray,
   UGriffEvent, UFormHelper, UMidiEvent;
 
@@ -126,9 +135,7 @@ type
 //    function SavePasFile(const FileName: string): boolean;
     function SaveToMidiFile(const FileName: string; realGriffschrift: boolean): boolean;
     function SaveToNewMidiFile(const FileName: string): boolean;
-{$ifdef __FRM_GRIFF__}
     function SaveToZip(const FileName: string): boolean;
-{$endif}
 
     function AppendFile(const FileName: string): boolean;
     procedure PurgeBass;
@@ -136,11 +143,9 @@ type
   //  function IsTriole(iEvent: integer; Ticks: integer): boolean;
   //  function TriolenTest(iEvent: integer): integer;
 
-{$if defined(__INSTRUMENTS__)}
     procedure OptimisePairs(iFirst, iLast: integer);
     function CheckSustain: boolean;
     procedure TransposeInstrument(delta: integer);
-{$endif}
     procedure SortEvents;
     procedure RepeatToRest;
     procedure SetBassGriff;
@@ -192,14 +197,16 @@ var
 implementation
 
 uses
-  System.Zip,
-{$if defined(__AMPEL__)}
+  Zip,
   UAmpel,
-{$endif}
-{$ifdef __FRM_GRIFF__}
   UfrmGriff,
+  umidi,
+{$ifdef mswindows}
+  Midi,
+{$else}
+  urtmidi,
 {$endif}
-  UGriffArray, Midi,  UXmlNode, UXmlParser;
+  UGriffArray, UXmlNode, UXmlParser;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -324,14 +331,14 @@ begin
   for i := 0 to High(EventPitchs) do
   begin
     SetAmpel(GriffEvents[EventPitchs[i]], true);
-    Midi.DoSoundPitch(GriffEvents[EventPitchs[i]].GetSoundPitch(Instrument), true);
+    umidi.DoSoundPitch(GriffEvents[EventPitchs[i]].GetSoundPitch(Instrument), true);
   end;
   Sleep(500);
   for i := 0 to High(EventPitchs) do
   begin
     SetAmpel(GriffEvents[EventPitchs[i]], false);
-    Midi.DoSoundPitch(GriffEvents[EventPitchs[i]].GetSoundPitch(Instrument), false);
-  end;  
+    umidi.DoSoundPitch(GriffEvents[EventPitchs[i]].GetSoundPitch(Instrument), false);
+  end;
 end;
     
 procedure TGriffPartitur.DeleteDouble;
@@ -1911,7 +1918,9 @@ var
   var
     t, Row, i: integer;
   begin
+  {$ifdef dcc}
     ProcessMessages;
+  {$endif}
     sleep(1);
 
     Ticks := GriffHeader.Details.GetTicks;
@@ -2364,7 +2373,6 @@ begin
   result := true;
 end;
 
-{$ifdef __FRM_GRIFF__}
 function TGriffPartitur.SaveToZip(const FileName: string): boolean;
 const
   rand = 40;
@@ -2386,7 +2394,8 @@ begin
   line := quarter div 24;
   if (quarter mod 24) > 0 then
     inc(line);
-  bitmap := TBitmap.Create(2*rand + breite, line*yAbstand);
+  bitmap := TBitmap.Create;
+  bitmap.SetSize(2*rand + breite, line*yAbstand);
 
   for i := 0 to line-1 do
   begin
@@ -2400,7 +2409,6 @@ begin
 
   result := true;
 end;
-{$endif}
 
 procedure TGriffPartitur.DoStopPlay;
 begin
@@ -2535,7 +2543,6 @@ begin
   result := PartiturLoaded;
 end;
 
-{$if defined(__INSTRUMENTS__)}
 procedure TGriffPartitur.OptimisePairs(iFirst, iLast: integer);
 var
   i, j, k, n: integer;
@@ -2715,7 +2722,6 @@ begin
     i := k;
   end;
 end;
-{$endif}
 
 procedure TGriffPartitur.PurgeBass;
 var

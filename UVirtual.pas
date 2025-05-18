@@ -1,10 +1,14 @@
 //
 // Vorlage ist: teVirtualMIDITest.dpr
 //
-// Diese Unit aus dem Projekt entfernen und das Projekt l‰sst sich ohne
+// Diese Unit aus dem Projekt entfernen und das Projekt l√§sst sich ohne
 // "VirtualMidi" generieren.
 //
 unit UVirtual;
+
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
 
 interface
 
@@ -19,9 +23,9 @@ implementation
 
 
 uses
-  SysUtils,
   teVirtualMIDIdll,
-  Midi;
+  Midi,
+  SysUtils;
 
 var
   dummy: word;

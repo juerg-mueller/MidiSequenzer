@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 Jürg Müller, CH-5524
+// Copyright (C) 2022 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -15,15 +15,23 @@
 //
 unit UMidiSequenzer;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Menus,
+{$IFnDEF FPC}
+  ShellApi, Windows,
+{$ELSE}
+  LCLIntf, LCLType, LMessages,
+{$ENDIF}
+  Messages, SysUtils, Variants, Classes, Graphics, Menus,
   Controls, Forms, Dialogs, ExtCtrls, StdCtrls,  
   UInstrument, UMyMidiStream, UGriffPartitur,
-  UMyMemoryStream, System.Bluetooth,
-  System.Bluetooth.Components, ShellApi,
-  UGriffEvent, System.Zip;
+  UMyMemoryStream,
+  UGriffEvent;
 
 type
 
@@ -134,7 +142,9 @@ type
     procedure btnPurgeBassClick(Sender: TObject);
     procedure edtStopEnter(Sender: TObject);
     procedure cbxMidiInputChange(Sender: TObject);
+  {$ifndef fpc}
     procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+  {$endif}
     procedure btnRealSoundClick(Sender: TObject);
     procedure cbxTransInstrumentChange(Sender: TObject);
     procedure cbxMuteTrebleClick(Sender: TObject);
@@ -146,7 +156,9 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure Button1Click(Sender: TObject);
     procedure cbxVoltaKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+  {$ifdef mswindows}
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
+  {$endif}
     procedure cbxVirtualChange(Sender: TObject);
     procedure btnRemoveSmallClick(Sender: TObject);
     procedure btnSaveTestClick(Sender: TObject);
@@ -169,13 +181,33 @@ var
 
 implementation
 
-{$R *.dfm}
+{$IFnDEF FPC}
+  {$R *.dfm}
+{$ELSE}
+  {$R *.lfm}
+{$ENDIF}
 
 uses
-  UfrmGriff, Midi, UAmpel, UMidiDataStream, UEventArray, UGriffPlayer,
+  UfrmGriff,
+  umidi,
+{$ifdef mswindows}
+  Midi, UVirtual,
+{$else}
+  urtmidi,
+{$endif}
+  UAmpel, UMidiDataStream, UEventArray, UGriffPlayer,
   UGriffArray, UXmlNode, UXmlParser,
-  USheetMusic, UMuseScore, UVirtual, UFormHelper, UMidiEvent;
+  USheetMusic, UMuseScore, UFormHelper, UMidiEvent;
 
+procedure InsertList(Combo: TComboBox; const arr: array of string);
+var
+  i: integer;
+begin
+  for i := 0 to Length(arr)-1 do
+    Combo.AddItem(arr[i], nil);
+end;
+
+{$ifdef mswindows}
 function GetConsoleWindow: HWND; stdcall; external kernel32;
 
 procedure TfrmSequenzer.WMDropFiles(var Msg: TWMDropFiles);
@@ -205,7 +237,7 @@ begin
          (Ext = '.mid') or (Ext = '.midi') then
       begin
         if not GriffPartitur_.PartiturLoaded or
-           (Warning('Die Partitur wird überschrieben. Wollen Sie das?') = IDYES )then
+           (Warning('Die Partitur wird Ã¼berschrieben. Wollen Sie das?') = IDYES )then
         begin
           FileOpenDialog1.FileName := FileName;
           edtMidiFile.Text := FileName;
@@ -219,7 +251,7 @@ begin
   // Note we handled message
   Msg.Result := 0;
 end;
-
+{$endif}
 
 procedure TfrmSequenzer.OnMidiInData(aDeviceIndex: integer; aStatus, aData1, aData2: byte; Timestamp: integer);
 var
@@ -558,7 +590,7 @@ end;
 
 procedure TfrmSequenzer.btnResetMidiClick(Sender: TObject);
 begin
-  ResetMidi;
+  ResetMidiOut;
 end;
 
 procedure TfrmSequenzer.btnSaveGriffClick(Sender: TObject);
@@ -602,15 +634,24 @@ begin
   if s = '' then
     s := edtMidiFile.Text;
   SaveDialog1.FileName := {ExtractFilePath(s) +} ExtractFilename(edtMidiFile.Text);
+{$ifdef fpc}
+  if SaveDialog1.Execute then
+{$else}
   if SaveDialog1.Execute(Handle) then
+{$endif}
   begin
     s := SaveDialog1.FileName;
     SaveDialog1.InitialDir := ExtractFilePath(s);
     ext := LowerCase(ExtractFileExt(s));
     ext1 := '';
     case SaveDialog1.FilterIndex of
+    {$ifdef dcc}
       2: if (ext <> '.mscx') and (ext <> '.mscz') then
            ext1 := '_.mscz';
+    {$else}
+      2: if (ext <> '.mscx') then
+           ext1 := '_.mscx';
+    {$endif}
       3: ext1 := '.ly';
       4: if (ext <> '.xml') and (ext <> '.musicxml') then
            ext1 := '.musicxml';
@@ -627,11 +668,15 @@ begin
       s := s + ext1;
     end;
     if FileExists(s) then
-      if Warning('File "' + s + '" existiert. Überschreiben?') <> IDYES then
+      if Warning('File "' + s + '" existiert. Ãœberschreiben?') <> IDYES then
         exit;
 
     case SaveDialog1.FilterIndex of
+    {$ifndef dcc}
       2: Ok := SaveToMscx(GriffPartitur_, s);
+    {$else}
+      2: Ok := SaveToXmlFile(GriffPartitur_, s);
+    {$endif}
       3: begin
            s1 := ExtractFileName(s);
            SetLength(s1, Length(s1)-Length(ExtractFileExt(s1)));
@@ -645,7 +690,7 @@ begin
          end;
       4: ok := GriffPartitur_.SaveToMusicXML(s, true);
       5: ok := GriffPartitur_.SaveToNewMidiFile(s);
-// !!!!      6: ok := GriffPartitur_.SaveToZip(s);
+      6: ok := GriffPartitur_.SaveToZip(s);
       else begin
         ok := GriffPartitur_.SaveToMidiFile(s, realSound);
       end;
@@ -735,7 +780,7 @@ begin
 
   frmAmpel.ChangeInstrument(@GriffPartitur_.Instrument);
   if Sender <> nil then
-    Midi.OpenMidiMicrosoft;
+    OpenMidiMicrosoft;
 
   SelectedChanges(nil);
 end;
@@ -1133,7 +1178,7 @@ begin
     Event1 := Event^;
     if Event1.GriffToSound(Instrument) and
        (Event1.SoundPitch = sPitch) then
-      // Korrektes Pitch nicht verwärfen!
+      // Korrektes Pitch nicht verwÃ¤rfen!
     else
       with Event^ do
       begin
@@ -1176,6 +1221,7 @@ begin
     edtWidth.Text := '';
 end;
 
+{$ifndef fpc}
 procedure TfrmSequenzer.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
 var
   KeyCode: word;
@@ -1191,6 +1237,7 @@ begin
 //  writeln(IntToHex(Keycode));
   //Handled := KeyCode = 32786;   }
 end;
+{$endif}
 
 procedure TfrmSequenzer.FormShow(Sender: TObject);
 var
@@ -1214,15 +1261,15 @@ begin
   frmAmpel.Show;
   frmAmpel.KeyDown := frmGriff.FormKeyDown;
 
-  cbxMidiOut.Items.Assign(MidiOutput.DeviceNames);
-  Midi.OpenMidiMicrosoft;
+  InsertList(cbxMidiOut, MidiOutput.DeviceNames);
+  OpenMidiMicrosoft;
   cbxMidiOut.ItemIndex := MicrosoftIndex;
   MidiInput.OnMidiData := frmAmpel.OnMidiInData;
-  cbxMidiInput.Visible := MidiInput.DeviceNames.Count > 0;
+  cbxMidiInput.Visible := Length(MidiInput.DeviceNames) > 0;
   lblKeyboard.Visible := cbxMidiInput.Visible;
   if cbxMidiInput.Visible then
   begin
-    cbxMidiInput.Items.Assign(MidiInput.DeviceNames);
+    InsertList(cbxMidiInput, MidiInput.DeviceNames);
     cbxMidiInput.Items.Insert(0, '');
     cbxMidiInput.ItemIndex := 0;
     for i := 0 to cbxMidiInput.Items.Count-1 do
@@ -1233,7 +1280,7 @@ begin
   end;
   cbxVirtual.Items.Clear;
   cbxVirtual.Items.Add('');
-  for i := 0 to MidiOutput.DeviceNames.Count-1 do
+  for i := 0 to Length(MidiOutput.DeviceNames)-1 do
     cbxVirtual.Items.Append(MidiOutput.DeviceNames[i]);
   cbxVirtual.ItemIndex := 0;
 
@@ -1250,7 +1297,7 @@ procedure TfrmSequenzer.FormCreate(Sender: TObject);
 var
   i: integer;
 begin
-{$ifdef WIN64}
+{$if defined(CPU64) or defined(WIN64)}
   Caption := Caption + ' (64)';
 {$else}
   Caption := Caption + ' (32)';
@@ -1268,6 +1315,7 @@ begin
 //    cbxLoadAsGriff.Visible := true;
 //    btnRealSound.Visible := true;
   end;
+{$ifdef dcc}
 {$if defined(CONSOLE)}
 //  if not RunningWine then
 //    ShowWindow(GetConsoleWindow, SW_SHOWMINIMIZED);
@@ -1279,6 +1327,7 @@ begin
   UVirtual.LoopbackName := 'MidiSequenzer loopback';
   InstallLoopback;
   Sleep(10);
+{$endif}
   Application.ProcessMessages;
   sbVolumeOutChange(sbVolumeOut);
 end;
@@ -1292,9 +1341,11 @@ begin
     exit;
   end;
 
+{$ifdef mswindows}
   frmAmpel.KeyMessageEvent(Msg, Handled);
+{$endif}
 
-  // keine messages für die console
+  // keine messages fÃ¼r die console
   if (Msg.message = WM_KEYDOWN) and
      (Msg.wParam in [vk_f1..vk_f4]) then
   begin
@@ -1302,7 +1353,7 @@ begin
       vk_F1:
         begin
           if GriffPartitur_.PartiturLoaded then
-            if Warning('Die Partitur wird überschrieben. Wollen Sie das?') <> IDYES then
+            if Warning('Die Partitur wird Ã¼berschrieben. Wollen Sie das?') <> IDYES then
             begin
               frmGriff.Show;
               exit;
@@ -1323,16 +1374,20 @@ begin
           frmGriff.Show;
         end;
       vk_F2:
-        if frmGriff.Visible then
         begin
-          if frmGriff.IsActive then
+          if GriffPartitur_.UsedEvents = 0 then
+            GriffPartitur_.InsertNewEvent(0, false);
+          if frmGriff.Visible then
           begin
-            Hide;
-            Show;
-          end;
-          frmGriff.Hide;
-        end else
-          frmGriff.Show;
+            if frmGriff.IsActive then
+            begin
+              Hide;
+              Show;
+            end;
+            frmGriff.Hide;
+          end else
+            frmGriff.Show;
+        end;
       vk_F3:
         if frmAmpel.Visible then
         begin
@@ -1344,7 +1399,7 @@ begin
           frmAmpel.Hide
         end else
           frmAmpel.Show;
-  {$if defined(CONSOLE)}
+  {$if defined(CONSOLE) and defined(dcc)}
       vk_F4: begin
                ShowWindow(GetConsoleWindow, SW_SHOWNORMAL);
             {   Application.ProcessMessages;
@@ -1362,8 +1417,10 @@ end;
 
 procedure TfrmSequenzer.FormDestroy(Sender: TObject);
 begin
+{$ifdef dcc}
   DragAcceptFiles(Self.Handle, false);
   Application.OnMessage := nil;
+{$endif}
   MidiInput.CloseAll;
 end;
 
@@ -1373,7 +1430,6 @@ begin
   frmGriff.Invalidate;
   result := true;
 end;
-
 
 procedure TfrmSequenzer.SelectedChanges(SelectedEvent: PGriffEvent);
 var

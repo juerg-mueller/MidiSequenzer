@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 Jürg Müller, CH-5524
+// Copyright (C) 2022 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -15,10 +15,14 @@
 //
 unit UMuseScore;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
-  SysUtils, System.Zip,
+  SysUtils, Zip,
   UGriffPartitur;
 
 
@@ -227,7 +231,9 @@ var
   Bass2015: boolean;
   SteiBass_: TSteiBass;
   MeasureNr: integer;
+{$ifdef mswindows}
   Zip_: System.Zip.TZipFile;
+{$endif}
   Outp: TBytes;
 begin
   Root := nil;
@@ -904,7 +910,7 @@ var
         Child1 := Child.AppendChildNode('font');
         Child1.AppendAttr('face', 'ScoreText');
         Child1 := Child.AppendChildNode('font', s);
-        // örgeli 22 st 18
+        // Ã¶rgeli 22 st 18
         if iLen >= 58612 then
           Child1.AppendAttr('size', '24')
         else
@@ -1066,7 +1072,7 @@ var
             LastRepeat := rRegular;
           end;
         end else begin
-          // Pausen einfügen
+          // Pausen einfÃ¼gen
           while (SaveRec.Rest(GriffHeader.Details.GetRaster(GriffEvents[SaveRec.iEvent].AbsRect.Left - offset),
                    (nt = ntBass) and (NoteType <> ntBass))) do
              if not AddRest(Len, Lyrics, nt = ntDiskant) then
@@ -1667,7 +1673,11 @@ begin
     Score.RemoveChild(Staff3);
   end;
 
+{$ifdef dcc}
   result := Root.SaveToMsczFile(FileName);
+{$else}
+  result := Root.SaveToXmlFile(Filename);
+{$endif}
 end;
 
 end.

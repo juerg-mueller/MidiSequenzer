@@ -1,13 +1,29 @@
 program MidiSequenzer;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 uses
-  Vcl.Forms,
+{$ifdef unix}
+  cthreads,
+  pthreads,
+  Interfaces,
+{$endif}
+  Forms,
   UMidiSequenzer in 'UMidiSequenzer.pas' {frmSequenzer},
   UInstrument in 'UInstrument.pas',
   UMyMidiStream in 'UMyMidiStream.pas',
   UfrmGriff in 'UfrmGriff.pas' {frmGriff},
   UGriffPartitur in 'UGriffPartitur.pas',
+{$ifdef mswindows}
   Midi in 'Midi.pas',
+  teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
+  UVirtual in 'UVirtual.pas',
+{$else}
+  umidi,
+  urtmidi,
+{$endif}
   UMidiDataStream in 'UMidiDataStream.pas',
   UAmpel in 'UAmpel.pas' {frmAmpel},
   UMyMemoryStream in 'UMyMemoryStream.pas',
@@ -19,8 +35,6 @@ uses
   UXmlParser in 'UXmlParser.pas',
   USheetMusic in 'USheetMusic.pas',
   UMuseScore in 'UMuseScore.pas',
-  teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
-  UVirtual in 'UVirtual.pas',
   UFormHelper in 'UFormHelper.pas',
   UMidiEvent in 'UMidiEvent.pas';
 
@@ -37,7 +51,9 @@ var
 
 begin
   Application.Initialize;
-  //Application.MainFormOnTaskbar := True;
+{$ifdef dcc}
+  Application.MainFormOnTaskbar := True;
+{$endif}
   Application.CreateForm(TfrmSequenzer, frmSequenzer);
   Application.CreateForm(TfrmGriff, frmGriff);
   Application.CreateForm(TfrmAmpel, frmAmpel);

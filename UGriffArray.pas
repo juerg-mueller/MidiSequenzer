@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 Jürg Müller, CH-5524
+// Copyright (C) 2022 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -15,10 +15,19 @@
 //
 unit UGriffArray;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
   SysUtils,
+  umidi,
+{$ifdef mswindows}
+{$else}
+  urtmidi,
+{$endif}
   UMyMidiStream, UGriffEvent, UEventArray, UInstrument, UMidiEvent;
 
 type
@@ -60,7 +69,10 @@ type
 implementation
 
 uses
-  UMidiDataStream, Midi;
+{$ifdef mswindows}
+  Midi,
+{$endif}
+  UMidiDataStream;
 
 class procedure TGriffArray.CopyToMidi(var MidiEvents: TMidiEventArray; const GriffEvents: TGriffEventArray; Channel: byte);
 var
@@ -595,7 +607,7 @@ begin
     if (GriffEvent.NoteType > ntBass) then
       continue;
 
-    // Balg-Notation ändert?
+    // Balg-Notation Ã¤ndert?
     if (not Bass or BassDiatonic) and
        not realGriffschrift then
     begin
@@ -816,7 +828,7 @@ begin
     if (GriffEvent.NoteType > ntBass) then
       continue;
 
-    // Balg-Notation ändert?
+    // Balg-Notation Ã¤ndert?
     if (not Bass or BassDiatonic) then
     begin
       if GriffEvent.InPush <> IsInPush then
@@ -1012,6 +1024,7 @@ var
   Delta, takt: integer;
   Datastream: TSimpleDataStream;
   MidiEvent: TMidiEvent;
+  d: double;
 begin
   Datastream := TSimpleDataStream.Create;
   try
@@ -1080,7 +1093,8 @@ begin
                     takt := Delta div DetailHeader.DeltaTimeTicks;
                     if DetailHeader.measureDiv = 8 then
                       takt := 2*takt;
-                    WriteString(Format('  Takt: %.2f', [takt / double(DetailHeader.measureFact) + 1]));
+                    d := DetailHeader.measureFact;
+                    WriteString(Format('  Takt: %.2f', [takt / d + 1]));
                   end;
                   inc(Delta, MidiEvent.var_len);
               //     WriteString('  LineNr: ' + IntToStr(iMidiEvent));

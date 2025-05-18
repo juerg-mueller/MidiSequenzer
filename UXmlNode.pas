@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 Jürg Müller, CH-5524
+// Copyright (C) 2022 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -15,10 +15,14 @@
 //
 unit UXmlNode;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
-  SysUtils, Classes, System.Zip,
+  SysUtils, Classes, Zip,
   UMyMemoryStream;
 
 type
@@ -50,7 +54,9 @@ type
     procedure AppendAttr(Name_: string; Value_: integer); overload;
     function SaveToXmlFile(const FileName: string; Header: string = ''): boolean;
     function SaveToStream(const Header: string): TMyMemoryStream;
+  {$ifdef dcc}
     function SaveToMsczFile(FileName: string): boolean;
+  {$endif}
     procedure BuildStream(Stream: TMyMemoryStream; Level: integer; Wln: boolean);
     procedure RemoveChild(Child: KXmlNode);
     function GetChildIndex(Child: KXmlNode): integer;
@@ -396,6 +402,7 @@ begin
   end;
 end;
 
+{$ifdef dcc}
 function KXmlNode.SaveToMsczFile(FileName: string): boolean;
 var
   container, child: KXmlNode;
@@ -414,18 +421,17 @@ begin
     child := child.AppendChildNode('rootfile');
     child.AppendAttr('full-path', ExtractFileName(FileName) + '.mscx');
     conStr := container.SaveToStream('<?xml version="1.0" encoding="UTF-8"?>'#13#10);
-
     Zip := TZipFile.Create;
     Zip.Open(FileName + '.mscz', zmWrite);
     Zip.Add(Stream.MakeBytes, ExtractFileName(FileName) + '.mscx');
     Zip.Add(conStr.MakeBytes, 'META-INF/container.xml');
     Zip.Free;
-
     Stream.Free;
     conStr.Free;
     result := true;
   end;
 end;
+{$endif}
 
 function KXmlNode.GetXmlValue: AnsiString;
 var
@@ -525,7 +531,7 @@ begin
     if (mea1 < Count) and (mea3 < Staff3.Count) then
     begin
       Child := Staff3.ChildNodes[mea3]; // measure
-      // startRepeat und endRepeat überspringen
+      // startRepeat und endRepeat Ã¼berspringen
       p := Child.Count-1;
       while (p > 0) and (Child.ChildNodes[p].Name <> 'voice') do
         dec(p);

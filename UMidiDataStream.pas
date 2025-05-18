@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2020 Jürg Müller, CH-5524
+// Copyright (C) 2020 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -16,13 +16,20 @@
 
 unit UMidiDataStream;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
-{$if defined(__INSTRUMENTS__)}
   UInstrument,
-{$endif}
-  Classes, SysUtils, windows,
+{$IFnDEF FPC}
+  windows,
+{$ELSE}
+  LCLIntf, LCLType, LMessages,
+{$ENDIF}
+  Classes, SysUtils,
   UMyMidiStream, UEventArray, UMidiEvent;
 
 const
@@ -44,7 +51,6 @@ type
     function ReadMidiHeader(RaiseExcept: boolean = false): boolean;
     function ReadMidiTrackHeader(var Header: TTrackHeader; RaiseExcept: boolean = false): boolean;
     function ReadMidiEvent(var event: TMidiEvent): boolean;
-{$if defined(__INSTRUMENTS__)}
     function TranslateEvent(var d1: byte;
                             toDo: eTranslate;
                             const Instrument: PInstrument): boolean;
@@ -52,9 +58,6 @@ type
     function MakeMidiFile(SimpleFile: TSimpleDataStream;
                           toDo: eTranslate = nothing;
                           const Instrument: PInstrument = nil): boolean;
-{$else}
-    function MakeMidiFile(SimpleFile: TSimpleDataStream): boolean;
-{$endif}
     function MakeMidiEventsArr(var Events: TMidiEventArray): boolean;
     function MakeMidiTrackEvents(var Tracks: TTrackEventArray): boolean;
     function MakeEventArray(var EventArray: TEventArray; Lyrics: boolean = false): boolean;
@@ -75,13 +78,9 @@ type
     function ReadSimpleHeader: boolean;
     function ReadSimpleTrackHeader(var TrackHeader: TTrackHeader): boolean;
     function ReadSimpleMidiEvent(var d: TInt4): boolean ;
-{$if defined(__INSTRUMENTS__)}
     function MakeSimpleFile(MidiFile: TMidiDataStream;
                             toDo: eTranslate = nothing;
                             const Instrument: PInstrument = nil): boolean;
-{$else}
-    function MakeSimpleFile(MidiFile: TMidiDataStream): boolean;
-{$endif}
     function ReadCross: boolean;
     function NextString: AnsiString;
     function ReadString: AnsiString;
@@ -111,13 +110,13 @@ type
 var
   RunningWine: boolean = false;
 
-{$if defined(__INSTRUMENTS__) and defined(CONSOLE)}
+{$if defined(CONSOLE)}
 procedure MidiConverterTest(const FileName: string; var Text: System.Text);
 procedure MidiConverterDirTest(const DirName: string; var Text: System.Text);
 {$endif}
 implementation
 
-
+{$ifdef mswindows}
 function IsRunningInWine: boolean;
 type
   TWineVers = function: PAnsiChar; cdecl;
@@ -136,6 +135,7 @@ begin
 {$endif}
   RunningWine := result;
 end;
+{$endif}
 
 constructor TMidiDataStream.Create;
 begin
@@ -211,7 +211,7 @@ begin
   if Size - Position < ChunkSize then
   begin
     if RaiseExcept then
-      raise Exception.Create('Restliche Dateigrösse kleiner als die angegebene Chunkgrösse!');
+      raise Exception.Create('Restliche DateigrÃ¶sse kleiner als die angegebene ChunkgrÃ¶sse!');
     exit;
   end;
   MidiHeader.Clear;
@@ -237,12 +237,11 @@ begin
      (event.command <> $f0) then
     event.d2 := ReadByte;
   if not (event.event in [$f]) then
-    event.var_len := ReadVariableLen;  // eigentlich auch für den Meta-Event ff
+    event.var_len := ReadVariableLen;  // eigentlich auch fÃ¼r den Meta-Event ff
 
   result := true;
 end;
 
-{$if defined(__INSTRUMENTS__)}
 function TMidiDataStream.TranslateEvent(var d1: byte;
                                         toDo: eTranslate;
                                         const Instrument: PInstrument): boolean;
@@ -266,9 +265,6 @@ end;
 function TMidiDataStream.MakeMidiFile(SimpleFile: TSimpleDataStream;
   toDo: eTranslate;
   const Instrument: PInstrument): boolean;
-{$else}
-function TMidiDataStream.MakeMidiFile(SimpleFile: TSimpleDataStream): boolean;
-{$endif}
 var
   d: TInt4;
   d1: byte;
@@ -346,10 +342,8 @@ begin
       Event := d[1] shr 4;
       WriteByte(d[1]);
       d1 := d[2] and $ff;
-{$if defined(__INSTRUMENTS__)}
       if (Event in [8,9]) then
         TranslateEvent(d1, toDo, Instrument);
-{$endif}
       WriteByte(d1);
       if Event <> $d then
         WriteByte(d[3]);
@@ -397,7 +391,7 @@ begin
   if (Size - Position + 2 < Header.ChunkSize) then
   begin
 //    if RaiseExcept then
-//      raise Exception.Create('Restliche Dateigröße kleiner als die angegebene Chunkgröße!');
+//      raise Exception.Create('Restliche DateigrÃ¶ÃŸe kleiner als die angegebene ChunkgrÃ¶ÃŸe!');
   end;
   result := true;
 end;
@@ -829,11 +823,7 @@ begin
   WritelnString(cSimpleTrackHeader + ' ' + IntToStr(Delta));
 end;
 
-{$if defined(__INSTRUMENTS__)}
 function TSimpleDataStream.MakeSimpleFile(MidiFile: TMidiDataStream; toDo: eTranslate; const Instrument: PInstrument): boolean;
-{$else}
-function TSimpleDataStream.MakeSimpleFile(MidiFile: TMidiDataStream): boolean;
-{$endif}
 var
   TrackHeader: TTrackHeader;
   event: TMidiEvent;
@@ -1238,7 +1228,7 @@ end;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-{$if defined(__INSTRUMENTS__) and defined(CONSOLE)}
+{$if defined(CONSOLE)}
 procedure MidiConverterTest(const FileName: string; var Text: System.Text);
 var
   SimpleFile: TSimpleDataStream;
@@ -1263,7 +1253,7 @@ begin
       writeln(Text, 'File not converted to midi file: ' + Filename);
       exit;
     end;
-// !!!!!!!!!    pos := NewMidi.Compare(MidiFile);
+    pos := NewMidi.Compare(MidiFile);
     if (pos < NewMidi.Size) or (pos < MidiFile.Size) then
       writeln(Text, Format('%x (%d) %x  %x', [pos, pos, NewMidi.size, MidiFile.Size]));
   finally
@@ -1300,7 +1290,7 @@ var
   Tracks: TTrackEventArray;
 }
 initialization
-  IsRunningInWine;
+  //IsRunningInWine;
 {
   Stream := TMidiSaveStream.Create;
   Stream.LoadFromFile('D:/Dokumente/Louis/RS-Player/Ferien am Murtensee.mid');

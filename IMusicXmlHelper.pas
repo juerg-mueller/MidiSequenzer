@@ -547,7 +547,9 @@ var
   Volta: integer;
   Outp: TBytes;
   Ok: boolean;
+{$ifdef mswindows}
   Zip_: System.Zip.TZipFile;
+{$endif}
 
   procedure DoChord(x: double);
   begin
@@ -558,6 +560,7 @@ var
 
 begin
   Root := nil;
+{$ifdef dcc}
   if ExtractFileExt(Filename) = '.mxl' then
   begin
     Zip_ := TZipFile.Create;
@@ -572,6 +575,7 @@ begin
     Ok := KXmlParser.ParseStream(Outp, Root);
     SetLength(Outp, 0);
   end else
+{$endif}
     Ok := KXmlParser.ParseFile(FileName, Root);
   if not Ok then
     exit;

@@ -1,6 +1,8 @@
 object frmSequenzer: TfrmSequenzer
-  Left = 0
-  Top = 0
+  Left = 642
+  Height = 510
+  Top = 501
+  Width = 898
   HorzScrollBar.Smooth = True
   HorzScrollBar.Tracking = True
   ActiveControl = btnOpen
@@ -8,94 +10,82 @@ object frmSequenzer: TfrmSequenzer
   ClientHeight = 510
   ClientWidth = 898
   Color = clBtnFace
-  Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
-  Font.Style = []
   KeyPreview = True
-  Position = poDesigned
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  OnShortCut = FormShortCut
   OnShow = FormShow
-  TextHeight = 13
+  LCLVersion = '2.2.6.0'
   object gbLoadSave: TGroupBox
     Left = 0
+    Height = 110
     Top = 400
     Width = 898
-    Height = 110
     Align = alBottom
     Caption = 'Load/Save Midi Partitur'
+    ClientHeight = 93
+    ClientWidth = 896
     TabOrder = 0
-    ExplicitTop = 399
-    ExplicitWidth = 894
-    DesignSize = (
-      898
-      110)
     object Label12: TLabel
-      Left = 574
-      Top = 33
-      Width = 92
-      Height = 13
+      Left = 566
+      Height = 16
+      Top = 19
+      Width = 98
       Anchors = [akTop, akRight]
       Caption = 'Transpose (Primes)'
-      ExplicitLeft = 590
+      ParentColor = False
     end
     object btnOpen: TButton
-      Left = 759
-      Top = 60
-      Width = 99
+      Left = 757
       Height = 25
+      Top = 46
+      Width = 99
       Anchors = [akTop, akRight]
       Caption = 'Choose mid-File'
-      TabOrder = 0
       OnClick = btnOpenClick
-      ExplicitLeft = 755
+      TabOrder = 0
     end
     object btnLoadPartitur: TButton
-      Left = 759
-      Top = 28
-      Width = 99
+      Left = 757
       Height = 25
+      Top = 14
+      Width = 99
       Anchors = [akTop, akRight]
       Caption = 'Load Partitur'
-      TabOrder = 1
       OnClick = btnLoadPartiturClick
-      ExplicitLeft = 755
+      TabOrder = 1
     end
     object btnSaveMidi: TButton
-      Left = 24
-      Top = 60
-      Width = 100
+      Left = 22
       Height = 25
+      Top = 46
+      Width = 100
       Caption = 'Save Midi-Partitur'
-      TabOrder = 2
       OnClick = btnSaveMidiClick
       OnEnter = edtStopEnter
+      TabOrder = 2
     end
     object cbxLoadAsGriff: TCheckBox
-      Left = 336
-      Top = 34
-      Width = 148
-      Height = 17
+      Left = 347
+      Height = 21
+      Top = 20
+      Width = 135
       Alignment = taLeftJustify
       Anchors = [akTop, akRight]
       Caption = 'Load as Griff Partitur'
       TabOrder = 3
-      ExplicitLeft = 332
     end
     object cbxTranspose: TComboBox
-      Left = 688
-      Top = 30
+      Left = 686
+      Height = 28
+      Top = 16
       Width = 61
-      Height = 21
-      Style = csDropDownList
       Anchors = [akTop, akRight]
+      ItemHeight = 0
       ItemIndex = 11
-      TabOrder = 4
-      Text = '0'
       Items.Strings = (
         '-11'
         '-10'
@@ -123,194 +113,202 @@ object frmSequenzer: TfrmSequenzer
         '12'
         '13'
         '14'
-        '15')
-      ExplicitLeft = 684
+        '15'
+      )
+      Style = csDropDownList
+      TabOrder = 4
+      Text = '0'
     end
     object edtMidiFile: TComboBox
-      Left = 336
-      Top = 62
+      Left = 334
+      Height = 28
+      Top = 48
       Width = 413
-      Height = 21
       Anchors = [akTop, akRight]
+      ItemHeight = 0
       TabOrder = 5
-      ExplicitLeft = 332
     end
     object btnRealSound: TButton
-      Left = 150
-      Top = 59
-      Width = 100
+      Left = 148
       Height = 25
+      Top = 45
+      Width = 100
       Caption = 'Save Griff-Partitur'
-      TabOrder = 6
-      Visible = False
       OnClick = btnSaveMidiClick
       OnEnter = edtStopEnter
+      TabOrder = 6
+      Visible = False
     end
     object btnSaveTest: TButton
-      Left = 150
-      Top = 19
-      Width = 100
+      Left = 148
       Height = 25
+      Top = 5
+      Width = 100
       Caption = 'Save Test-Partitur'
-      TabOrder = 7
       OnClick = btnSaveTestClick
       OnEnter = edtStopEnter
+      TabOrder = 7
     end
   end
   object gbGriffEvent: TGroupBox
     Left = 0
+    Height = 400
     Top = 0
     Width = 250
-    Height = 400
     Align = alLeft
     Caption = 'Selected Griff Event'
-    Enabled = False
+    ClientHeight = 383
+    ClientWidth = 248
     TabOrder = 1
-    ExplicitHeight = 399
     object Label1: TLabel
-      Left = 24
-      Top = 50
-      Width = 56
-      Height = 13
+      Left = 22
+      Height = 16
+      Top = 36
+      Width = 63
       Caption = 'Sound Pitch'
+      ParentColor = False
     end
     object Label2: TLabel
-      Left = 24
-      Top = 77
-      Width = 47
-      Height = 13
+      Left = 22
+      Height = 16
+      Top = 63
+      Width = 53
       Caption = 'Griff Pitch'
+      ParentColor = False
     end
     object Label3: TLabel
-      Left = 24
-      Top = 150
-      Width = 43
-      Height = 13
+      Left = 22
+      Height = 16
+      Top = 136
+      Width = 49
       Caption = 'Griff Line'
+      ParentColor = False
     end
     object Label4: TLabel
-      Left = 24
-      Top = 177
-      Width = 28
-      Height = 13
+      Left = 22
+      Height = 16
+      Top = 163
+      Width = 30
       Caption = 'Index'
+      ParentColor = False
     end
     object Label9: TLabel
-      Left = 24
-      Top = 231
-      Width = 28
-      Height = 13
+      Left = 22
+      Height = 16
+      Top = 217
+      Width = 31
       Caption = 'Width'
+      ParentColor = False
     end
     object Label10: TLabel
-      Left = 24
-      Top = 204
-      Width = 59
-      Height = 13
+      Left = 22
+      Height = 16
+      Top = 190
+      Width = 66
       Caption = 'Left Position'
+      ParentColor = False
     end
     object Label14: TLabel
-      Left = 24
-      Top = 258
-      Width = 35
-      Height = 13
+      Left = 22
+      Height = 16
+      Top = 244
+      Width = 36
       Caption = 'Repeat'
+      ParentColor = False
     end
     object Label15: TLabel
-      Left = 24
-      Top = 22
-      Width = 24
-      Height = 13
+      Left = 22
+      Height = 16
+      Top = 8
+      Width = 25
       Caption = 'Type'
+      ParentColor = False
     end
     object edtSoundPitch: TEdit
-      Left = 102
-      Top = 47
+      Left = 100
+      Height = 28
+      Top = 33
       Width = 121
-      Height = 21
-      TabOrder = 0
       OnExit = edtSoundPitchExit
       OnKeyPress = edtKeyPress
+      TabOrder = 0
     end
     object edtGriffPitch: TEdit
-      Left = 102
-      Top = 74
+      Left = 100
+      Height = 28
+      Top = 60
       Width = 121
-      Height = 21
       Enabled = False
-      TabOrder = 1
       OnExit = edtGriffPitchExit
       OnKeyPress = edtKeyPress
+      TabOrder = 1
     end
     object cbxCross: TCheckBox
-      Left = 24
-      Top = 101
-      Width = 91
-      Height = 17
+      Left = 22
+      Height = 21
+      Top = 87
+      Width = 52
       Alignment = taLeftJustify
       Caption = 'Cross'
-      TabOrder = 2
       OnExit = cbxCrossClick
       OnMouseUp = cbxCrossMouseUp
+      TabOrder = 2
     end
     object cbxPush: TCheckBox
-      Left = 24
-      Top = 124
-      Width = 91
-      Height = 17
+      Left = 22
+      Height = 21
+      Top = 110
+      Width = 50
       Alignment = taLeftJustify
       Caption = 'Push'
-      TabOrder = 3
       OnExit = cbxPushClick
       OnMouseUp = cbxPushMouseUp
+      TabOrder = 3
     end
     object edtGriffLine: TEdit
-      Left = 102
-      Top = 147
+      Left = 100
+      Height = 28
+      Top = 133
       Width = 121
-      Height = 21
       Enabled = False
-      TabOrder = 4
       OnExit = edtGriffPitchExit
       OnKeyPress = edtKeyPress
+      TabOrder = 4
     end
     object edtIndex: TEdit
-      Left = 102
-      Top = 174
+      Left = 100
+      Height = 28
+      Top = 160
       Width = 121
-      Height = 21
       Enabled = False
-      TabOrder = 5
       OnExit = edtGriffPitchExit
       OnKeyPress = edtKeyPress
+      TabOrder = 5
     end
     object edtLeftPos: TEdit
-      Left = 102
-      Top = 201
+      Left = 100
+      Height = 28
+      Top = 187
       Width = 121
-      Height = 21
-      TabOrder = 6
       OnExit = edtLeftPosExit
       OnKeyPress = edtKeyPress
+      TabOrder = 6
     end
     object edtWidth: TEdit
-      Left = 102
-      Top = 228
+      Left = 100
+      Height = 28
+      Top = 214
       Width = 121
-      Height = 21
-      TabOrder = 7
       OnExit = edtWidthExit
       OnKeyPress = edtKeyPress
+      TabOrder = 7
     end
     object cbxVolta: TComboBox
-      Left = 102
-      Top = 255
+      Left = 100
+      Height = 28
+      Top = 241
       Width = 121
-      Height = 21
-      TabOrder = 8
-      Text = 'regular'
-      OnExit = cbxVoltaChange
-      OnKeyUp = cbxVoltaKeyUp
+      ItemHeight = 0
       Items.Strings = (
         'regular'
         'start repeat'
@@ -318,192 +316,194 @@ object frmSequenzer: TfrmSequenzer
         'start volta 1'
         'stop volta 1'
         'start volta 2'
-        'stop volta 2')
+        'stop volta 2'
+      )
+      OnExit = cbxVoltaChange
+      OnKeyUp = cbxVoltaKeyUp
+      TabOrder = 8
+      Text = 'regular'
     end
     object cbxNoteType: TComboBox
-      Left = 102
-      Top = 20
+      Left = 100
+      Height = 28
+      Top = 6
       Width = 121
-      Height = 21
+      ItemHeight = 0
       ItemIndex = 0
-      TabOrder = 9
-      Text = 'Diskant'
-      OnExit = cbxNoteTypeChange
       Items.Strings = (
         'Diskant'
         'Bass'
         'Rest'
-        'Repeat')
+        'Repeat'
+      )
+      OnExit = cbxNoteTypeChange
+      TabOrder = 9
+      Text = 'Diskant'
     end
   end
   object gbOptimize: TGroupBox
     Left = 748
+    Height = 400
     Top = 0
     Width = 150
-    Height = 400
     Align = alRight
     Caption = 'Optimization'
+    ClientHeight = 383
+    ClientWidth = 148
     TabOrder = 2
-    ExplicitLeft = 744
-    ExplicitHeight = 399
-    DesignSize = (
-      150
-      400)
     object btnBassSynch: TButton
-      Left = 27
-      Top = 275
-      Width = 99
+      Left = 25
       Height = 25
+      Top = 264
+      Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Bass Synch.'
-      TabOrder = 0
       OnClick = btnBassSynchClick
       OnEnter = edtStopEnter
-      ExplicitTop = 274
+      TabOrder = 0
     end
     object btnSmallest: TButton
-      Left = 27
-      Top = 337
-      Width = 99
+      Left = 25
       Height = 25
+      Top = 326
+      Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Optimize'
-      TabOrder = 1
       OnClick = btnSmallestClick
       OnEnter = edtStopEnter
-      ExplicitTop = 336
+      TabOrder = 1
     end
     object btnLongerPitches: TButton
-      Left = 27
-      Top = 306
-      Width = 99
+      Left = 25
       Height = 25
+      Top = 295
+      Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Longer Pitches'
-      TabOrder = 2
       OnClick = btnLongerPitchesClick
       OnEnter = edtStopEnter
-      ExplicitTop = 305
+      TabOrder = 2
     end
     object btnPurgeBass: TButton
-      Left = 27
-      Top = 27
-      Width = 100
+      Left = 25
       Height = 25
+      Top = 13
+      Width = 100
       Caption = 'Remove Bass'
-      TabOrder = 3
       OnClick = btnPurgeBassClick
       OnEnter = edtStopEnter
+      TabOrder = 3
     end
     object Button1: TButton
-      Left = 27
-      Top = 119
-      Width = 100
+      Left = 25
       Height = 25
+      Top = 105
+      Width = 100
       Caption = 'Check Push/Pull'
-      TabOrder = 4
-      Visible = False
       OnClick = Button1Click
       OnEnter = edtStopEnter
+      TabOrder = 4
+      Visible = False
     end
     object btnRemoveSmall: TButton
-      Left = 27
-      Top = 368
-      Width = 99
+      Left = 25
       Height = 25
+      Top = 357
+      Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Remove Small'
-      TabOrder = 5
       OnClick = btnRemoveSmallClick
       OnEnter = edtStopEnter
-      ExplicitTop = 367
+      TabOrder = 5
     end
     object Button2: TButton
-      Left = 27
-      Top = 244
-      Width = 99
+      Left = 25
       Height = 25
+      Top = 233
+      Width = 99
       Anchors = [akLeft, akBottom]
-      Caption = 'B'#228'sse gleichlang'
-      TabOrder = 6
+      Caption = 'Bässe gleichlang'
       OnClick = Button2Click
       OnEnter = edtStopEnter
-      ExplicitTop = 243
+      TabOrder = 6
     end
   end
   object Panel1: TPanel
     Left = 250
+    Height = 400
     Top = 0
     Width = 498
-    Height = 400
     Align = alClient
     BevelOuter = bvNone
+    ClientHeight = 400
+    ClientWidth = 498
     TabOrder = 3
-    ExplicitWidth = 494
-    ExplicitHeight = 399
     object gbHeader: TGroupBox
       Left = 0
+      Height = 141
       Top = 0
       Width = 498
-      Height = 141
       Align = alTop
       Caption = 'Partitur Header'
+      ClientHeight = 124
+      ClientWidth = 496
       TabOrder = 0
-      ExplicitWidth = 494
       object Label5: TLabel
-        Left = 24
-        Top = 32
-        Width = 41
-        Height = 13
+        Left = 22
+        Height = 16
+        Top = 18
+        Width = 44
         Caption = 'Measure'
+        ParentColor = False
       end
       object Label6: TLabel
-        Left = 24
-        Top = 85
-        Width = 109
-        Height = 13
+        Left = 22
+        Height = 16
+        Top = 71
+        Width = 119
         Caption = 'Ticks per Quarter Note'
+        ParentColor = False
       end
       object Label7: TLabel
-        Left = 24
-        Top = 57
-        Width = 65
-        Height = 13
+        Left = 22
+        Height = 16
+        Top = 43
+        Width = 71
         Caption = 'Smallest Note'
+        ParentColor = False
       end
       object Label8: TLabel
-        Left = 24
-        Top = 112
-        Width = 81
-        Height = 13
+        Left = 22
+        Height = 16
+        Top = 98
+        Width = 89
         Caption = 'Beats per Minute'
+        ParentColor = False
       end
       object cbxViertel: TComboBox
-        Left = 219
-        Top = 29
+        Left = 217
+        Height = 28
+        Top = 15
         Width = 70
-        Height = 21
-        Style = csDropDownList
+        ItemHeight = 0
         ItemIndex = 0
-        TabOrder = 1
-        Text = 'Quarter'
-        OnChange = cbxViertelChange
-        OnEnter = edtStopEnter
         Items.Strings = (
           'Quarter'
-          '8-th')
+          '8-th'
+        )
+        OnChange = cbxViertelChange
+        OnEnter = edtStopEnter
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'Quarter'
       end
       object cbxTakt: TComboBox
-        Left = 143
-        Top = 29
+        Left = 141
+        Height = 28
+        Top = 15
         Width = 70
-        Height = 21
-        Style = csDropDownList
+        ItemHeight = 0
         ItemIndex = 2
-        TabOrder = 0
-        Text = '4'
-        OnChange = cbxTaktChange
-        OnEnter = edtStopEnter
         Items.Strings = (
           '2'
           '3'
@@ -515,216 +515,228 @@ object frmSequenzer: TfrmSequenzer
           '9'
           '10'
           '11'
-          '12')
+          '12'
+        )
+        OnChange = cbxTaktChange
+        OnEnter = edtStopEnter
+        Style = csDropDownList
+        TabOrder = 0
+        Text = '4'
       end
       object edtDeltaTimeTicks: TEdit
-        Left = 143
-        Top = 82
+        Left = 141
+        Height = 28
+        Top = 68
         Width = 70
-        Height = 21
         Alignment = taRightJustify
-        TabOrder = 3
-        Text = '192'
         OnEnter = edtStopEnter
         OnExit = edtDeltaTimeTicksExit
         OnKeyPress = edtKeyPress
+        TabOrder = 3
+        Text = '192'
       end
       object cbxSmallestNote: TComboBox
-        Left = 143
-        Top = 56
+        Left = 141
+        Height = 28
+        Top = 42
         Width = 70
-        Height = 21
-        Style = csDropDownList
+        ItemHeight = 0
         ItemIndex = 0
-        TabOrder = 2
-        Text = '8th'
-        OnChange = cbxSmallestNoteChange
-        OnEnter = edtStopEnter
         Items.Strings = (
           '8th'
           '16th'
-          '32th')
+          '32th'
+        )
+        OnChange = cbxSmallestNoteChange
+        OnEnter = edtStopEnter
+        Style = csDropDownList
+        TabOrder = 2
+        Text = '8th'
       end
       object cbxTrimNote: TCheckBox
-        Left = 24
-        Top = 140
-        Width = 132
-        Height = 17
+        Left = 22
+        Height = 21
+        Top = 126
+        Width = 76
         Alignment = taLeftJustify
         Caption = 'Trim Note'
+        OnClick = cbxTrimNoteClick
         TabOrder = 5
         Visible = False
-        OnClick = cbxTrimNoteClick
       end
       object edtBPM: TEdit
-        Left = 143
-        Top = 109
+        Left = 141
+        Height = 28
+        Top = 95
         Width = 70
-        Height = 21
         Alignment = taRightJustify
-        TabOrder = 4
-        Text = '120'
         OnEnter = edtStopEnter
         OnExit = edtBPMExit
         OnKeyPress = edtKeyPress
+        TabOrder = 4
+        Text = '120'
       end
     end
     object gbMidiSound: TGroupBox
       Left = 0
+      Height = 187
       Top = 141
       Width = 498
-      Height = 187
       Align = alClient
       Caption = 'Midi / Sound'
+      ClientHeight = 170
+      ClientWidth = 496
       TabOrder = 1
-      ExplicitWidth = 494
-      ExplicitHeight = 186
-      DesignSize = (
-        498
-        187)
       object Label11: TLabel
-        Left = 219
-        Top = 61
-        Width = 74
-        Height = 13
+        Left = 217
+        Height = 16
+        Top = 47
+        Width = 78
         Caption = 'Play Delay (ms)'
+        ParentColor = False
       end
       object lblKeyboard: TLabel
-        Left = 134
-        Top = 34
-        Width = 78
-        Height = 13
-        Caption = 'Keyboard/'#214'rgeli'
+        Left = 131
+        Height = 16
+        Top = 20
+        Width = 86
+        Caption = 'Keyboard/Örgeli'
+        ParentColor = False
       end
       object Label17: TLabel
-        Left = 134
-        Top = 88
-        Width = 56
-        Height = 13
+        Left = 131
+        Height = 16
+        Top = 74
+        Width = 60
         Caption = 'Synthesizer'
+        ParentColor = False
       end
       object lbVirtual: TLabel
-        Left = 134
-        Top = 122
-        Width = 65
-        Height = 13
+        Left = 131
+        Height = 16
+        Top = 108
+        Width = 72
         Caption = 'Virtual Device'
+        ParentColor = False
         Visible = False
       end
       object lbBegleitung: TLabel
-        Left = 24
-        Top = 153
-        Width = 69
-        Height = 13
+        Left = 22
+        Height = 16
+        Top = 139
+        Width = 78
         Caption = 'Volume output'
+        ParentColor = False
       end
       object cbxMidiOut: TComboBox
-        Left = 219
-        Top = 85
+        Left = 217
+        Height = 32
+        Top = 71
         Width = 156
-        Height = 21
+        ItemHeight = 0
+        OnChange = cbxMidiOutChange
         Style = csDropDownList
         TabOrder = 0
-        OnChange = cbxMidiOutChange
       end
       object edtPlayDelay: TEdit
-        Left = 308
-        Top = 58
+        Left = 306
+        Height = 28
+        Top = 44
         Width = 67
-        Height = 21
         Alignment = taRightJustify
-        TabOrder = 1
-        Text = '0'
         OnEnter = edtStopEnter
         OnExit = edtPlayDelayExit
         OnKeyPress = edtKeyPress
+        TabOrder = 1
+        Text = '0'
       end
       object cbxMuteBass: TCheckBox
-        Left = 24
-        Top = 87
-        Width = 90
-        Height = 17
+        Left = 22
+        Height = 21
+        Top = 73
+        Width = 77
         Alignment = taLeftJustify
         Caption = 'Mute Bass'
-        TabOrder = 4
         OnClick = cbxMuteBassClick
+        TabOrder = 4
       end
       object cbxNoSound: TCheckBox
-        Left = 24
-        Top = 33
-        Width = 90
-        Height = 17
+        Left = 22
+        Height = 21
+        Top = 19
+        Width = 51
         Alignment = taLeftJustify
         Caption = 'Mute'
-        TabOrder = 2
         OnClick = cbxNoSoundClick
+        TabOrder = 2
       end
       object btnPlay: TButton
-        Left = 383
-        Top = 56
-        Width = 100
+        Left = 381
         Height = 25
+        Top = 46
+        Width = 100
         Caption = 'Play Partitur'
-        TabOrder = 5
         OnClick = btnPlayClick
+        TabOrder = 5
       end
       object cbxMidiInput: TComboBox
-        Left = 219
-        Top = 31
+        Left = 217
+        Height = 32
+        Top = 12
         Width = 156
-        Height = 21
+        ItemHeight = 0
+        OnChange = cbxMidiInputChange
         Style = csDropDownList
         TabOrder = 6
-        OnChange = cbxMidiInputChange
       end
       object cbxMuteTreble: TCheckBox
-        Left = 24
-        Top = 60
-        Width = 90
-        Height = 17
+        Left = 22
+        Height = 21
+        Top = 46
+        Width = 95
         Alignment = taLeftJustify
         Caption = 'Mute Descant'
-        TabOrder = 3
         OnClick = cbxMuteTrebleClick
+        TabOrder = 3
       end
       object btnResetMidi: TButton
-        Left = 383
-        Top = 83
-        Width = 100
+        Left = 381
         Height = 25
+        Top = 77
+        Width = 100
         Caption = 'Clear Synth.'
-        TabOrder = 7
         OnClick = btnResetMidiClick
+        TabOrder = 7
       end
       object cbxVirtual: TComboBox
-        Left = 219
-        Top = 119
+        Left = 217
+        Height = 32
+        Top = 105
         Width = 156
-        Height = 21
+        ItemHeight = 0
+        OnChange = cbxVirtualChange
         Style = csDropDownList
         TabOrder = 8
-        OnChange = cbxVirtualChange
         Visible = False
       end
       object sbVolumeOut: TScrollBar
-        Left = 136
-        Top = 151
+        Left = 134
+        Height = 20
+        Top = 137
         Width = 226
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
+        Anchors = [akTop, akLeft, akRight]
         Max = 120
         Min = 20
         PageSize = 0
         Position = 100
         TabOrder = 9
         OnChange = sbVolumeOutChange
-        ExplicitWidth = 222
       end
       object cbxTurboSound: TCheckBox
-        Left = 24
-        Top = 118
-        Width = 90
-        Height = 17
+        Left = 22
+        Height = 21
+        Top = 103
+        Width = 93
         Alignment = taLeftJustify
         Caption = 'Turbo Sound'
         TabOrder = 10
@@ -733,31 +745,29 @@ object frmSequenzer: TfrmSequenzer
     end
     object gbInstrument: TGroupBox
       Left = 0
+      Height = 72
       Top = 328
       Width = 498
-      Height = 72
       Align = alBottom
-      Caption = 'Schwyzer'#246'rgeli / Steirische Harmonika'
+      Caption = 'Schwyzerörgeli / Steirische Harmonika'
+      ClientHeight = 55
+      ClientWidth = 496
       TabOrder = 2
-      ExplicitTop = 327
-      ExplicitWidth = 494
       object Label13: TLabel
-        Left = 24
-        Top = 34
-        Width = 92
-        Height = 13
+        Left = 22
+        Height = 16
+        Top = 20
+        Width = 98
         Caption = 'Transpose (Primes)'
+        ParentColor = False
       end
       object cbxTransInstrument: TComboBox
-        Left = 127
-        Top = 31
+        Left = 125
+        Height = 28
+        Top = 17
         Width = 46
-        Height = 21
-        Style = csDropDownList
+        ItemHeight = 0
         ItemIndex = 11
-        TabOrder = 0
-        Text = '0'
-        OnChange = cbxTransInstrumentChange
         Items.Strings = (
           '-11'
           '-10'
@@ -781,36 +791,38 @@ object frmSequenzer: TfrmSequenzer
           '8'
           '9'
           '10'
-          '11')
+          '11'
+        )
+        OnChange = cbxTransInstrumentChange
+        Style = csDropDownList
+        TabOrder = 0
+        Text = '0'
       end
       object cbTransInstrument: TComboBox
-        Left = 219
-        Top = 30
+        Left = 217
+        Height = 28
+        Top = 16
         Width = 156
-        Height = 21
-        Style = csDropDownList
+        ItemHeight = 0
         ItemIndex = 0
-        TabOrder = 1
-        Text = 'B-'#214'rgeli'
-        OnChange = cbTransInstrumentChange
         Items.Strings = (
-          'B-'#214'rgeli'
-          'A-'#214'rgeli')
+          'B-Örgeli'
+          'A-Örgeli'
+        )
+        OnChange = cbTransInstrumentChange
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'B-Örgeli'
       end
     end
   end
   object FileOpenDialog1: TOpenDialog
-    Filter = 
-      'Midi Files|*.mid;*.midi|All Files|*.*|Griff Filles|*.griff|MuseS' +
-      'core Files|*.mscx;*.mscz'
+    Filter = 'Midi Files|*.mid;*.midi|All Files|*.*|Griff Filles|*.griff|MuseScore Files|*.mscx;*.mscz'
     Left = 576
     Top = 22
   end
   object SaveDialog1: TSaveDialog
-    Filter = 
-      'Midi File|*.mid|MuseScore|*.mscz; *.mscx|LilyPond|*.ly|Standard ' +
-      'MusicXML|*.xml;*.musicxml|new Midi File|*.mid|Sequenzer Noten|*.' +
-      'zip'
+    Filter = 'Midi File|*.mid|MuseScore|*.mscz; *.mscx|LilyPond|*.ly|Standard MusicXML|*.xml;*.musicxml|new Midi File|*.mid|Sequenzer Noten|*.zip'
     Left = 624
     Top = 83
   end

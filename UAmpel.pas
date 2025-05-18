@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 Jürg Müller, CH-5524
+// Copyright (C) 2022 JÃ¼rg MÃ¼ller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -18,12 +18,12 @@
 // ==========================================================================
 //
 // Midi-Balg-Information, wird bei jedem Wechsel ausgegeben:
-//   B7 1f 00/01    01 für Push; 00 für Pull
+//   B7 1f 00/01    01 fÃ¼r Push; 00 fÃ¼r Pull
 //
 // Die Tastatur-Spalten werden je einem eigenen Midi-Kanal zugewiesen.
-//   91 nn xx  für die äusserste Diskant-Spalte
+//   91 nn xx  fÃ¼r die Ã¤usserste Diskant-Spalte
 //   ..
-//   96 nn xx  Für die äusserste Bass-Spalte
+//   96 nn xx  FÃ¼r die Ã¤usserste Bass-Spalte
 //
 //
 // Tastatureingabe
@@ -32,10 +32,10 @@
 // Mit der Tastatur (Buchstaben, Zahlen und Sonderzeichen) wird die Diskantseite
 // der Steirischen Harmonika abgebildet. Der Gleichton (mit Kreuz markiert) ist die H-Taste.
 //
-// F5 bis F12 wird für die Bässe verwendet.
-// Mit Ctrl schaltet man von der äusseren Bassreihe auf die innere.
+// F5 bis F12 wird fÃ¼r die BÃ¤sse verwendet.
+// Mit Ctrl schaltet man von der Ã¤usseren Bassreihe auf die innere.
 //
-// Mit der Shift-Taste ändert man die Balgbewegung.
+// Mit der Shift-Taste Ã¤ndert man die Balgbewegung.
 //
 unit UAmpel;
 
@@ -45,21 +45,21 @@ unit UAmpel;
 
 interface
 
-{$ifdef FPC}
-  {$R *.lfm}
-{$else}
-  {$R *.dfm}
-{$endif}
-
 uses
 {$ifdef FPC}
-  urtmidi, lcltype, LCLIntf, lcl,
+  lcltype, LCLIntf, lcl,
 {$else}
-  Messages, Windows, Midi,
+  Messages, Windows,
+{$endif}
+  umidi,
+{$ifdef mswindows}
+  Midi,
+{$else}
+  urtmidi,
 {$endif}
   Forms, SyncObjs, Graphics, Types, StdCtrls, Dialogs, Controls, SysUtils,
   Classes,
-  UInstrument, UGriffEvent, Menus, Vcl.ExtCtrls;
+  UInstrument, UGriffEvent, Menus, ExtCtrls;
 
 type
   TSoundGriff = procedure (Row: byte; index: byte; Push: boolean; On_:boolean) of object;
@@ -186,7 +186,7 @@ type
     procedure PaintBalg(Push: boolean);
     function GetKeyIndex(var Event: TMouseEvent; Key: word): boolean;
     procedure InitLastPush;
-{$ifdef dcc}
+{$ifdef mswindows}
     procedure KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);
 {$endif}
     procedure OnMidiInData(aDeviceIndex: integer; aStatus, aData1, aData2: byte; aTimestamp: Int64);
@@ -198,8 +198,8 @@ type
 const
   TastKeys: TTastKeys =
     (( #226,'Y','X','C','V','B','N','M',#188,#190,#189,#0), // ','
-     ( 'A','S','D','F','G','H','J','K','L',#222,#220,#223),   // Ö  Ä
-     ( 'Q', 'W','E','R','T','Z','U','I','O','P',#186,#192), // Ü
+     ( 'A','S','D','F','G','H','J','K','L',#222,#220,#223),   // Ã–  Ã„
+     ( 'Q', 'W','E','R','T','Z','U','I','O','P',#186,#192), // Ãœ
      ( '2','3','4','5','6','7','8','9','0',#219,#221, #0)
     );
 
@@ -208,7 +208,11 @@ var
 
 implementation
 
-{$R *.dfm}
+{$IFnDEF FPC}
+  {$R *.dfm}
+{$ELSE}
+  {$R *.lfm}
+{$ENDIF}
 
 uses
 {$if not defined(__VIRTUAL__) and defined(dcc)}
@@ -305,10 +309,10 @@ begin
     if UsedEvents = 0 then
       exit;
 
-    // Control wechselt: Bass Reihe ändert (Tastatur F5 bis F12)
+    // Control wechselt: Bass Reihe Ã¤ndert (Tastatur F5 bis F12)
     for i := 0 to UsedEvents-1 do
-      if (MouseEvents[i].Pitch = 0) and // nicht für Midi-Eingabe vom Keyboard
-         (MouseEvents[i].Key > 0) and   // nur für Tastatur
+      if (MouseEvents[i].Pitch = 0) and // nicht fÃ¼r Midi-Eingabe vom Keyboard
+         (MouseEvents[i].Key > 0) and   // nur fÃ¼r Tastatur
          (((MouseEvents[i].Row_ = 5) and not Ctrl) or
           ((MouseEvents[i].Row_ = 6) and Ctrl)) then
       begin
@@ -485,10 +489,10 @@ begin
           d := Velocity;
         end else
           d := 127;
-       { if Row_ >= 5 then
+        if Row_ >= 5 then
           d := d*VolumeBass
         else
-          d := d*VolumeDiscant;  }
+          d := d*VolumeDiscant;
         if d > 120 then
           d := 120;
         di := trunc(d);
@@ -1156,6 +1160,7 @@ procedure TfrmAmpel.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
 var
   KeyCode: word;
 begin
+{$ifdef mswindows}
   if (Msg.KeyData and $40000000) <> 0 then // auto repeat
   begin
     Handled := true;
@@ -1171,6 +1176,7 @@ begin
   end;
   if (KeyCode and $fff) = vk_Return then
     Handled := true;
+{$endif}
 end;
 
 procedure TfrmAmpel.FormShow(Sender: TObject);
@@ -1436,6 +1442,7 @@ begin
     PRecordMidiIn(aStatus, aData1, aData2, t);
 end;
 
+{$ifdef mswindows}
 procedure TfrmAmpel.KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);
 begin
   if ((Msg.message = WM_KEYDOWN) or (Msg.message = WM_KEYUP)) then
@@ -1454,14 +1461,14 @@ begin
         Msg.wParam := 219;
       if (Msg.lParam and $fff0000) = $00d0000 then
         Msg.wParam := 221;
-      // 3. Reihe ü ¨
+      // 3. Reihe Ã¼ Â¨
       if RunningWine then
       begin
         if (Msg.lParam and $fff0000) = $01b0000 then
           Msg.wParam := 192;
         if (Msg.lParam and $fff0000) = $0600000 then
           Msg.wParam := 186;
-        // 2. Reihe ö ä $
+        // 2. Reihe Ã¶ Ã¤ $
         if (Msg.lParam and $fff0000) = $0610000 then
           Msg.wParam := 222;
         if (Msg.lParam and $fff0000) = $0620000 then
@@ -1471,7 +1478,7 @@ begin
       end else begin
         if (Msg.lParam and $fff0000) = $01a0000 then
           Msg.wParam := 186;
-        // 2. Reihe ö ä
+        // 2. Reihe Ã¶ Ã¤
  //       if (Msg.lParam and $fff0000) = $0270000 then
  //         Msg.wParam := 222;
         if (Msg.lParam and $fff0000) = $0280000 then
@@ -1498,6 +1505,7 @@ begin
     end;
   end;
 end;
+{$endif}
 
 end.
 
