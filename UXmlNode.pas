@@ -29,28 +29,28 @@ type
 
   KXmlAttr = class
     Name: string;
-    Value: string;
+    Value: WideString;
   end;
 
 
   KXmlNode = class
     ChildNodes: array of KXmlNode;
     Attrs: array of KXmlAttr;
-    Value: string;
+    Value: WideString;
     Name: string;   // = '': Text
 
     destructor Destroy; override;
 
 
-    function AppendChildNode(Name_: string; Value_: string = ''): KXmlNode; overload;
+    function AppendChildNode(Name_: string; Value_: WideString = ''): KXmlNode; overload;
     function AppendChildNode(Name_: string; Value_: integer): KXmlNode; overload;
-    function AddChild(Name_: string; Value_: string = ''): KXmlNode;
+    function AddChild(Name_: string; Value_: WideString = ''): KXmlNode;
 
     procedure InsertChildNode(Index: integer; Child_: KXmlNode);
     procedure AppendChildNode(Child_: KXmlNode); Overload;
     function ChildNodesCount: integer;
 
-    procedure AppendAttr(Name_, Value_: string); overload;
+    procedure AppendAttr(Name_: string; Value_: WideString); overload;
     procedure AppendAttr(Name_: string; Value_: integer); overload;
     function SaveToXmlFile(const FileName: string; Header: string = ''): boolean;
     function SaveToStream(const Header: string): TMyMemoryStream;
@@ -65,8 +65,8 @@ type
     function DeleteAttribute(Attribute: string): boolean;
     function AttributeIdx(Attribute: string): integer;
     function HasAttribute(Attribute: string): boolean;
-    function GetAttribute(const Idx: string): string;
-    procedure SetAttributes(const Idx: string; const Value: string);
+    function GetAttribute(const Idx: string): WideString;
+    procedure SetAttributes(const Idx: string; const Value: WideString);
     function LastNode: KXmlNode;
     function GetXmlValue: AnsiString;
     function GetChild(Name: string; var Child: KXmlNode): boolean;
@@ -81,7 +81,7 @@ type
     class function BuildMemoryStream(Root: KXmlNode): TMyMemoryStream;
 
 
-    property Attributes[const Name: string]: string read GetAttribute write SetAttributes;
+    property Attributes[const Name: string]: WideString read GetAttribute write SetAttributes;
     property Count: integer read ChildNodesCount;
     property XmlValue: AnsiString read GetXmlValue;
     property Child[Idx: integer]: KXmlNode read GetChildNode; default;
@@ -101,13 +101,13 @@ const
   halfNoteHead =    119127;
   quarterNoteHead = 119128;
 
-  function NewXmlAttr(Name_: string; Value_: string = ''): KXmlAttr;
-  function NewXmlNode(Name_: string; Value_: string = ''): KXmlNode;
+  function NewXmlAttr(Name_: string; Value_: WideString = ''): KXmlAttr;
+  function NewXmlNode(Name_: string; Value_: WideString = ''): KXmlNode;
 
 implementation
 
 
-function NewXmlAttr(Name_: string; Value_: string = ''): KXmlAttr;
+function NewXmlAttr(Name_: string; Value_: WideString = ''): KXmlAttr;
 begin
   result := KXmlAttr.Create;
   result.Name := Name_;
@@ -126,7 +126,7 @@ begin
   inherited;
 end;
 
-function NewXmlNode(Name_: string; Value_: string = ''): KXmlNode;
+function NewXmlNode(Name_: string; Value_: WideString = ''): KXmlNode;
 begin
   result := KXmlNode.Create;
   SetLength(result.ChildNodes, 0);
@@ -158,7 +158,7 @@ begin
   result := Length(ChildNodes);
 end;
 
-function KXmlNode.AppendChildNode(Name_: string; Value_: string = ''): KXmlNode;
+function KXmlNode.AppendChildNode(Name_: string; Value_: WideString = ''): KXmlNode;
 begin
   result := NewXmlNode(Name_, Value_);
   SetLength(ChildNodes, Length(ChildNodes) + 1);
@@ -170,12 +170,12 @@ begin
   result := AppendChildNode(Name_, IntToStr(Value_));
 end;
 
-function KXmlNode.AddChild(Name_: string; Value_: string = ''): KXmlNode;
+function KXmlNode.AddChild(Name_: string; Value_: WideString = ''): KXmlNode;
 begin
   result := AppendChildNode(Name_, Value_);
 end;
 
-procedure KXmlNode.AppendAttr(Name_, Value_: string);
+procedure KXmlNode.AppendAttr(Name_: string; Value_: WideString);
 var
   Attr_: KXmlAttr;
 begin
@@ -246,7 +246,7 @@ begin
   result := AttributeIdx(Attribute) >= 0;
 end;
 
-function KXmlNode.GetAttribute(const Idx: string): string;
+function KXmlNode.GetAttribute(const Idx: string): WideString;
 var
   i: integer;
 begin
@@ -277,7 +277,7 @@ begin
       inc(i);
 end;
 
-procedure KXmlNode.SetAttributes(const Idx: string; const Value: string);
+procedure KXmlNode.SetAttributes(const Idx: string; const Value: WideString);
 var
   i: integer;
 begin

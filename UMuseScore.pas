@@ -874,7 +874,7 @@ var
     t, t1: integer;
     RestNode, Child, Child1: KXmlNode;
     iLen: integer;
-    s: string;
+    s: WideString;
   begin
     t := 8*Len div GriffPartitur.quarterNote;
     result := false;
@@ -898,7 +898,7 @@ var
         end else
           SaveRec.sLen := GetLen2(t, SaveRec.dot, SaveRec.t32takt);
         iLen := GetLyricLen(SaveRec.sLen);
-        s := char(iLen);
+        s := WideChar(iLen);
         Child := VoiceNode.AppendChildNode('StaffText');
         Child1 := Child.AppendChildNode('offset');
         Child1.AppendAttr('x', '0');
