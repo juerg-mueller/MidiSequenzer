@@ -52,7 +52,9 @@
       <Unit>
         <Filename Value="UfrmGriff.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmGriff"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
         <Filename Value="UGriffPartitur.pas"/>

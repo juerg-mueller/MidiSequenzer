@@ -19,12 +19,6 @@ unit UGriffPartitur;
   {$MODE Delphi}
 {$ENDIF}
 
-{$if defined(LAZARUS)}
-  {$mode Delphi, objfpc}{$H+}
-{$endif}
-
-{$define _OldStyle}
-
 interface
 
 uses
@@ -42,7 +36,7 @@ uses
 
 const
   row_height = 15;
-  pitch_width = 64;//48; // quarter
+  PixelPerQuarter = 64; // pixel per quarter
   rows = 23;
   MoveVert = 20;
   LoadStartPush = true;
@@ -1291,7 +1285,7 @@ end;
 
 function TGriffPartitur.ScreenToNotePoint(var NotePoint: TPoint; ScreenPoint: TPoint): boolean;
 begin
-  NotePoint.X := trunc(GriffHeader.Details.GetMeasureDiv*ScreenPoint.X / pitch_width);
+  NotePoint.X := trunc(GriffHeader.Details.GetMeasureDiv*ScreenPoint.X / PixelPerQuarter);
   NotePoint.Y := MaxGriffIndex - (ScreenPoint.Y - MoveVert) div row_height;
   result := true;
 end;
@@ -1384,8 +1378,8 @@ begin
   if bRubberBandOk then
   begin
     FirstCopy := -1;
-    Left := rectRubberBand.Left mod (pitch_width div 4);
-    w := rectRubberBand.Width mod (pitch_width div 4); 
+    Left := rectRubberBand.Left mod (PixelPerQuarter div 4);
+    w := rectRubberBand.Width mod (PixelPerQuarter div 4);
     case Key of
       ord('C'),
       ord('X'),
@@ -1398,8 +1392,8 @@ begin
           begin
             SetLength(CopyEvents, 0);
           end;
-          left := trunc(GriffHeader.Details.GetmeasureDiv*rectRubberBand.Left / pitch_width);
-          right := trunc(GriffHeader.Details.GetmeasureDiv*rectRubberBand.right / pitch_width);
+          left := trunc(GriffHeader.Details.GetmeasureDiv*rectRubberBand.Left / PixelPerQuarter);
+          right := trunc(GriffHeader.Details.GetmeasureDiv*rectRubberBand.right / PixelPerQuarter);
           iFirst := -1;
           iLast := -1;
           for iEvent := 0 to UsedEvents-1 do
@@ -1481,14 +1475,14 @@ begin
         end;
         
       vk_Left:
-        rectRubberBand.Offset(-(pitch_width div 4) - Left, 0);
+        rectRubberBand.Offset(-(PixelPerQuarter div 4) - Left, 0);
       vk_Right: 
-        rectRubberBand.Offset(pitch_width div 4 - Left, 0);
+        rectRubberBand.Offset(PixelPerQuarter div 4 - Left, 0);
       vk_Up: 
-        rectRubberBand.Width := rectRubberBand.Width + pitch_width div 4 - w;
+        rectRubberBand.Width := rectRubberBand.Width + PixelPerQuarter div 4 - w;
       vk_Down:
-        if rectRubberBand.Width > pitch_width div 2 then
-          rectRubberBand.Width := rectRubberBand.Width - pitch_width div 4 - w;
+        if rectRubberBand.Width > PixelPerQuarter div 2 then
+          rectRubberBand.Width := rectRubberBand.Width - PixelPerQuarter div 4 - w;
     end;
     result := key in [vk_left, vk_right, vk_up, vk_down];
     exit;
@@ -1874,7 +1868,7 @@ end;
 
 function TGriffPartitur.TickToScreen(tick: integer): integer;
 begin
-  result := round(tick*pitch_width/quarterNote);
+  result := round(tick*PixelPerQuarter/quarterNote);
   if GriffHeader.Details.measureDiv = 8 then
     result := 2*result;
 end;
@@ -2377,7 +2371,7 @@ function TGriffPartitur.SaveToZip(const FileName: string): boolean;
 const
   rand = 40;
   yAbstand = 250;
-  breite = 4*6*pitch_width;
+  breite = 4*6*PixelPerQuarter;
 var
   bitmap: TBitmap;
   rect: TRect;

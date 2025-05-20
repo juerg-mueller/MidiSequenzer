@@ -35,7 +35,7 @@ uses
   urtmidi,
 {$endif}
   UGriffPartitur, UMyMidiStream,
-  UGriffEvent, UAmpel;
+  UGriffEvent, UAmpel, StdCtrls;
 
 type
 
@@ -44,6 +44,9 @@ type
   PRubberProc = procedure (const Rect: TRect) of object;
   
   TfrmGriff = class(TForm)
+  {$ifdef fpc}
+    ScrollBar1: TScrollBar;
+  {$endif}
     procedure FormPaint(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -82,7 +85,12 @@ type
                        const Horz_pos: integer; const BalgVersatz: integer;
                        const xOffset: integer = 0);
 
-
+    function GetHorzScrollPos: integer;
+    procedure SetHorzScrollPos(Pos: integer);
+    function GetHorzScrollRange: integer;
+    procedure SetHorzScrollRange(Range: integer);
+    property HorzScrollPos: integer read GetHorzScrollPos write SetHorzScrollPos;
+    property HorzScrollRange: integer read GetHorzScrollRange write SetHorzScrollRange;
   end;
 
 var
@@ -169,20 +177,16 @@ end;
 procedure TfrmGriff.GetClippedMousePos(var Pos : TPoint; X, Y : integer);
 var w, h : integer;
 begin
-{$ifdef UseBitmap}
-  w:= bmPaint.Width;
-  h:= bmPaint.Height;
-{$else}
   if GriffPartitur_.quarterNote = 0 then
   begin
     Pos := TPoint.Create(0, 0);
     exit;
   end;
-  w:= Width + HorzScrollBar.Position - 20;
+  w:= Width + HorzScrollPos - 20;
   h:= Height + VertScrollBar.Position;
-{$endif}
-  Pos.X := Max(0, Min(w, X));
-  Pos.Y := Max(0, Min(h, Y));
+
+  Pos.X := UMidiEvent.Max(0, UMidiEvent.Min(w, X));
+  Pos.Y := UMidiEvent.Max(0, UMidiEvent.Min(h, Y));
 end;
 
 procedure TfrmGriff.ShowSelected;
@@ -200,23 +204,23 @@ begin
       Size := GriffPartitur_.GriffEvents[i].AbsRect.Right;
     inc(i);
   end;
-  HorzScrollBar.Range := GriffPartitur_.TickToScreen(Size) + 8*pitch_width;
+  HorzScrollRange := GriffPartitur_.TickToScreen(Size) + 8*PixelPerQuarter;
 
   // Selected soll sichtbar sein
   if GriffPartitur_.Selected >= 0 then
   begin
     w := GriffPartitur_.SelectedEvent.AbsRect.Right + GriffPartitur_.quarterNote;
-    if HorzScrollBar.Position + Width < GriffPartitur_.TickToScreen(w) then
+    if HorzScrollPos + Width < GriffPartitur_.TickToScreen(w) then
     begin
-      HorzScrollBar.Position :=
+      HorzScrollPos :=
         GriffPartitur_.TickToScreen(GriffPartitur_.SelectedEvent.AbsRect.Right) - 3*Width div 4;
     end else
-    if HorzScrollBar.Position > GriffPartitur_.TickToScreen(GriffPartitur_.SelectedEvent.AbsRect.Left) then
+    if HorzScrollPos > GriffPartitur_.TickToScreen(GriffPartitur_.SelectedEvent.AbsRect.Left) then
     begin
-      if HorzScrollBar.Position > Width div 4 then
-        HorzScrollBar.Position := HorzScrollBar.Position - Width div 4
+      if HorzScrollPos > Width div 4 then
+        HorzScrollPos := HorzScrollPos - Width div 4
       else
-        HorzScrollBar.Position := 0;
+        HorzScrollPos := 0;
     end;
   end;
 end;
@@ -314,7 +318,7 @@ var
   iEvent: integer;
 begin
   if mbLeft = Button then begin
-    GetClippedMousePos(Pos, X + HorzScrollBar.Position, Y + VertScrollBar.Position);
+    GetClippedMousePos(Pos, X + HorzScrollPos, Y + VertScrollBar.Position);
     GriffPartitur_.ScreenToNotePoint(NotenPoint, Pos);
     pDrag := NotenPoint;
 
@@ -361,7 +365,7 @@ begin
     end else begin
       with GriffPartitur_ do
       begin
-        GetClippedMousePos(rectRubberBand.TopLeft, X + HorzScrollBar.Position,
+        GetClippedMousePos(rectRubberBand.TopLeft, X + HorzScrollPos,
                                                    Y + VertScrollBar.Position);
         rectRubberBand.Right:= rectRubberBand.Left;
         rectRubberBand.Bottom:= rectRubberBand.Top;
@@ -385,7 +389,7 @@ var
   NotenPoint, Pos: TPoint;
   rect: TRect;
 begin
-  xRGB:= X + HorzScrollBar.Position;
+  xRGB:= X + HorzScrollPos;
   yRGB:= Y + VertScrollBar.Position;
   with GriffPartitur_ do
   begin
@@ -404,21 +408,21 @@ begin
       if ssRight in Shift then begin
         if sChangingCursor <> [] then begin
           if cmpTop in sChangingCursor then
-            rectRubberBand.Top:=    Min(yRGB, rectRubberBand.Bottom-2);
+            rectRubberBand.Top:=    UMidiEvent.Min(yRGB, rectRubberBand.Bottom-2);
           if cmpBottom in sChangingCursor then
-            rectRubberBand.Bottom:= Max(yRGB, rectRubberBand.Top+2);
+            rectRubberBand.Bottom:= UMidiEvent.Max(yRGB, rectRubberBand.Top+2);
           if cmpLeft in sChangingCursor then
-            rectRubberBand.Left:=   Min(xRGB, rectRubberBand.Right-2);
+            rectRubberBand.Left:=   UMidiEvent.Min(xRGB, rectRubberBand.Right-2);
           if cmpRight in sChangingCursor then
-            rectRubberBand.Right:=  Max(xRGB, rectRubberBand.Left+2);
+            rectRubberBand.Right:=  UMidiEvent.Max(xRGB, rectRubberBand.Left+2);
           if [cmpDrag] = sChangingCursor then begin
             // Rechteck verschieben.
             xRGB:= pDrag.X - xRGB;
             yRGB:= pDrag.Y - yRGB;
             if rectRubberBand.Left - xRGB < 0 then
               xRGB:= rectRubberBand.Left;
-            if rectRubberBand.Right - xRGB > HorzScrollBar.Range then
-              xRGB:= rectRubberBand.Right - HorzScrollBar.Range;
+            if rectRubberBand.Right - xRGB > HorzScrollRange then
+              xRGB:= rectRubberBand.Right - HorzScrollRange;
             if rectRubberBand.Top - yRGB < 0 then
               yRGB:= rectRubberBand.Top;
             if rectRubberBand.Bottom - yRGB > VertScrollBar.Range then
@@ -520,7 +524,7 @@ begin
     if (mbRight = Button) and bRubberBand then begin
       bRubberBand:= false;
       MouseCapture:= false;
-      GetClippedMousePos(rectRubberBand.BottomRight, X + HorzScrollBar.Position,
+      GetClippedMousePos(rectRubberBand.BottomRight, X + HorzScrollPos,
                                                      Y + VertScrollBar.Position);
       MakeOriginalRect(rectRubberBand);
       bRubberBandOk:= (rectRubberBand.Right > 1) and
@@ -540,7 +544,7 @@ begin
     end else
     if (sChangingCursor <> []) and (Button = mbLeft) and (SelectedEvent <> nil) then
     begin
-      GetClippedMousePos(Pos, X + HorzScrollBar.Position, Y + VertScrollBar.Position);
+      GetClippedMousePos(Pos, X + HorzScrollPos, Y + VertScrollBar.Position);
       GriffPartitur_.ScreenToNotePoint(NotenPoint, Pos);
       w := NotenPoint.X - pDrag.X;
       w := GriffHeader.Details.GetRaster(w);
@@ -600,13 +604,13 @@ begin
   Canvas.Brush.Color:= Color;
   rectSource.Left:= 0;
   rectSource.Top:= 0;
-  w:= width + HorzScrollBar.Position - 20;
+  w:= width + HorzScrollPos - 20;
   h:= row_height*(rows + 6);
   rectSource.Right:= w;
   rectSource.Bottom:= h;
   rectFrame:= rectSource;
   rect:= Canvas.ClipRect;
-  inc(rectSource.Left, HorzScrollBar.Position + rect.Left);
+  inc(rectSource.Left, HorzScrollPos + rect.Left);
   inc(rectSource.Top, VertScrollBar.Position + rect.Top);
 
   // Der Punkt rect.(Left, Top) entspricht dem Punkt rectSource.(Left, Top) in
@@ -621,14 +625,14 @@ begin
   end else
     rect.Bottom:= rect.Top + rectSource.Bottom - rectSource.Top;
 
-  DrawGriff(canvas.ClipRect, HorzScrollBar.Position);
+  DrawGriff(canvas.ClipRect, HorzScrollPos);
 
   if GriffPartitur_.bRubberBandOk then begin
     // Das Band liegt auf den Punkten, die noch kopiert werden sollen.
     rect:= GriffPartitur_.rectRubberBand;
     MakeOriginalRect(rect);
     ClipRect(rect, w, h);
-    rect.Offset(-HorzScrollBar.Position, -VertScrollBar.Position);
+    rect.Offset(-HorzScrollPos, -VertScrollBar.Position);
     if (rect.Right >= 0) and (rect.Bottom >= 0) and
        ((rect.Left <> rect.Right) or (rect.Top <> rect.Bottom)) then begin
       Canvas.Brush.Color:= (not clBlack) and $ffffff;
@@ -679,7 +683,7 @@ begin
   if GriffPartitur_.PartiturLoaded then
   begin
  //   HorzScrollBar.Size := ClientWidth; //    Lazarus
-    HorzScrollBar.Range := pitch_width*GriffPartitur_.GetRelTotalDuration + 500
+    HorzScrollRange := PixelPerQuarter*GriffPartitur_.GetRelTotalDuration + 500
   end;
 end;
 
@@ -687,19 +691,19 @@ procedure TfrmGriff.SetPlayRect(rect: TRect);
 var
   p: integer;
 begin
-  if (rect.Left < HorzScrollBar.Position) then
+  if (rect.Left < HorzScrollPos) then
   begin
-    HorzScrollBar.Position := rect.Left - Width div 4;
+    HorzScrollPos := rect.Left - Width div 4;
     Invalidate;
   end else
-  if rect.Right >= HorzScrollBar.Position + Width - {50} 2*pitch_width then
+  if rect.Right >= HorzScrollPos + Width - {50} 2*PixelPerQuarter then
   begin
-    p := GriffPartitur_.GriffHeader.Details.MeasureFact*pitch_width;
-    HorzScrollBar.Position := p*(rect.Left div p - 1);
+    p := GriffPartitur_.GriffHeader.Details.MeasureFact*PixelPerQuarter;
+    HorzScrollPos := p*(rect.Left div p - 1);
     Invalidate;
   end else begin  
-    rect.Offset(-HorzScrollBar.Position, 0);
-    DrawGriff(rect, HorzScrollBar.Position);
+    rect.Offset(-HorzScrollPos, 0);
+    DrawGriff(rect, HorzScrollPos);
   end;
 end;
 
@@ -714,7 +718,7 @@ var
   quot: double;
 begin
   // Balg-Information
-  quot := pitch_width/GriffPartitur_.GriffHeader.Details.GetMeasureDiv;
+  quot := PixelPerQuarter/GriffPartitur_.GriffHeader.Details.GetMeasureDiv;
   tickDur.Left := trunc(clipRect.Left/quot);
   tickDur.Right := trunc(clipRect.Right/quot)+1;
   PushStart := 0;
@@ -837,11 +841,11 @@ var
   quot: double;
   w: integer;
 begin
-  quot := pitch_width/GriffPartitur_.GriffHeader.Details.GetMeasureDiv;
+  quot := PixelPerQuarter/GriffPartitur_.GriffHeader.Details.GetMeasureDiv;
   tickDur.Left := trunc(clipRect.Left/quot);
   tickDur.Right := trunc(clipRect.Right/quot)+1;
 
-  w:= pitch_width*GriffPartitur_.GetRelTotalDuration + 500;
+  w:= PixelPerQuarter*GriffPartitur_.GetRelTotalDuration + 500;
 
   // kleines Notensystem unten
 
@@ -854,9 +858,9 @@ begin
   end;
 
   // senkrechte Striche zeichnen
-  for i := clipRect.Left div pitch_width to (w div pitch_width) do
+  for i := clipRect.Left div PixelPerQuarter to (w div PixelPerQuarter) do
   begin
-    j := i*pitch_width;
+    j := i*PixelPerQuarter;
 
     // Taktstrich zeichnen
     if (i mod GriffPartitur_.GriffHeader.Details.MeasureFact) = 0 then
@@ -992,11 +996,11 @@ begin
 
   clipRect.Offset(Horz_pos, 0);
 
-  quot := pitch_width/GriffPartitur_.GriffHeader.Details.GetMeasureDiv;
+  quot := PixelPerQuarter/GriffPartitur_.GriffHeader.Details.GetMeasureDiv;
   tickDur.Left := trunc(clipRect.Left/quot);
   tickDur.Right := trunc(clipRect.Right/quot)+1;
 
-  w:= pitch_width*GriffPartitur_.GetRelTotalDuration + 500;
+  w:= PixelPerQuarter*GriffPartitur_.GetRelTotalDuration + 500;
   h:= row_height*(MaxGriffIndex+1);
   rhalbe := row_height div 2;
 
@@ -1033,13 +1037,13 @@ begin
   smallDiff := 0;
   if not GriffPartitur_.Instrument.bigInstrument then
     smallDiff := 2;
-  for i := clipRect.Left div pitch_width to (w div pitch_width) do
+  for i := clipRect.Left div PixelPerQuarter to (w div PixelPerQuarter) do
   begin
     if (i mod GriffPartitur_.GriffHeader.Details.MeasureFact) = 0 then
       Canvas.Pen.Color := $c0c0c0
     else
       Canvas.Pen.Color := $f0f0f0;
-    j := i*pitch_width;
+    j := i*PixelPerQuarter;
     if (clipRect.Left <= j) and (j < clipRect.Right) then
     begin
       Canvas.MoveTo(j - Horz_pos, MoveVert+smallDiff*row_height+rhalbe);
@@ -1258,6 +1262,42 @@ begin
     ShowSelected;
     Invalidate;
   end;
+end;
+
+function TfrmGriff.GetHorzScrollPos: integer;
+begin
+{$ifdef fpc}
+  result := ScrollBar1.Position;
+{$else}
+  result := HorzScrollBar.Position;
+{$endif}
+end;
+
+procedure TfrmGriff.SetHorzScrollPos(Pos: integer);
+begin
+{$ifdef fpc}
+  ScrollBar1.Position := Pos;
+{$else}
+  HorzScrollBar.Position := Pos;
+{$endif}
+end;
+
+function TfrmGriff.GetHorzScrollRange: integer;
+begin
+{$ifdef fpc}
+  result := ScrollBar1.Max;
+{$else}
+  result := HorzScrollBar.Range;
+{$endif}
+end;
+
+procedure TfrmGriff.SetHorzScrollRange(Range: integer);
+begin
+{$ifdef fpc}
+  ScrollBar1.Max := Range;
+{$else}
+  HorzScrollBar.Range := Range;
+{$endif}
 end;
 
 

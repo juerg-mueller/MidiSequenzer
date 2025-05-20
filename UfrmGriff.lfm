@@ -1,18 +1,19 @@
 object frmGriff: TfrmGriff
-  Left = 400
-  Top = 0
-  HorzScrollBar.Smooth = True
+  Left = 275
+  Height = 616
+  Top = 351
+  Width = 1022
   HorzScrollBar.Tracking = True
+  HorzScrollBar.Visible = False
   Caption = 'Griffschrift'
   ClientHeight = 616
-  ClientWidth = 1084
+  ClientWidth = 1022
   Color = clBtnFace
-  Font.Charset = ANSI_CHARSET
+  Font.CharSet = ANSI_CHARSET
   Font.Color = clWindowText
   Font.Height = -13
   Font.Name = 'Tahoma'
   Font.Style = [fsBold]
-  Position = poDesigned
   OnActivate = FormActivate
   OnCreate = FormCreate
   OnDeactivate = FormDeactivate
@@ -24,4 +25,14 @@ object frmGriff: TfrmGriff
   OnPaint = FormPaint
   OnShortCut = FormShortCut
   OnShow = FormShow
+  LCLVersion = '2.2.6.0'
+  object ScrollBar1: TScrollBar
+    Left = 0
+    Height = 20
+    Top = 596
+    Width = 1022
+    Align = alBottom
+    PageSize = 0
+    TabOrder = 0
+  end
 end

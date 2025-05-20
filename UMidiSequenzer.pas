@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (C) 2022 Jürg Müller, CH-5524
 //
 // This program is free software: you can redistribute it and/or modify
@@ -348,7 +348,7 @@ var
 
     AktualizeHeader;
 
-    frmGriff.HorzScrollBar.Position := 0;
+    frmGriff.HorzScrollPos := 0;
     frmGriff.Show;
     frmGriff.Caption := ExtractFilename(PartiturFileName);
     GriffPartitur_.PartiturFileName := PartiturFileName;
@@ -1365,8 +1365,8 @@ begin
           cbTransInstrumentChange(nil);
           GriffPartitur_.InsertNewEvent(-1);
           GriffPartitur_.Selected := 0;
-          frmGriff.HorzScrollBar.Position := 0;
-          frmGriff.HorzScrollBar.Range := 0;
+          frmGriff.HorzScrollPos := 0;
+          frmGriff.HorzScrollRange := 0;
           SelectedChanges(GriffPartitur_.SelectedEvent);
           frmGriff.Show;
         end;
