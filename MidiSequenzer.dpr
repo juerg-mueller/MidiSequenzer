@@ -53,9 +53,6 @@ var
 
 begin
   Application.Initialize;
-{$ifdef dcc}
-  Application.MainFormOnTaskbar := True;
-{$endif}
   Application.CreateForm(TfrmSequenzer, frmSequenzer);
   Application.CreateForm(TfrmGriff, frmGriff);
   Application.CreateForm(TfrmAmpel, frmAmpel);
