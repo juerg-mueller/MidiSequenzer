@@ -9,7 +9,7 @@ uses
   cthreads,
   pthreads,
 {$endif}
-{$ifdef fpc}
+{$if defined(fpc) or defined(darwin)}
   Interfaces,
 {$endif}
   Forms,
@@ -18,12 +18,14 @@ uses
   UMyMidiStream in 'UMyMidiStream.pas',
   UfrmGriff in 'UfrmGriff.pas' {frmGriff},
   UGriffPartitur in 'UGriffPartitur.pas',
-{$ifdef mswindows}
-  Midi in 'Midi.pas',
+{$ifdef dcc}
   teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
   UVirtual in 'UVirtual.pas',
-{$else}
+{$endif}
   umidi,
+{$ifdef mswindows}
+  Midi in 'Midi.pas',
+{$else}
   urtmidi,
 {$endif}
   UMidiDataStream in 'UMidiDataStream.pas',
@@ -41,7 +43,7 @@ uses
   UMidiEvent in 'UMidiEvent.pas';
 
 
-{$ifdef DEBUG}
+{$if defined(DEBUG) and defined(dcc)}
   {$APPTYPE CONSOLE}
 {$endif}
 
@@ -53,6 +55,9 @@ var
 
 begin
   Application.Initialize;
+{$ifdef dcc}
+  Application.MainFormOnTaskbar := True;
+{$endif}
   Application.CreateForm(TfrmSequenzer, frmSequenzer);
   Application.CreateForm(TfrmGriff, frmGriff);
   Application.CreateForm(TfrmAmpel, frmAmpel);

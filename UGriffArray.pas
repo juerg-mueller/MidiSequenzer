@@ -28,13 +28,11 @@ uses
 {$else}
   urtmidi,
 {$endif}
-  UMyMidiStream, UGriffEvent, UEventArray, UInstrument, UMidiEvent;
+  UMyMidiStream, UGriffEvent, UEventArray, UInstrument, UMidiEvent, UMidiDataStream;
 
 type
 
   TGriffArray = class
-    class procedure CopyToGriff(var GriffEvents: TGriffEventArray; const MidiEvents: TMidiEventArray);
-    class procedure CopyToMidi(var MidiEvents: TMidiEventArray; const GriffEvents: TGriffEventArray; Channel: byte);
     class procedure SortGriffEvents(var GriffEvents: TGriffEventArray; var Selected: integer);
     class procedure ReduceBass(var GriffEvents: TGriffEventArray); overload;
     class procedure ReduceBass(var MidiEvents: TMidiEventArray; Channel: integer); overload;
@@ -49,135 +47,30 @@ type
     class procedure CopyGriffToNewMidi(var MidiEvents: TMidiEventArray;
                                        const GriffEvents: TGriffEventArray;
                                        Bass, BassDiatonic: boolean);
-    class procedure SaveMidiToFile(FileName: string;
-                                   const GriffEvents: TGriffEventArray;
+    class function MakeStreamFromGriffEvents(const GriffEvents: TGriffEventArray;
                                    const Instrument: TInstrument;
                                    const DetailHeader: TDetailHeader;
-                                   realGriffschrift: boolean);
-    class procedure SaveNewMidiToFile(FileName: string;
-                                      const GriffEvents: TGriffEventArray;
+                                   realGriffschrift: boolean): TMidiSaveStream;
+    class function MakeNewStreamFromGriffEvents(const GriffEvents: TGriffEventArray;
                                       const Instrument: TInstrument;
-                                      const DetailHeader: TDetailHeader);
+                                      const DetailHeader: TDetailHeader): TMidiSaveStream;
 
-    class procedure SaveSimpleToFile(FileName: string;
-                                     const MidiTracks: TTrackEventArray;
-                                     const DetailHeader: TDetailHeader);
+    class function MakeSimpleFromDataStream(const GriffEvents: TGriffEventArray;
+                                         const Instrument: TInstrument;
+                                         const DetailHeader: TDetailHeader;
+                                         realGriffschrift: boolean): TSimpleDataStream;
 
-
+    class function CorrectSoundPitch(var GriffEvents: TGriffEventArray;
+                                     const Instrument: TInstrument): boolean;
   end;
 
 implementation
 
-uses
+
 {$ifdef mswindows}
-  Midi,
+uses
+  Midi;
 {$endif}
-  UMidiDataStream;
-
-class procedure TGriffArray.CopyToMidi(var MidiEvents: TMidiEventArray; const GriffEvents: TGriffEventArray; Channel: byte);
-var
-  i, iGriff, iMidi: integer;
-  Offset: integer;
-  MidiEvent: TMidiEvent;
-  Dur: array [0..127] of integer;
-  Empty: boolean;
-
-  procedure AddStops;
-  var
-    i: integer;
-  begin
-    Empty := true;
-    for i := 0 to 127 do
-      if Dur[i] = Offset then
-      begin
-        MidiEvent.Clear;
-        MidiEvent.command := $80 + (Channel and $7f);
-        MidiEvent.d1 := i;
-        MidiEvent.d2 := $40;
-
-        MidiEvents[iMidi] := MidiEvent;
-        inc(iMidi);
-      end else
-      if Dur[i] > Offset then
-        Empty := false;
-  end;
-
-begin
-  SetLength(MidiEvents, 3*Length(GriffEvents));
-
-  for i := 0 to 127 do
-    Dur[i] := -1;
-
-  Offset := 0;
-  MidiEvent.Clear;
-  MidiEvents[0] := MidiEvent;
-  iGriff := 0;
-  iMidi := 1;
-  while iGriff < Length(GriffEvents) do
-    if GriffEvents[iGriff].NoteType in [ntDiskant, ntBass] then
-      with GriffEvents[iGriff] do
-      begin
-        AddStops;
-        if AbsRect.Left = Offset then
-        begin
-          MidiEvent.Clear;
-          MidiEvent.command := $90 + (Channel and $7f);
-          MidiEvent.d1 := SoundPitch;
-          MidiEvent.d2 := Velocity;
-
-          MidiEvents[iMidi] := MidiEvent;
-          inc(iMidi);
-          Dur[SoundPitch] := AbsRect.Right;
-          inc(iGriff);
-        end else begin
-          inc(MidiEvents[iMidi-1].var_len);
-          inc(Offset);
-        end;
-      end;
-  repeat
-    AddStops;
-    inc(MidiEvents[iMidi-1].var_len);
-    inc(Offset);
-  until Empty;
-  SetLength(MidiEvents, iMidi);
-end;
-
-class procedure TGriffArray.CopyToGriff(var GriffEvents: TGriffEventArray; const MidiEvents: TMidiEventArray);
-var
-  iGriff, iMidi: integer;
-  Offset: integer;
-  GriffEvent: TGriffEvent;
-begin
-  iGriff := 0;
-  iMidi := 0;
-  SetLength(GriffEvents, Length(MidiEvents));
-
-  Offset := 0;
-  while iMidi < Length(MidiEvents) do
-  begin
-    with MidiEvents[iMidi] do
-    begin
-      if MidiEvents[iMidi].Event = 9 then
-      begin
-        GriffEvent.Clear;
-        GriffEvent.NoteType := ntBass;
-        GriffEvent.SoundPitch := d1;
-        GriffEvent.Velocity := d2;
-        GriffEvent.AbsRect.Left := Offset;
-        GriffEvent.AbsRect.Width := TEventArray.GetDelayEvent(MidiEvents, iMidi);
-        GriffEvent.AbsRect.Top := -1;
-        GriffEvent.AbsRect.Height := 1;
-
-        GriffEvents[iGriff] := GriffEvent;
-        inc(iGriff);
-      end;
-      inc(Offset, var_len);
-      inc(iMidi);
-    end;
-  end;
-
-  SetLength(GriffEvents, iGriff);
-end;
 
 class procedure TGriffArray.SortGriffEvents(var GriffEvents: TGriffEventArray; var Selected: integer);
 
@@ -398,9 +291,9 @@ class procedure TGriffArray.ReduceBass(var MidiEvents: TMidiEventArray; Channel:
 var
   GriffEvents: TGriffEventArray;
 begin
-  CopyToGriff(GriffEvents, MidiEvents);
+//  CopyToGriff(GriffEvents, MidiEvents);
   ReduceBass(GriffEvents);
-  CopyToMidi(MidiEvents, GriffEvents, Channel);
+//  CopyToMidi(MidiEvents, GriffEvents, Channel);
 end;
 
 
@@ -505,7 +398,6 @@ var
     if Found then
     begin
       inc(MidiEvents[iM-1].var_len, pos - offset);
-      //offset := pos;
     end;
     if RestOff = Pos then
       RestOff := 0;
@@ -527,7 +419,7 @@ begin
   if not Bass or BassDiatonic then
   begin
     MidiEvent.command := $b0;
-    MidiEvent.d1 := ControlSustain;
+    MidiEvent.d1 := ControlPushPull;
     MidiEvent.d2 := 0;
     if IsInPush then
       MidiEvent.d2 := 127;
@@ -561,7 +453,7 @@ begin
       MidiEvent.command := $b0;
       if Bass then
         inc(MidiEvent.command);
-      MidiEvent.d1 := ControlSustain + 3;
+      MidiEvent.d1 := ControlPushPull + 3;
       MidiEvent.d2 := ord(GriffEvent.Repeat_);
       AppendMidiEvent;
     end;
@@ -569,7 +461,7 @@ begin
     if (GriffEvent.NoteType > ntBass) then
     begin
       MidiEvent.command := $b0;
-      MidiEvent.d1 := ControlSustain + 4;
+      MidiEvent.d1 := ControlPushPull + 4;
       MidiEvent.d2 := ord(GriffEvent.NoteType);
       if GriffEvents[iEvent].NoteType = ntRest then
       begin
@@ -577,7 +469,7 @@ begin
         Offset := GriffEvent.AbsRect.Right;
         AppendMidiEvent;
         MidiEvent.command := $b0;
-        MidiEvent.d1 := ControlSustain + 4;
+        MidiEvent.d1 := ControlPushPull + 4;
         MidiEvent.d2 := ord(GriffEvent.NoteType);
       end;
       AppendMidiEvent;
@@ -618,7 +510,7 @@ begin
           MidiEvent.command := $b1
         else
           MidiEvent.command := $b0;
-        MidiEvent.d1 := ControlSustain;
+        MidiEvent.d1 := ControlPushPull;
         MidiEvent.d2 := 0;
         if IsInPush then
           MidiEvent.d2 := 127;
@@ -635,7 +527,7 @@ begin
           MidiEvent.command := $b1
         else
           MidiEvent.command := $b0;
-        MidiEvent.d1 := ControlSustain + 1;
+        MidiEvent.d1 := ControlPushPull + 1;
         if GriffEvent.Cross then
           inc(MidiEvent.d1);
         if realGriffschrift then
@@ -681,7 +573,7 @@ var
   i, k: integer;
   smallest: integer;
   Ok, IsInPush: boolean;
-  D: integer;
+  h: integer;
   AmpelRect: TAmpelRec;
 
   iEvent, iMidi: integer;
@@ -696,7 +588,7 @@ var
     if RestOff > 0 then
       result := RestOff;
     for r := 1 to 6 do
-      for i := 0 to High(Off[r]) do
+      for i := 0 to 127 do
         if (Off[r, i] > 0) and
            ((Off[r, i] < result) or (result = -1)) then
         begin
@@ -721,7 +613,7 @@ var
     Found := RestOff = Pos;
     iM := iMidi;
     for r := 1 to 6 do
-      for i := 0 to High(Off[r]) do
+      for i := 0 to 127 do
         if (Off[r, i] > 0) and (pos <= Off[r, i]) then
         begin
           MidiEvent.command := $80 + r;
@@ -734,7 +626,6 @@ var
     if Found then
     begin
       inc(MidiEvents[iM-1].var_len, pos - offset);
-      //offset := pos;
     end;
     if RestOff = Pos then
       RestOff := 0;
@@ -753,15 +644,12 @@ begin
   AppendMidiEvent;
 
   IsInPush := true;
-  if not Bass or BassDiatonic then
-  begin
-    MidiEvent.command := $b0;
-    MidiEvent.d1 := ControlSustain;
-    MidiEvent.d2 := 0;
-    if IsInPush then
-      MidiEvent.d2 := 127;
-    AppendMidiEvent;
-  end;
+  MidiEvent.command := $b0;
+  MidiEvent.d1 := ControlPushPull;
+  MidiEvent.d2 := 0;
+  if IsInPush then
+    MidiEvent.d2 := 127;
+  AppendMidiEvent;
 
   for iEvent := 0 to Length(GriffEvents)-1 do
   begin
@@ -788,9 +676,7 @@ begin
     if (GriffEvent.Repeat_ > rRegular) then
     begin
       MidiEvent.command := $b0;
-      if Bass then
-        inc(MidiEvent.command);
-      MidiEvent.d1 := ControlSustain + 3;
+      MidiEvent.d1 := ControlPushPull + 3;
       MidiEvent.d2 := ord(GriffEvent.Repeat_);
       AppendMidiEvent;
     end;
@@ -798,7 +684,7 @@ begin
     if (GriffEvent.NoteType > ntBass) then
     begin
       MidiEvent.command := $b0;
-      MidiEvent.d1 := ControlSustain + 4;
+      MidiEvent.d1 := ControlPushPull + 4;
       MidiEvent.d2 := ord(GriffEvent.NoteType);
       if GriffEvents[iEvent].NoteType = ntRest then
       begin
@@ -806,39 +692,37 @@ begin
         Offset := GriffEvent.AbsRect.Right;
         AppendMidiEvent;
         MidiEvent.command := $b0;
-        MidiEvent.d1 := ControlSustain + 4;
+        MidiEvent.d1 := ControlPushPull + 4;
         MidiEvent.d2 := ord(GriffEvent.NoteType);
       end;
       AppendMidiEvent;
       continue;
     end;
 
-    // bereits aktiver Pitch?
+    // bereits aktiver Pitch? (sollte nicht vorkommen)
     AmpelRect := GriffEvent.GetAmpelRec;
-    D := GriffEvent.SoundPitch;
+    h := GriffEvent.SoundPitch;
     if (GriffEvent.NoteType <= ntBass) and
-       (Off[AmpelRect.row, D] > 0) then
+       (Off[AmpelRect.row, h] > 0) then
     begin
       MidiEvent.command := $80 + AmpelRect.row;
-      MidiEvent.d1 := D;
+      MidiEvent.d1 := h;
       MidiEvent.d2 := $40;
-      Off[AmpelRect.row, D] := 0;
+      Off[AmpelRect.row, h] := 0;
       AppendMidiEvent;
     end;
+
     if (GriffEvent.NoteType > ntBass) then
       continue;
 
     // Balg-Notation ändert?
-    if (not Bass or BassDiatonic) then
+    if (GriffEvent.NoteType = ntDiskant) or BassDiatonic then
     begin
       if GriffEvent.InPush <> IsInPush then
       begin
         IsInPush := not IsInPush;
-        if Bass then
-          MidiEvent.command := $b1
-        else
-          MidiEvent.command := $b0;
-        MidiEvent.d1 := ControlSustain;
+        MidiEvent.command := $b0;
+        MidiEvent.d1 := ControlPushPull;
         MidiEvent.d2 := 0;
         if IsInPush then
           MidiEvent.d2 := 127;
@@ -846,12 +730,15 @@ begin
       end;
     end;
 
-    if Bass then
+    if GriffEvent.NoteType = ntBass then
     begin
-      MidiEvent.command := $90 + + AmpelRect.row;
+      if GriffEvent.Cross then
+        MidiEvent.command := $96
+      else
+        MidiEvent.command := $95;
       MidiEvent.d2 := $7f;
     end else begin
-      MidiEvent.command := $90 + + AmpelRect.row;
+      MidiEvent.command := $90 + AmpelRect.row;
       MidiEvent.d2 := $6f;
     end;
     MidiEvent.d1 := GriffEvent.SoundPitch;
@@ -867,252 +754,190 @@ begin
   until smallest < 0;
 end;
 
-class procedure TGriffArray.SaveMidiToFile(FileName: string;
-                                           const GriffEvents: TGriffEventArray;
-                                           const Instrument: TInstrument;
-                                           const DetailHeader: TDetailHeader;
-                                           realGriffschrift: boolean);
+class function TGriffArray.MakeStreamFromGriffEvents(
+  const GriffEvents: TGriffEventArray; const Instrument: TInstrument;
+  const DetailHeader: TDetailHeader; realGriffschrift: boolean): TMidiSaveStream;
 var
   MidiEvents: TMidiEventArray;
-  SaveStream: TMidiSaveStream;
   i: integer;
   MidiEvent: TMidiEvent;
   Header: TDetailHeader;
   MidiTracks: TTrackEventArray;
+  k, q: integer;
 begin
-  SaveStream := TMidiSaveStream.Create;
-  try
-    SaveStream.SetHead(DetailHeader.DeltaTimeTicks);
-    SaveStream.AppendTrackHead;
+  result := TMidiSaveStream.Create;
 
-    if realGriffschrift then
-      MidiEvent.MakeMetaEvent(2, Copyrightreal)
-    else
-      MidiEvent.MakeMetaEvent(2, CopyrightGriff);
-    SaveStream.AppendEvent(MidiEvent);
+  result.SetHead(DetailHeader.DeltaTimeTicks);
+  result.AppendTrackHead;
 
-    Header := DetailHeader;
-    if realGriffschrift then
-    begin
-      Header.CDur := 0;
-      Header.Minor := false;
-    end;
-    SaveStream.AppendHeaderMetaEvents(Header);
+  if realGriffschrift then
+    MidiEvent.MakeMetaEvent(2, Copyrightreal)
+  else
+    MidiEvent.MakeMetaEvent(2, CopyrightGriff);
+  result.AppendEvent(MidiEvent);
 
-    SaveStream.AppendTrackEnd(false);
+  Header := DetailHeader;
+  if realGriffschrift then
+  begin
+    Header.CDur := 0;
+    Header.Minor := false;
+  end;
+  result.AppendHeaderMetaEvents(Header);
 
-    SetLength(MidiTracks, 2);
-    for i := 0 to 1 do
-    begin
-      TGriffArray.CopyGriffToMidi(MidiEvents, GriffEvents,
+  result.AppendTrackEnd(false);
+
+  SetLength(MidiTracks, 2);
+  for i := 0 to 1 do
+  begin
+    TGriffArray.CopyGriffToMidi(MidiEvents, GriffEvents,
                                 i = 1, Instrument.BassDiatonic or (i = 0), realGriffschrift);
-      MidiTracks[i] := MidiEvents;
 
-      if (i = 0) or (Length(MidiEvents) > 1) then
+    // chromatischer Bass: alle Push/Pulls entfernen
+    if (i = 1) and not Instrument.BassDiatonic then
+    begin
+      k := 0;
+      while k < Length(MidiEvents)-1 do
       begin
-        SaveStream.AppendTrackHead(MidiEvents[0].var_len);
-        MidiEvents[0].var_len := 0;
-
-        if i = 1 then
-          MidiEvent.MakeMetaEvent(3, 'Bass')
+        if MidiEvents[k].IsPushPull then
+          TEventArray.RemoveIndex(k, MidiEvents)
         else
-          MidiEvent.MakeMetaEvent(3, 'Melodie');
-        SaveStream.AppendEvent(MidiEvent);
-        MidiEvent.command := $c0;
-        if i = 1 then
-          MidiEvent.command := $c1;
-        MidiEvent.d1 := MidiInstr;
-        SaveStream.AppendEvent(MidiEvent);
-
-        if Instrument.Name <> '' then
-        begin
-          MidiEvent.MakeMetaEvent(4, Instrument.Name);
-          SaveStream.AppendEvent(MidiEvent);
-        end;
-        SaveStream.AppendEvents(MidiEvents);
-        SaveStream.AppendTrackEnd(false);
-      end
-    end;
-    SaveStream.Size := SaveStream.Position;
-    SaveStream.SaveToFile(FileName);
-
-    SaveSimpleToFile(FileName + '.txt', MidiTracks, DetailHeader);
-
-  finally
-    SaveStream.Free;
-  end;
-end;
-
-class procedure TGriffArray.SaveNewMidiToFile(FileName: string;
-                                              const GriffEvents: TGriffEventArray;
-                                              const Instrument: TInstrument;
-                                              const DetailHeader: TDetailHeader);
-var
-  MidiEvents: TMidiEventArray;
-  SaveStream: TMidiSaveStream;
-  i, j, l, h: integer;
-  MidiEvent: TMidiEvent;
-  MidiTracks: TTrackEventArray;
-begin
-  SaveStream := TMidiSaveStream.Create;
-  try
-    SaveStream.SetHead(DetailHeader.DeltaTimeTicks);
-    SaveStream.AppendTrackHead;
-
-    MidiEvent.MakeMetaEvent(2, CopyrightNewGriff);
-    SaveStream.AppendEvent(MidiEvent);
-
-    SaveStream.AppendHeaderMetaEvents(DetailHeader);
-
-    SaveStream.AppendTrackEnd(false);
-
-    SetLength(MidiTracks, 2);
-    for i := 0 to 1 do
-    begin
-      TGriffArray.CopyGriffToNewMidi(MidiEvents, GriffEvents,
-                                     i = 1, Instrument.BassDiatonic or (i = 0));
-      MidiTracks[i] := MidiEvents;
-
-      if (i = 0) or (Length(MidiEvents) > 1) then
-      begin
-        SaveStream.AppendTrackHead(MidiEvents[0].var_len);
-        MidiEvents[0].var_len := 0;
-
-        if i = 1 then
-        begin
-          MidiEvent.MakeMetaEvent(3, 'Bass');
-          l := 5;
-          h := 6;
-        end else begin
-          MidiEvent.MakeMetaEvent(3, 'Melodie');
-          l := 1;
-          h := 4;
-        end;
-        SaveStream.AppendEvent(MidiEvent);
-        for j := l to h do
-        begin
-          MidiEvent.command := $c0 + j;
-          MidiEvent.d1 := MidiInstr;
-          SaveStream.AppendEvent(MidiEvent);
-        end;
-
-        if Instrument.Name <> '' then
-        begin
-          MidiEvent.MakeMetaEvent(4, Instrument.Name);
-          SaveStream.AppendEvent(MidiEvent);
-        end;
-        SaveStream.AppendEvents(MidiEvents);
-        SaveStream.AppendTrackEnd(false);
-      end
-    end;
-    SaveStream.Size := SaveStream.Position;
-    SaveStream.SaveToFile(FileName);
-
-    SaveSimpleToFile(FileName + '.txt', MidiTracks, DetailHeader);
-
-  finally
-    SaveStream.Free;
-  end;
-end;
-
-class procedure TGriffArray.SaveSimpleToFile(FileName: string;
-                                             const MidiTracks: TTrackEventArray;
-                                             const DetailHeader: TDetailHeader);
-var
-  iTrack, iMidiEvent, i : integer;
-  Push: boolean;
-  Delta, takt: integer;
-  Datastream: TSimpleDataStream;
-  MidiEvent: TMidiEvent;
-  d: double;
-begin
-  Datastream := TSimpleDataStream.Create;
-  try
-    Delta := 0;
-    with DataStream do
-    begin
-      WritelnString(cSimpleHeader + ' 1 ' + IntToStr(Length(MidiTracks)) +
-                    ' ' + IntToStr(DetailHeader.DeltaTimeTicks) +
-                    ' ' + IntToStr(DetailHeader.beatsPerMin));
-
-      for iTrack := 0 to Length(MidiTracks)-1 do
-      begin
-        for iMidiEvent := 0 to Length(MidiTracks[iTrack])-1 do
-        begin
-          MidiEvent := MidiTracks[iTrack][iMidiEvent];
-          if iMidiEvent = 0 then
-          begin
-            Delta := MidiEvent.var_len;
-            WriteTrackHeader(Delta);
-
-            continue;
-          end;
-          case MidiEvent.Event of
-            15:
-              if MidiEvent.command = $f0 then
-              begin
-                WriteString(cSimpleMetaEvent + ' ' + IntToStr(MidiEvent.command) + '    ' +
-                  IntToStr(MidiEvent.d1));
-                for i := Low(MidiEvent.Bytes) to High(MidiEvent.Bytes) do
-                  WriteString(' ' + IntToStr(MidiEvent.Bytes[i]));
-              end else begin
-                WriteString(cSimpleMetaEvent + ' ' + IntToStr(MidiEvent.command) + ' ' +
-                  IntToStr(MidiEvent.d1) + ' ' + IntToStr(MidiEvent.d2));
-                for i := Low(MidiEvent.Bytes) to High(MidiEvent.Bytes) do
-                  WriteString(' ' + IntToStr(MidiEvent.Bytes[i]));
-                if MidiEvent.d2 > 0 then
-                  WriteString(' ' + IntToStr(MidiEvent.var_len));
-                if MidiEvent.d1 in [2, 3, 4] then
-                  WriteAnsiString(AnsiString('  "' + MidiEvent.GetBytes + '"'));
-              end;
-            8..14:
-              begin
-                if (MidiEvent.Channel = 0) and MidiEvent.IsSustain and (MidiEvent.Event = 11) then
-                begin
-                  Push := MidiEvent.IsPush;
-                  if Push then
-                    WriteString(cPush)
-                  else
-                    WriteString(cPull);
-                  WritelnString(' ' + IntToStr(MidiEvent.var_len));
-                  continue;
-                end;
-                if HexOutput then
-                begin
-                  WriteString(Format('%5d $%2.2x $%2.2x $%2.2x',
-                                     [MidiEvent.var_len, MidiEvent.command, MidiEvent.d1, MidiEvent.d2]));
-                end else
-                  WriteString(Format('%5d %3d %3d %3d',
-                                     [MidiEvent.var_len, MidiEvent.command, MidiEvent.d1, MidiEvent.d2]));
-                for i := Low(MidiEvent.Bytes) to High(MidiEvent.Bytes) do
-                  WriteString(' ' + IntToStr(MidiEvent.Bytes[i]));
-                if MidiEvent.Event in [8, 9] then
-                begin
-                  if MidiEvent.Event = 9 then
-                  begin
-                    takt := Delta div DetailHeader.DeltaTimeTicks;
-                    if DetailHeader.measureDiv = 8 then
-                      takt := 2*takt;
-                    d := DetailHeader.measureFact;
-                    WriteString(Format('  Takt: %.2f', [takt / d + 1]));
-                  end;
-                  inc(Delta, MidiEvent.var_len);
-              //     WriteString('  LineNr: ' + IntToStr(iMidiEvent));
-             //     if event.Event = 9 then
-             //       WriteString(' ' + IntToStr(OffIndex));
-                end;
-              end;
-              else begin end;
-          end;
-          if MidiEvent.Event >= 8 then
-            WritelnString('');
-        end;
+          inc(k);
       end;
     end;
-    Datastream.SaveToFile(FileName);
-  finally
-    Datastream.Free;
+    TEventArray.MakeNice(MidiEvents);
+
+    MidiTracks[i] := MidiEvents;
+    if (i = 0) or (Length(MidiEvents) > 1) then
+    begin
+      result.AppendTrackHead(MidiEvents[0].var_len);
+      MidiEvents[0].var_len := 0;
+
+      if i = 1 then
+        MidiEvent.MakeMetaEvent(3, 'Bass')
+      else
+        MidiEvent.MakeMetaEvent(3, 'Melodie');
+      result.AppendEvent(MidiEvent);
+      if i = 0 then
+      begin
+        MidiEvent.command := $c0;
+        MidiEvent.d1 := MidiInstrDiskant;
+      end else begin
+        MidiEvent.command := $c1;
+        MidiEvent.d1 := MidiInstrBass;
+      end;
+      result.AppendEvent(MidiEvent);
+
+      if Instrument.Name <> '' then
+      begin
+        MidiEvent.MakeMetaEvent(4, Instrument.Name);
+        result.AppendEvent(MidiEvent);
+      end;
+      result.AppendEvents(MidiEvents);
+      result.AppendTrackEnd(false);
+    end
   end;
+  result.Size := result.Position;
+end;
+
+class function TGriffArray.MakeNewStreamFromGriffEvents(
+  const GriffEvents: TGriffEventArray;
+  const Instrument: TInstrument;
+  const DetailHeader: TDetailHeader): TMidiSaveStream;
+var
+  MidiEvents: array [0..1] of TMidiEventArray;
+  i, j, l, h: integer;
+  MidiEvent: TMidiEvent;
+begin
+  result := TMidiSaveStream.Create;
+
+  result.SetHead(DetailHeader.DeltaTimeTicks);
+  result.AppendTrackHead;
+
+  MidiEvent.MakeMetaEvent(2, CopyrightNewGriff);
+  result.AppendEvent(MidiEvent);
+
+  result.AppendHeaderMetaEvents(DetailHeader);
+
+  result.AppendTrackEnd(false);
+
+  for i := 0 to 1 do
+    TGriffArray.CopyGriffToNewMidi(MidiEvents[i], GriffEvents, i=1, Instrument.BassDiatonic);
+  TEventArray.MergeTracks(MidiEvents[0], MidiEvents[1]);
+  TEventArray.MakeNice(MidiEvents[0]);
+
+  result.AppendTrackHead(MidiEvents[0][0].var_len);
+
+  MidiEvent.MakeMetaEvent(4, Instrument.Name);
+  result.AppendEvent(MidiEvent);
+  MidiEvent.Clear;
+  MidiEvent.command := $c0;
+  for i := 0 to 7 do
+  begin
+    if i < 5 then
+      MidiEvent.d1 := MidiInstrDiskant
+    else
+      MidiEvent.d1 := MidiInstrBass;
+    result.AppendEvent(MidiEvent);
+    inc(MidiEvent.command);
+  end;
+
+  for i := 1 to Length(MidiEvents[0])-1 do
+    result.AppendEvent(MidiEvents[0][i]);
+
+  result.AppendTrackEnd(true);
+
+  {      for j := l to h do
+      begin
+        MidiEvent.command := $c0 + j;
+        MidiEvent.d1 := MidiInstr;
+        result.AppendEvent(MidiEvent);
+      end;
+
+      if Instrument.Name <> '' then
+      begin
+        MidiEvent.MakeMetaEvent(4, Instrument.Name);
+        result.AppendEvent(MidiEvent);
+      end;
+      result.AppendEvents(MidiEvents);
+      result.AppendTrackEnd(false);
+    end
+  end;      }
+end;
+
+class function TGriffArray.MakeSimpleFromDataStream(
+  const GriffEvents: TGriffEventArray;
+  const Instrument: TInstrument;
+  const DetailHeader: TDetailHeader;
+  realGriffschrift: boolean): TSimpleDataStream;
+var
+  Stream: TMidiSaveStream;
+begin
+  result := nil;
+  Stream := MakeStreamFromGriffEvents(GriffEvents, Instrument, DetailHeader, realGriffschrift);
+  if Stream <> nil then
+  try
+    result := TSimpleDataStream.MakeSimpleDataStream(Stream);
+  finally
+    Stream.Free;
+  end;
+end;
+
+
+class function TGriffArray.CorrectSoundPitch(var GriffEvents: TGriffEventArray;
+                                             const Instrument: TInstrument): boolean;
+var
+  i, p: integer;
+begin
+  result := true;
+  for i := 0 to Length(GriffEvents)-1 do
+    if GriffEvents[i].NoteType in [ntDiskant, ntBass] then
+    begin
+      p := GriffEvents[i].GetSoundPitch(Instrument);
+      if p <> GriffEvents[i].SoundPitch then
+        result := false;
+      if p > 0 then
+        GriffEvents[i].SoundPitch := p;
+    end;
 end;
 
 end.

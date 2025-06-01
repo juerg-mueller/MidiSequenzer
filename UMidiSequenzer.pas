@@ -35,6 +35,8 @@ uses
 
 type
 
+  { TfrmSequenzer }
+
   TfrmSequenzer = class(TForm)
     gbLoadSave: TGroupBox;
     btnOpen: TButton;
@@ -68,7 +70,6 @@ type
     Label10: TLabel;
     edtLeftPos: TEdit;
     edtWidth: TEdit;
-    cbxLoadAsGriff: TCheckBox;
     cbxTranspose: TComboBox;
     Label12: TLabel;
     gbMidiSound: TGroupBox;
@@ -142,7 +143,9 @@ type
     procedure btnPurgeBassClick(Sender: TObject);
     procedure edtStopEnter(Sender: TObject);
     procedure cbxMidiInputChange(Sender: TObject);
-  {$ifndef fpc}
+  {$ifdef fpc}
+    procedure FormShortCut(var Msg: TLMKey; var Handled: Boolean);
+  {$else}
     procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
   {$endif}
     procedure btnRealSoundClick(Sender: TObject);
@@ -190,8 +193,11 @@ implementation
 uses
   UfrmGriff,
   umidi,
+{$ifdef dcc}
+  UVirtual,
+{$endif}
 {$ifdef mswindows}
-  Midi, UVirtual,
+  Midi,
 {$else}
   urtmidi,
 {$endif}
@@ -203,8 +209,11 @@ procedure InsertList(Combo: TComboBox; const arr: array of string);
 var
   i: integer;
 begin
+  Combo.Items.Clear;
   for i := 0 to Length(arr)-1 do
     Combo.AddItem(arr[i], nil);
+  Combo.Items.Insert(0, '');
+  Combo.ItemIndex := 0;
 end;
 
 {$ifdef dcc}
@@ -315,13 +324,14 @@ const
   scoreMusic: AnsiString = '<score-partwise';
   scoreMS:    AnsiString = '<museScore';
 var
-  i: integer;
+  i, p: integer;
   PartiturFileName: string;
   ext: string;
   Ok: boolean;
   Index: integer;
   Partitur: TEventArray;
   s: string;
+  SaveStream: TMidiSaveStream;
 
   procedure PrepareFinally;
   begin
@@ -430,44 +440,61 @@ begin
     if not Ok then
       raise Exception.Create('File not read!');
 
-  {$if defined(DEBUG)}
-    s := ExtractFilePath(ParamStr(0)) + 'test.txt';
-    Partitur.SaveSimpleMidiToFile(s, Partitur.TrackArr, Partitur.DetailHeader, false);
-    s := ExtractFilePath(ParamStr(0)) + 'test.mid';
-    Partitur.SaveMidiToFile(s, false);
+  {$ifdef DEBUG}
+    SaveStream := Partitur.SaveMidiToStream(Partitur.TrackArr, Partitur.DetailHeader, false) as TMidiSaveStream;
+    if SaveStream <> nil then
+    begin
+      s := ExtractFilePath(ParamStr(0)) + 'test.mid';
+      SaveStream.SaveToFile(s);
+      s := ExtractFilePath(ParamStr(0)) + 'test.txt';
+      TSimpleDataStream.SaveMidiToSimpleFile(s, SaveStream);
+      SaveStream.Free;
+    end;
   {$endif}
+
+    ChangeInstrument(Partitur.Instrument);
+    Partitur.Repair;
+    SaveStream := Partitur.SaveMidiToStream(Partitur.TrackArr, Partitur.DetailHeader, false) as TMidiSaveStream;
+    if SaveStream <> nil then
+    begin
+      s := ExtractFilePath(ParamStr(0)) + 'repair.txt';
+      TSimpleDataStream.SaveMidiToSimpleFile(s, SaveStream);
+      SaveStream.Free;
+    end;
 
     Partitur.Transpose(cbxTranspose.ItemIndex - 11);
     cbxSmallestNoteChange(nil);
 
-    if (FileOpenDialog1.FilterIndex = 6) or
-       (Partitur.GetCopyright = noCopy) then
-    begin
-      GriffPartitur_.LoadFromTrackEventArray(Partitur);
-      if ext = '.txt' then
-        GriffPartitur_.SetBassGriff;
-      GriffPartitur_.CheckSustain;
-      GriffPartitur_.TransposeInstrument(cbxTransInstrument.ItemIndex - 11);
-    end else begin
-      if not cbxLoadAsGriff.Checked then
-      begin
-        ChangeInstrument(Partitur.Instrument);
-      end;
+    GriffPartitur_.GriffHeader.Details := Partitur.DetailHeader;
+    case Partitur.GetCopyright of
+      griffCopy: GriffPartitur_.LoadFromEventPartitur(Partitur, false);
+      realCopy:  GriffPartitur_.LoadFromEventPartitur(Partitur, true);
+      newCopy:   GriffPartitur_.LoadFromNewEventPartitur(Partitur);
+      prepCopy:  GriffPartitur_.LoadFromRecorded(Partitur);
+      else       GriffPartitur_.LoadFromRecorded(Partitur);
+    end;
+    GriffPartitur_.RepeatToRest;
 
-      GriffPartitur_.GriffHeader.Details := Partitur.DetailHeader;
-      if Partitur.GetCopyright = prepCopy then
-      begin
-     //   if not GriffPartitur_.Instrument.BassDiatonic then    !!!
-     //     TGriffArray.ReduceBass(Partitur.TrackArr[1], $1);
-        if not GriffPartitur_.LoadFromRecorded(Partitur) then
-          Application.MessageBox('Partitur nicht korrekt geladen', 'Fehler');
-//        GriffPartitur_.CheckSustain;
-      end else
-        GriffPartitur_.LoadFromEventPartitur(Partitur, cbxLoadAsGriff.Checked);
-      GriffPartitur_.RepeatToRest;
+    if not TGriffArray.CorrectSoundPitch(GriffPartitur_.GriffEvents, GriffPartitur_.Instrument) then
+    begin
+    {$ifdef CONSOLE}
+      writeln('Fehler beim Einlesen entdeckt!');
+    {$endif}
     end;
 
     PrepareFinally;
+
+  {$ifndef DEBUG}
+    s := ExtractFilePath(ParamStr(0)) + 'GriffPartitur.mid';
+    if GriffPartitur_.PartiturLoaded then
+    begin
+      GriffPartitur_.SaveToNewMidiFile(s);
+      if Partitur.MakeNewSingleTrack then
+      begin
+
+      end;
+    end;
+  {$endif}
   finally
     Partitur.Free;
   end;
@@ -531,7 +558,7 @@ begin
     GriffPartitur_.iAEvent := -1;
     GriffPartitur_.iBEvent := -1;
 //    GriffPartitur_.Volume := 1.0;
-    repeat
+//    repeat
       if iEvent < GriffPartitur_.UsedEvents then
         for i := 0 to iEvent-1 do
           if (GriffPartitur_.GriffEvents[i].AbsRect.Right >
@@ -541,7 +568,8 @@ begin
             break;
           end;
       GriffPartitur_.StopPlay := false;
-      GriffPartitur_.iSkipEvent := -1;
+      GriffPartitur_.iSkipAmpelEvent := -1;
+      GriffPartitur_.iSkipPlayEvent := -1;
       frmGriff.Invalidate;
       GriffPartitur_.StartPlay;
       Player := TGriffPlayer.Create(true);
@@ -554,16 +582,14 @@ begin
                                  StrToIntDef(edtPlayDelay.Text, 0));
         while not Player.Terminated_ do
         begin
-        ProcessMessages;
-        sleep(10);
+          ProcessMessages;
+          sleep(10);
         end;
       finally
         GriffPartitur_.IsPlaying := false;
         Player.Free;
       end;
-      if GriffPartitur_.iSkipEvent >= 0 then
-        iEvent := GriffPartitur_.iSkipEvent;
-    until GriffPartitur_.iSkipEvent < 0;
+//    until GriffPartitur_.iSkipPlayEvent < 0;
     btnPlay.Caption := 'Play Partitur';
     frmGriff.Repaint;
   end else begin
@@ -577,6 +603,7 @@ begin
 
   ProcessMessages;
 end;
+
 procedure TfrmSequenzer.btnPurgeBassClick(Sender: TObject);
 begin
   GriffPartitur_.PurgeBass;
@@ -685,10 +712,10 @@ begin
            Stream.Free;
          end;
       4: ok := GriffPartitur_.SaveToMusicXML(s, true);
-      5: ok := GriffPartitur_.SaveToNewMidiFile(s);
-      6: ok := GriffPartitur_.SaveToZip(s);
+      5: ok := GriffPartitur_.SaveToMidiFile(s, realSound);
+      6: ok := GriffPartitur_.SaveToBmp(s);
       else begin
-        ok := GriffPartitur_.SaveToMidiFile(s, realSound);
+         ok := GriffPartitur_.SaveToNewMidiFile(s);
       end;
     end;
     if ok and (SaveDialog1.FilterIndex in [1, 5]) then
@@ -908,11 +935,9 @@ begin
   begin
     MidiOutput.Close(MicrosoftIndex);
     if iVirtualMidi <> cbxMidiOut.ItemIndex then
-      MicrosoftIndex := cbxMidiOut.ItemIndex
+      MicrosoftIndex := cbxMidiOut.ItemIndex-1
     else
-      cbxMidiOut.ItemIndex := MicrosoftIndex;
-    if system.Pos('UM-ONE', cbxMidiOut.Text) > 0 then
-      edtPlayDelay.Text := '0';
+      cbxMidiOut.ItemIndex := MicrosoftIndex-1;
 
     OpenMidiMicrosoft;
   end;
@@ -1217,23 +1242,24 @@ begin
     edtWidth.Text := '';
 end;
 
-{$ifndef fpc}
+{$ifdef fpc}
+procedure TfrmSequenzer.FormShortCut(var Msg: TLMKey; var Handled: Boolean);
+{$else}
 procedure TfrmSequenzer.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+{$endif}
 var
   KeyCode: word;
 begin
-{
   if GriffPartitur_.PlayControl(Msg.CharCode, Msg.KeyData) then
   begin
     Handled := true;
     exit;
   end;
-  }
+
 // KeyCode := {Menus.}ShortCut(Msg.CharCode, KeyDataToShiftState(Msg.KeyData));
 //  writeln(IntToHex(Keycode));
   //Handled := KeyCode = 32786;   }
 end;
-{$endif}
 
 procedure TfrmSequenzer.FormShow(Sender: TObject);
 var
@@ -1259,26 +1285,14 @@ begin
 
   InsertList(cbxMidiOut, MidiOutput.DeviceNames);
   OpenMidiMicrosoft;
-  cbxMidiOut.ItemIndex := MicrosoftIndex;
+  if MicrosoftIndex > 0 then
+    cbxMidiOut.ItemIndex := MicrosoftIndex;
   MidiInput.OnMidiData := frmAmpel.OnMidiInData;
-  cbxMidiInput.Visible := Length(MidiInput.DeviceNames) > 0;
-  lblKeyboard.Visible := cbxMidiInput.Visible;
-  if cbxMidiInput.Visible then
-  begin
-    InsertList(cbxMidiInput, MidiInput.DeviceNames);
-    cbxMidiInput.Items.Insert(0, '');
-    cbxMidiInput.ItemIndex := 0;
-    for i := 0 to cbxMidiInput.Items.Count-1 do
-      if cbxMidiInput.Items[i] = 'Mobile Keys 49'  then
-        cbxMidiInput.ItemIndex := i;
 
-    cbxMidiInputChange(nil);
-  end;
-  cbxVirtual.Items.Clear;
-  cbxVirtual.Items.Add('');
-  for i := 0 to Length(MidiOutput.DeviceNames)-1 do
-    cbxVirtual.Items.Append(MidiOutput.DeviceNames[i]);
-  cbxVirtual.ItemIndex := 0;
+  InsertList(cbxVirtual, MidiOutput.DeviceNames);
+
+  InsertList(cbxMidiInput, MidiInput.DeviceNames);
+  cbxMidiInputChange(nil);
 
   InitDone := true;
 end;
@@ -1294,10 +1308,17 @@ var
   i: integer;
 begin
 {$if defined(CPU64) or defined(WIN64)}
-  Caption := Caption + ' (64)';
-{$endif}
-{$if defined(CPU32) or defined(WIN32)}
-  Caption := Caption + ' (32)';
+  {$ifdef fpc}
+    Caption := Caption + ' (Lazarus 64)';
+  {$else}
+    Caption := Caption + ' (64)';
+  {$endif}
+{$else}
+  {$ifdef fpc}
+    Caption := Caption + ' (Lazarus 32)';
+  {$else}
+    Caption := Caption + ' (32)';
+  {$endif}
 {$endif}
   cbTransInstrument.Items.Clear;
   for i := 0 to High(InstrumentsList_) do
@@ -1338,9 +1359,7 @@ begin
     exit;
   end;
 
-{$ifdef dcc}
   frmAmpel.KeyMessageEvent(Msg, Handled);
-{$endif}
 
   // keine messages für die console
   if (Msg.message = WM_KEYDOWN) and

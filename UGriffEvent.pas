@@ -97,9 +97,9 @@ type
     procedure SetBass(NewBass: boolean);
     function GetSteiBass: string;
     function IsAppoggiatura(const GriffHeader: TGriffHeader): boolean;
-//  {$if defined(__INSTRUMENTS__)}
     function IsDiatonic(const Instrument: TInstrument): boolean;
-    function GriffToSound(const Instrument: TInstrument; diff: integer = 0): boolean;
+    function GriffToSound(const Instrument: TInstrument): boolean;
+    function GetSound(const Instrument: TInstrument): integer;
     function InSet(const Instrument: TInstrument): TPushPullSet;
     function GetSoundPitch(const Instrument: TInstrument): byte;
     function SoundToGriff(const Instrument: TInstrument): boolean;
@@ -111,7 +111,6 @@ type
     function SoundToGriffBass(const Instrument: TInstrument): integer; overload;
     function SetEvent(Row, Index: integer; Push: boolean; const Instrument: TInstrument): boolean;
     function DoSound(const Instrument: TInstrument; On_: boolean): boolean;
-//  {$endif}
   end;
   PGriffEvent = ^TGriffEvent;
 
@@ -566,6 +565,13 @@ begin
     end else begin
       dec(SoundPitch, 12);
       result := SoundToGriffBass(Instrument, InPush);
+      if result < 0 then
+      begin
+        inc(SoundPitch, 24);
+        result := SoundToGriffBass(Instrument, InPush);
+        if result < 0 then
+          dec(SoundPitch, 12);
+      end;
     end;
   end;
   if result > 0 then
@@ -688,10 +694,11 @@ begin
     end;
   end else begin
     NoteType := ntBass;
+    Cross := Event.Channel = 6;
     if InPush or not Instrument.BassDiatonic then
-      Bass := Instrument.Bass[Event.Channel = 6]
+      Bass := Instrument.Bass[Cross]
     else
-      Bass := Instrument.PullBass[Event.Channel = 6];
+      Bass := Instrument.PullBass[Cross];
     Index := High(Bass);
     while (Index >= 0) and (Bass[Index] <> SoundPitch) do
       dec(Index);
@@ -759,23 +766,28 @@ begin
   end;
 end;
 
-function TGriffEvent.GriffToSound(const Instrument: TInstrument; diff: integer): boolean;
-var
-  Index: integer;
+function TGriffEvent.GetSound(const Instrument: TInstrument): integer;
 begin
-  Index := -1;
+  result := -1;
   if NoteType = ntBass then
   begin
     if GriffPitch in [1..8] then
     begin
       if not InPush and Instrument.BassDiatonic then
-        Index := Instrument.PullBass[Cross, GriffPitch]
+        result := Instrument.PullBass[Cross, GriffPitch]
       else
-        Index := Instrument.Bass[Cross, GriffPitch];
+        result := Instrument.Bass[Cross, GriffPitch];
     end;
   end else
   if NoteType = ntDiskant then
-    Index := Instrument.GriffToSound(GriffPitch, InPush, Cross);
+    result := Instrument.GriffToSound(GriffPitch, InPush, Cross);
+end;
+
+function TGriffEvent.GriffToSound(const Instrument: TInstrument): boolean;
+var
+  Index: integer;
+begin
+  Index := GetSound(Instrument);
   result := Index >= 0;
   if result then
     SoundPitch := Index;

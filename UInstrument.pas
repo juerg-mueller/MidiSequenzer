@@ -21,12 +21,13 @@ interface
 {$define _InstrumentsList}
 {$define GenerateA_Oergeli}
 
-{$if not defined(DCC)}
-  {$mode Delphi}
-{$endif}
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
 
 uses
-  SysUtils;
+  SysUtils, Classes,
+  Ujson;
 
 type
   TPitchArray = array [0..15] of byte; 
@@ -41,6 +42,7 @@ type
       function IsDouble(Pitch: byte; var Index1, Index2: integer): boolean;
       function SoundCount: integer;
       function IsCross(Pitch: byte): boolean;
+      procedure CopyJson(Node: Tjson);
     end;
   PVocalArray = ^TVocalArray;
 
@@ -71,6 +73,7 @@ type
       function GetMinIndex(var Row: byte): integer;
       function bigInstrument: boolean;
       function GetAccordion: string;
+      function UseJson(Root: Tjson): boolean;
     end;
   pInstrument = ^TInstrument;
 
@@ -143,7 +146,6 @@ const
       // doubles: 58 (B3: 3 - 3), 70 (B4: 6 - 6), 82 (B5: 9 - 9),   oben/Kopf                                            unten/Fuss
       Col: (( 0,50,53,58,62,65,70,74,77,82,86, 0, 0, 0, 0, 0),  //   D3   F3   B3   D4   F4   B4   D5   F5   B5   D6
             (64,55,58,63,67,70,75,79,82,87,91, 0, 0, 0, 0, 0),  //   E4   G3   B3  Es4   G4   B4  Es5   G5   B5  Es6   G6
-//            ( 0,54,71,61,72,68,73,80,84,85,83, 0, 0, 0, 0, 0),  // Ges3   H4 Des4   C5  As4 Des5  As5   C6 Des6   H5
             ( 0,66,71,61,72,68,73,80,84,85,83, 0, 0, 0, 0, 0),  // Ges3   H4 Des4   C5  As4 Des5  As5   C6 Des6   H5
             ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
            );
@@ -152,7 +154,6 @@ const
       // doubles: 72 (C5: 7 - 6),
       Col: (( 0,53,57,60,63,67,69,72,75,79,81, 0, 0, 0, 0, 0),  //   F3   A3   C4  Es4   G4   A4   C5  Es5   G5   A5
             (64,58,62,65,68,72,74,77,80,84,86, 0, 0, 0, 0, 0),  //   E4   B3   D4   F4  As4   C5   D5   F5  As5   C6   D6
-//            ( 0,61,71,56,66,73,70,78,82,85,87, 0, 0, 0, 0, 0),  // Des3   H4  As3 Ges4 Des5   B4 Ges5   B5 Des6   E6
               ( 0,61,71,56,66,73,70,78,82,85,76, 0, 0, 0, 0, 0),  // Des3   H4  As3 Ges4 Des5   B4 Ges5   B5 Des6   E6
           ( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
            );
@@ -211,8 +212,11 @@ function GetPitchIndex(Pitch: byte; const arr: TPitchArray): integer;
 
 implementation
 
-//uses
-//  UMyMemoryStream, UMyMidiStream;
+uses
+  {$ifndef FPC}
+    AnsiStrings,
+  {$endif}
+  UMyMemoryStream, UMyMidiStream, UFormHelper;
 
 
 function TInstrument.GetAccordion: string;
@@ -232,6 +236,7 @@ function TInstrument.GetMaxIndex(var Row: byte): integer;
 var
   i: integer;
 begin
+  row := 0;
   result := 6;
   for i := 1 to 4 do
     while Push.Col[i, result+1] > 0 do
@@ -245,6 +250,7 @@ function TInstrument.GetMinIndex(var Row: byte): integer;
 var
   i: integer;
 begin
+  row := 0;
   result := 6;
   for i := 1 to 4 do
     while (result > 0) and (Push.Col[i, result-1] > 0) do
@@ -302,6 +308,76 @@ begin
         Col[k][i] := Col[k][i] + delta;
 end;
 
+procedure TVocalArray.CopyJson(Node: Tjson);
+var
+  i, max: integer;
+
+  function GetPitch(Note: AnsiString): integer;
+  var
+    i: integer;
+  begin
+  {$ifdef FPC}
+    Note := LowerCase(Note);
+  {$else}
+    Note := AnsiStrings.LowerCase(Note);
+  {$endif}
+    if Note = '' then
+    begin
+      result := 0;
+    end else begin
+      case AnsiChar(Note[1]) of
+        'c': result := 0;
+        'd': result := 2;
+        'e': result := 4;
+        'f': result := 5;
+        'g': result := 7;
+        'a': result := 9;
+        'b': result := 11;
+        else result := 0;
+      end;
+      if Copy(Note, 2, 2) = 'es' then
+        dec(result)
+      else
+      if Copy(Note, 2, 2) = 'is' then
+        inc(result);
+      inc(result, 48);
+      i := Length(Note);
+      while (i > 0) and (AnsiChar(Note[i]) in ['''', ',']) do
+      begin
+        if Note[i] = '''' then
+          inc(result, 12)
+        else
+          dec(result, 12);
+        dec(i);
+      end;
+    end;
+  end;
+
+  procedure FillPitchArray(var Arr: TPitchArray; Values: Tjson);
+  var
+    i, max: integer;
+  begin
+    if Values = nil then
+      max := -1
+    else
+      max := Length(Values.List)-1;
+    if max > 15 then
+      max := 15;
+    for i := 0 to max do
+      Arr[i] := GetPitch(Values.List[i].Value);
+    for i := max + 1 to 15 do
+      Arr[i] := 0;
+  end;
+
+begin
+  max := Length(Node.List);
+  if max > 4 then
+    max := 4;
+  for i := 1 to max do
+    FillPitchArray(Col[i], Node.List[i-1]);
+//  for i := max+1 to 5 do
+//    FillPitchArray(Col[i], nil);
+end;
 
 function TVocalArray.SoundCount: integer; 
 
@@ -338,6 +414,24 @@ begin
     dec(Index2); 
 
   result := (Index1 >= 0) and (Index2 >= 0);
+end;
+
+function TInstrument.UseJson(Root: Tjson): boolean;
+var
+  Node: Tjson;
+begin
+  result := false;
+  Node := Root.FindInList('steirDescription');
+  if Node <> nil then
+    Name := Node.Value;
+  Node := Root.FindInList('steirMapping');
+  if (Node <> nil) and (Length(Node.List) = 2) then
+  begin
+    Columns := Length(Node.List[0].List);
+    Push.CopyJson(Node.List[1]);
+    Pull.CopyJson(Node.List[0]);
+    result := true;
+  end;
 end;
 
 procedure TInstrument.Transpose(delta: integer);
@@ -425,6 +519,8 @@ end;
 
 function TInstrument.SoundToGriff(const Pitch: byte; Push: boolean; var iCol, Index: integer): integer;
 begin
+  iCol := -1;
+  Index := -1;
   if Push then
     result := SoundToGriff(Pitch, self.Push, iCol, Index)
   else
@@ -635,6 +731,18 @@ end;
 
 {$if defined(InstrumentsList)}
 
+const
+  FlatNotes  : array [0..11] of string = ('C', 'Des', 'D', 'Es', 'E', 'F', 'Ges', 'G', 'As', 'A', 'B', 'H');
+  SharpNotes : array [0..11] of string = ('C', 'Cis', 'D', 'Dis', 'E', 'F', 'Fis', 'G', 'Gis', 'A', 'B', 'H');
+
+function MidiOnlyNote(Pitch: byte; Sharp: boolean): string;
+begin
+  if Sharp then
+    result := Format('%s%d', [SharpNotes[Pitch mod 12], Pitch div 12])
+  else
+    result := Format('%s%d', [FlatNotes[Pitch mod 12], Pitch div 12])
+end;
+
 procedure PrintInstrument(var stream: TMyMemoryStream; Instrument: TInstrument);
 var
   j: integer;
@@ -767,32 +875,51 @@ end;
 var
   NewInstrument: TInstrument;
 
+procedure AddInstrument(FileName: string);
+var
+  Root: Tjson;
+  Instrument: TInstrument;
+begin
+  if TjsonParser.LoadFromJsonFile(FileName, Root) then
+  begin
+    Instrument := NewInstrument;
+    if Instrument.UseJson(Root) then
+      AddInstr(Instrument);
+  end;
+end;
+
+procedure ReadInstruments(Path: string);
+var
+  SR      : TSearchRec;
+  DirList : TStringList;
+  i: integer;
+begin
+  SetLength(InstrumentsList_, 0);
+  DirList := TStringList.Create;
+  if FindFirst(Path + '*.json', faNormal, SR) = 0 then
+  begin
+    repeat
+      DirList.Add(SR.Name); //Fill the list
+    until FindNext(SR) <> 0;
+    FindClose(SR);
+  end;
+
+  for i := 0 to DirList.Count-1 do
+    AddInstrument(Path + DirList[i]);
+
+  DirList.Free;
+end;
+
 
 initialization
 
+  // Json Files
+  if DirectoryExists('../../instruments') then
+    ReadInstruments('../../instruments/')
+  else
+    ReadInstruments('instruments/');
+
 {$if defined(GenerateA_Oergeli)}
-  AddInstr(SteirischeBEsAsDes);
-  SteirischeADGC := SteirischeBEsAsDes;
-  SteirischeADGC.Transpose(-1);
-  SteirischeADGC.TransposedPrimes := 0;
-  SteirischeADGC.Sharp := true;
-  SteirischeADGC.Name := 'Steirische ADGC';
-  AddInstr(SteirischeADGC);
-
-  SteirischeGCFB := SteirischeBEsAsDes;
-  SteirischeGCFB.Transpose(-3);
-  SteirischeGCFB.TransposedPrimes := 0;
-  SteirischeGCFB.Sharp := true;
-  SteirischeGCFB.Name := 'Steirische GCFB';
-  AddInstr(SteirischeGCFB);
-
-  SteirischeCFBEs := SteirischeBEsAsDes;
-  SteirischeCFBEs.Transpose(2);
-  SteirischeCFBEs.TransposedPrimes := 0;
-  SteirischeCFBEs.Sharp := false;
-  SteirischeCFBEs.Name := 'Steirische CFBEs';
-  AddInstr(SteirischeCFBEs);
-
   SteirischeFBEsAs := SteirischeBEsAsDes;
   SteirischeFBEsAs.Transpose(-5);
   SteirischeFBEsAs.TransposedPrimes := 0;
@@ -807,12 +934,28 @@ initialization
   SteirischeFisHEA.Name := 'Steirische FisHEA';
   AddInstr(SteirischeFisHEA);
 
+  SteirischeGCFB := SteirischeBEsAsDes;
+  SteirischeGCFB.Transpose(-3);
+  SteirischeGCFB.TransposedPrimes := 0;
+  SteirischeGCFB.Sharp := true;
+  SteirischeGCFB.Name := 'Steirische GCFB';
+  AddInstr(SteirischeGCFB);
+
+  AddInstr(SteirischeBEsAsDes);
+
+  SteirischeADGC := SteirischeBEsAsDes;
+  SteirischeADGC.Transpose(-1);
+  SteirischeADGC.TransposedPrimes := 0;
+  SteirischeADGC.Sharp := true;
+  SteirischeADGC.Name := 'Steirische ADGC';
+  AddInstr(SteirischeADGC);
+
   SteirischeGisCisFisH := SteirischeBEsAsDes;
   SteirischeGisCisFisH.Transpose(-2);
   SteirischeGisCisFisH.TransposedPrimes := 0;
   SteirischeGisCisFisH.Sharp := false;
   SteirischeGisCisFisH.Name := 'Steirische GisCisFisH';
-  AddInstr(cis_Oergeli);
+  AddInstr(SteirischeGisCisFisH);
 
   SteirischeHEAD := SteirischeBEsAsDes;
   SteirischeHEAD.Transpose(1);
@@ -821,13 +964,33 @@ initialization
   SteirischeHEAD.Name := 'Steirische HEAD';
   AddInstr(SteirischeHEAD);
 
-  AddInstr(b_Oergeli);
-  a_Oergeli := b_Oergeli;
-  a_Oergeli.Transpose(-1);
-  a_Oergeli.TransposedPrimes := 0;
-  a_Oergeli.Sharp := true;
-  a_Oergeli.Name := 'a-Oergeli';
-  AddInstr(a_Oergeli);
+  SteirischeCFBEs := SteirischeBEsAsDes;
+  SteirischeCFBEs.Transpose(2);
+  SteirischeCFBEs.TransposedPrimes := 0;
+  SteirischeCFBEs.Sharp := false;
+  SteirischeCFBEs.Name := 'Steirische CFBEs';
+  AddInstr(SteirischeCFBEs);
+
+  gis_Oergeli := b_Oergeli;
+  gis_Oergeli.Transpose(-5);
+  gis_Oergeli.TransposedPrimes := 0;
+  gis_Oergeli.Sharp := true;
+  gis_Oergeli.Name := 'f-Oergeli';
+  AddInstr(gis_Oergeli);
+
+  gis_Oergeli := b_Oergeli;
+  gis_Oergeli.Transpose(-4);
+  gis_Oergeli.TransposedPrimes := 0;
+  gis_Oergeli.Sharp := true;
+  gis_Oergeli.Name := 'fis-Oergeli';
+  AddInstr(gis_Oergeli);
+
+  gis_Oergeli := b_Oergeli;
+  gis_Oergeli.Transpose(-3);
+  gis_Oergeli.TransposedPrimes := 0;
+  gis_Oergeli.Sharp := true;
+  gis_Oergeli.Name := 'g-Oergeli';
+  AddInstr(gis_Oergeli);
 
   gis_Oergeli := b_Oergeli;
   gis_Oergeli.Transpose(-2);
@@ -835,6 +998,15 @@ initialization
   gis_Oergeli.Sharp := true;
   gis_Oergeli.Name := 'gis-Oergeli';
   AddInstr(gis_Oergeli);
+
+  a_Oergeli := b_Oergeli;
+  a_Oergeli.Transpose(-1);
+  a_Oergeli.TransposedPrimes := 0;
+  a_Oergeli.Sharp := true;
+  a_Oergeli.Name := 'a-Oergeli';
+  AddInstr(a_Oergeli);
+
+  AddInstr(b_Oergeli);
 
   h_Oergeli := b_Oergeli;
   h_Oergeli.Transpose(1);
@@ -868,5 +1040,4 @@ initialization
 finalization
 
 end.
-
 

@@ -248,7 +248,7 @@ end;
 
 function TMidiDevices.IsOpen(const aDeviceIndex: integer) : boolean;
 begin
-  result := GetHandle(aDeviceIndex) <> 0;
+  result := (aDeviceIndex >= 0) and (GetHandle(aDeviceIndex) <> 0);
 end;
 
 procedure TMidiInput.GenerateList;
@@ -268,11 +268,11 @@ begin
     MidiResult := midiInGetDevCaps(i, @lInCaps, SizeOf(TMidiInCaps));
     if MidiResult = 0 then
     begin
-      if not IsCreativeSoundBlaster(lInCaps.szPname) and
+      if //not IsCreativeSoundBlaster(lInCaps.szPname) and
          (midiInOpen(@lHandle, i, 0, 0, CALLBACK_NULL) = 0) then
       begin
     {$if defined(CONSOLE)}
-//        writeln('midi input ', fDeviceNames.Count, ': ', lInCaps.szPname);
+        writeln('midi input ', length(DeviceNames), ': ', lInCaps.szPname);
     {$endif}
         l := length(DeviceNames);
         SetLength(DeviceNames, l+1);
@@ -396,8 +396,7 @@ begin
         DeviceNames[l] := lOutCaps.szPname;
         Handles[l] := 0;
         s := lOutCaps.szPname;
-        if (s = MicrosoftSync){ or
-           (Pos(UM_ONE, s) > 0)} then
+        if (s = MicrosoftSync) then
         begin
           MicrosoftIndex := l;
           TrueMicrosoftIndex := MicrosoftIndex;
@@ -408,19 +407,10 @@ begin
 {$else}
         end;
 {$endif}
-       //  MIDICAPS_VOLUME          = $0001;  { supports volume control }
-       //  MIDICAPS_LRVOLUME        = $0002;  { separate left-right volume control }
-       //  MIDICAPS_CACHE           = $0004;
-       //  MIDICAPS_STREAM          = $0008;  { driver supports midiStreamOut directly }
-       //  writeln(IntToHex(lOutCaps.dwSupport));
         midiOutClose(lHandle);
       end;
     end;
   end;
-{  if (fDeviceNames.Count > 1) and
-     (fDeviceNames.IndexOf('Midi Through Port-0') = 0) then
-    MicrosoftIndex := 1   }
-
 end;
 
 constructor TMidiOutput.Create;
@@ -476,8 +466,15 @@ begin
 end;
 
 procedure TMidiOutput.Reset;
+  var
+    i: integer;
 begin
-  //
+  for i := 0 to 15 do
+  begin
+    Sleep(5);
+    Send(MicrosoftIndex, $B0 + i, 120, 0);  // all sound off
+  end;
+  Sleep(5);
 end;
 
 ////////////////////////////////////////////////////////////////////////////////

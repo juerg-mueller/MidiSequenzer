@@ -43,6 +43,8 @@ type
 
   PRubberProc = procedure (const Rect: TRect) of object;
   
+  { TfrmGriff }
+
   TfrmGriff = class(TForm)
   {$ifdef fpc}
     ScrollBar1: TScrollBar;
@@ -56,10 +58,15 @@ type
     procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+  {$ifdef fpc}
+    procedure FormShortCut(var Msg: TLMKey; var Handled: Boolean);
+  {$else}
     procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+  {$endif}
     procedure FormActivate(Sender: TObject);
     procedure FormDeactivate(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure ScrollBar1Change(Sender: TObject);
   private
     procedure GetClippedMousePos(var Pos : TPoint; X, Y : integer);
 //    function GetKeyIndex(var Event: UAmpel.TMouseEvent; Key: word): boolean;
@@ -224,6 +231,7 @@ begin
     end;
   end;
 end;
+
 {
 function TfrmGriff.GetKeyIndex(var Event: UAmpel.TMouseEvent; Key: word): boolean;
 var
@@ -309,6 +317,11 @@ procedure TfrmGriff.FormKeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
 //
+end;
+
+procedure TfrmGriff.ScrollBar1Change(Sender: TObject);
+begin
+  invalidate;
 end;
 
 procedure TfrmGriff.FormMouseDown(Sender: TObject; Button: TMouseButton;
@@ -642,13 +655,16 @@ begin
   end;
 end;
 
+{$ifdef fpc}
+procedure TfrmGriff.FormShortCut(var Msg: TLMKey; var Handled: Boolean);
+{$else}
 procedure TfrmGriff.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+{$endif}
 var
   KeyCode: word;
   Key: word;
   Shift: TShiftState;
 begin
-{$ifdef dcc}
   if (Msg.KeyData and $40000000) <> 0 then // auto repeat
   begin
     Handled := true;
@@ -664,7 +680,7 @@ begin
   if (scAlt and KeyCode) <> 0 then
     Shift := Shift + [ssAlt];
 
-//  if not GriffPartitur_.PlayControl(Msg.CharCode, Msg.KeyData) then
+  if not GriffPartitur_.PlayControl(Msg.CharCode, Msg.KeyData) then
     case Key of
       VK_TAB: FormKeyDown(self, Key, Shift);
       else begin
@@ -675,7 +691,6 @@ begin
     end;
 
   Handled := true;
-  {$endif}
 end;
 
 procedure TfrmGriff.FormShow(Sender: TObject);
@@ -836,7 +851,7 @@ var
 var
   i, j, k: integer;
   Weight: TNotenWeight;
-  rect: TRect;
+  rect, clipR: TRect;
   tickDur: TGriffDuration;
   quot: double;
   w: integer;
@@ -882,6 +897,8 @@ begin
       break;
   end;
 
+  clipR := clipRect;
+  dec(clipR.Right);
   canvas_.Pen.Color := 0;
   canvas_.Brush.Color := 0;
   canvas_.Brush.Style := bsClear;
@@ -897,7 +914,7 @@ begin
       rect.Left := round(rect.Left*quot);
       rect.Right := round(rect.Right*quot);
       rect.Offset(0, MoveVert);
-      if not MakeDuration(rect).IsIntersect(MakeDuration(clipRect)) then
+      if not MakeDuration(rect).IsIntersect(MakeDuration(clipR)) then
         continue;
 
       rect.Offset(-Horz_pos + 9, 0);

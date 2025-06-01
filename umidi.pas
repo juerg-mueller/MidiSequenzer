@@ -18,7 +18,6 @@ type
   TChannels = set of 0..15;
 
 var
-  TrueMicrosoftIndex: integer = -1;
   MidiInstrDiskant: byte = $15; // Akkordeon
   MidiBankDiskant: byte = 0;
   MidiInstrBass: byte = $15;
@@ -34,10 +33,8 @@ var
   NurTakt: boolean = false;
   OhneBlinker: boolean = true;
 
-  MidiInstr: byte = $1e;
 
 procedure ChangeBank(Index, Channel, Bank, Instr: byte);
-procedure VolumeChange(vol: double; channels: TChannels);
 procedure ResetMidiOut;
 procedure OpenMidiMicrosoft;
 procedure SendMidi(Status, Data1, Data2: byte);
@@ -57,24 +54,14 @@ begin
 end;
 
 procedure ResetMidiOut;
-var
-  i: integer;
 begin
   if MicrosoftIndex >= 0 then
-  begin
-    for i := 0 to 15 do
-    begin
-      Sleep(5);
-      MidiOutput.Send(MicrosoftIndex, $B0 + i, 120, 0);  // all sound off
-    end;
-    Sleep(5);
-  end;
+    MidiOutput.Reset;
 end;
 
 
 procedure ChangeBank(Index, Channel, Bank, Instr: byte);
 begin
-
   MidiOutput.Send(Index, $b0 + Channel, 0, Bank);
   MidiOutput.Send(Index, $c0 + Channel, Instr, 0);
 end;
@@ -104,28 +91,6 @@ begin
   if (MicrosoftIndex >= 0) then
     MidiOutput.Send(MicrosoftIndex, Status, Data1, Data2);
 end;
-
-procedure VolumeChange(vol: double; channels: TChannels);
-var
-  v: byte;
-  i: integer;
-begin
-  if MicrosoftIndex >= 0 then
-  begin
-    vol := 127*vol*0.75 + 32;
-    if vol > 127 then
-      vol := 127;
-    v := trunc(vol);
-    for i := 0 to 15 do
-      if i in channels then
-      begin
-        MidiOutput.Send(MicrosoftIndex, $B0 + i, 7, v);
-        MidiOutput.Send(MicrosoftIndex, $B0 + i, 11, 127);
-        Sleep(10);
-      end;
-  end;
-end;
-
 
 end.
 

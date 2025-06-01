@@ -29,6 +29,7 @@ type
     procedure Open(Index: integer);
     procedure Close(Index: integer);
     procedure Send(Index: integer; command, d1, d2: byte);
+    procedure Reset;
   end;
 
 
@@ -124,6 +125,19 @@ begin
     rtmidi_out_send_message(MidiOut, @b, l);
 end;
 
+procedure TMidiOutput.Reset;
+  var
+    i: integer;
+begin
+  for i := 0 to 15 do
+  begin
+    Sleep(5);
+    Send(MicrosoftIndex, $B0 + i, 120, 0);  // all sound off
+  end;
+  Sleep(5);
+end;
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 constructor TMidiInput.Create(Name: PChar);
@@ -194,9 +208,9 @@ end;
 initialization
 
 
-    MidiOutput := TMidiOutput.Create;
-    MidiVirtual := TMidiOutput.Create;
-    MidiInput := TMidiInput.Create;
+  MidiOutput := TMidiOutput.Create;
+  MidiVirtual := TMidiOutput.Create;
+  MidiInput := TMidiInput.Create;
 
 
 finalization

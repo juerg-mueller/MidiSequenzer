@@ -47,9 +47,9 @@ interface
 
 uses
 {$ifdef FPC}
-  lcltype, LCLIntf, lcl,
+  lcltype, LCLIntf, lcl, lMessages,
 {$else}
-  Messages, Windows,
+  Windows,
 {$endif}
   umidi,
 {$ifdef mswindows}
@@ -57,9 +57,9 @@ uses
 {$else}
   urtmidi,
 {$endif}
-  Forms, SyncObjs, Graphics, Types, StdCtrls, Dialogs, Controls, SysUtils,
+  Messages, Forms, SyncObjs, Graphics, Types, StdCtrls, Dialogs, Controls, SysUtils,
   Classes,
-  UInstrument, UGriffEvent, Menus, ExtCtrls;
+  UInstrument, UMidiEvent, UGriffEvent, Menus, ExtCtrls;
 
 type
   TSoundGriff = procedure (Row: byte; index: byte; Push: boolean; On_:boolean) of object;
@@ -90,6 +90,7 @@ type
   TWMKey = integer;
 {$endif}
   TLastPush = (unknown, LastPush_, LastPull_);
+
   TAmpelEvents = class
   private
     frmAmpel: TfrmAmpel;
@@ -124,10 +125,24 @@ type
     property UsedEvents : integer read FUsedEvents;
   end;
 
+  TMidiInBuffer = class
+  private
+    Critical: syncobjs.TCriticalSection;
+    Head, Tail: word;
+    Buffer: array [0..1023] of TMidiInData;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    function Empty: boolean;
+    function Get(var rec: TMidiInData): boolean;
+    function Put(const rec: TMidiInData): boolean;
+  end;
 
   PPlayControl = function(CharCode: word; KeyData: Longint): boolean of object;
 
   PKeyDown = procedure (Sender: TObject; var Key: Word; Shift: TShiftState) of object;
+
+  { TfrmAmpel }
 
   TfrmAmpel = class(TForm)
     btnFlip: TButton;
@@ -137,6 +152,7 @@ type
     cbxVerkehrt: TCheckBox;
     lbTastatur: TLabel;
     Timer1: TTimer;
+    cbxNoteAnzeigen: TCheckBox;
     procedure FormPaint(Sender: TObject);
     procedure btnFlipClick(Sender: TObject);
     procedure btnFlipHorzClick(Sender: TObject);
@@ -153,7 +169,11 @@ type
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+  {$ifdef fpc}
+    procedure FormShortCut(var Msg: TLMKey; var Handled: Boolean);
+  {$else}
     procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+  {$endif}
     procedure FormActivate(Sender: TObject);
     procedure FormDeactivate(Sender: TObject);
     procedure cbxLinkshaenderClick(Sender: TObject);
@@ -162,34 +182,29 @@ type
   private
     function MakeMouseDown(const P: TPoint; Push: boolean): TMouseEvent;
     function FlippedHorz: boolean;
+    procedure PaintNote(const rect: TRect; Pitch: byte);
   public
     Instrument: PInstrument;
     AmpelEvents: TAmpelEvents;
     FlippedVert: boolean;
     FlippedHorz_: boolean;
-    //SoundGriff: TSoundGriff;
-    SelectedChanges: PSelectedProc;
     KnopfGroesse: integer;
     MinIndex, MaxIndex: integer;
     PlayControl: PPlayControl;
     KeyDown: PKeyDown;
     IsActive: boolean;
-    CriticalMidiIn: syncobjs.TCriticalSection;
-    MidiBufferHead, MidiBufferTail: word;
-    MidiInBuffer: array [0..1023] of TMidiInData;
-    PRecordMidiIn: TRecordMidiIn;
+    MidiInBuffer: TMidiInBuffer;
+    SelectedChanges: PSelectedProc;
     UseTurboSound: boolean;
 
     procedure ChangeInstrument(Instrument_: PInstrument);
     function KnopfRect(Row: byte {1..6}; index: byte {0..10}): TRect;
-    procedure PaintAmpel_(Row: byte {1..6}; index: integer {0..10}; Push, On_: boolean);
+    procedure PaintAmpel(Row: byte {1..6}; index: integer {0..10}; Push, On_: boolean);
     procedure PaintBalg(Push: boolean);
     function GetKeyIndex(var Event: TMouseEvent; Key: word): boolean;
     procedure InitLastPush;
-{$ifdef dcc}
-    procedure KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);
-{$endif}
     procedure OnMidiInData(aDeviceIndex: integer; aStatus, aData1, aData2: byte; aTimestamp: Int64);
+    procedure KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);
   end;
 
   TKeys = array [0..11] of AnsiChar;
@@ -205,20 +220,18 @@ const
 
 var
   frmAmpel: TfrmAmpel;
+  IsLimex: boolean = false;
 
 implementation
 
-{$IFnDEF FPC}
-  {$R *.dfm}
-{$ELSE}
+{$ifdef FPC}
   {$R *.lfm}
-{$ENDIF}
+{$else}
+  {$R *.dfm}
+{$endif}
 
 uses
-{$if not defined(__VIRTUAL__) and defined(dcc)}
-  UfrmGriff,
-{$endif}
-  UFormHelper, UMidiEvent;
+  UFormHelper;
 
 procedure TMouseEvent.Clear;
 begin
@@ -270,16 +283,8 @@ begin
 end;
 
 procedure TAmpelEvents.SendMidiOut(const Status, Data1, Data2: byte);
-var
-  b: byte;
 begin
-  b := Status;
-  if (MicrosoftIndex >= 0) then
-  begin
-    MidiOutput.Send(MicrosoftIndex, b, Data1, Data2);
-  end;
-//  if @PRecordMidiOut <> nil then
-//    PRecordMidiOut(Status, Data1, Data2, trunc(24*3600*1000*now));
+  SendMidi(Status, Data1, Data2);
 end;
 
 procedure TAmpelEvents.SendPush(Push: boolean);
@@ -291,7 +296,7 @@ begin
     else
       LastPush := LastPull_;
 
-    SendMidiOut($B0, ControlSustain, ord(Push));
+    SendMidiOut($B0, ControlPushPull, ord(Push));
   end;
 
 end;
@@ -649,9 +654,9 @@ begin
   begin
     result := AmpelOn[Row, Index].On_;
     if result then
-      frmAmpel.PaintAmpel_(Row, Index, AmpelOn[Row, Index].Push, true)
+      frmAmpel.PaintAmpel(Row, Index, AmpelOn[Row, Index].Push, true)
     else
-      frmAmpel.PaintAmpel_(Row, Index, false, false);
+      frmAmpel.PaintAmpel(Row, Index, false, false);
   end;
 
 end;
@@ -734,15 +739,6 @@ begin
   lbUnten.Top := rectMax.Bottom + 10;
   lbUnten.Left := Mitte - lbUnten.Width div 2;
 
- { if FlippedVert then
-    rect2.Offset(-rect2.Width, 0);
-  lbTastatur.Left := rect2.Left;
-  cbxVerkehrt.Left := rect2.Left;
-  cbxLinkshaender.Left := rect2.Left;
-  d := btnFlip.Top - lbTastatur.Top;
-  lbTastatur.Top := lbTastatur.Top + d;
-  cbxLinkshaender.Top := cbxLinkshaender.Top + d;
-  cbxVerkehrt.Top := cbxVerkehrt.Top + d;     }
   Invalidate;
 end;
 
@@ -760,20 +756,16 @@ end;
 procedure TfrmAmpel.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   CanClose := true;
-//  WindowState := wsMinimized;
 end;
 
 procedure TfrmAmpel.FormCreate(Sender: TObject);
 begin
-  CriticalMidiIn := TCriticalSection.Create;
+  MidiInBuffer := TMidiInBuffer.Create;
   AmpelEvents := TAmpelEvents.Create(self);
   KnopfGroesse := 52;
   FlippedHorz_ := true;
   btnFlipClick(Sender);
   btnFlipHorzClick(Sender);
-  MidiBufferHead := 0;
-  MidiBufferTail := 0;
-  FillChar(MidiInBuffer, sizeof(MidiInBuffer), 0);
 end;
 
 procedure TfrmAmpel.FormDeactivate(Sender: TObject);
@@ -784,7 +776,7 @@ end;
 procedure TfrmAmpel.FormDestroy(Sender: TObject);
 begin
   AmpelEvents.Free;
-  CriticalMidiIn.Free;
+  MidiInBuffer.Free;
 end;
 
 function TfrmAmpel.GetKeyIndex(var Event: TMouseEvent; Key: word): boolean;
@@ -902,7 +894,7 @@ var
 begin
   if Key in [vk_Shift, vk_Control, vk_Capital] then
   begin
-    FormKeyDown(nil, Key, Shift);
+    FormKeyDown(Sender, Key, Shift);
     exit;
   end;
 
@@ -919,13 +911,6 @@ begin
   P.X := X;
   P.Y := Y;
   Event := MakeMouseDown(P, ShiftUsed);
-
-{$if not defined(__VIRTUAL__) and defined(dcc)}
-  if (@KeyDown <> nil) and
-     ((GetKeyState(vk_scroll) = 1) or //   numlock pause scroll
-      (GetKeyState(vk_RMenu) < 0)) then // AltGr
-    frmGriff.GenerateNewNote(Event);
-{$endif}
 end;
 
 function TfrmAmpel.MakeMouseDown(const P: TPoint; Push: boolean): TMouseEvent;
@@ -1004,6 +989,8 @@ begin
 end;
 
 function TfrmAmpel.KnopfRect(Row: byte {1..6}; index: byte {0..12}): TRect;
+const
+  yOffset = 40;
 var
   y: integer;
   Knopf, kDelta: integer;
@@ -1093,6 +1080,7 @@ begin
       result.Offset((Instrument.Columns+2)*Knopf +
                     KnopfGroesse*(Row-5), y);
   end;
+  result.Offset(0, yOffset);
 end;
 
 
@@ -1134,7 +1122,7 @@ procedure TfrmAmpel.FormResize(Sender: TObject);
 var
   w1, w2: integer;
 begin
-{  w1 := GetWidth;
+  w1 := GetWidth;
   repeat
     if w1 > Width then
     begin
@@ -1153,14 +1141,17 @@ begin
     end else
       break;
   until (w1 < Width) and (w2 >= Width);
-  cbSizeChange(nil); }
+  cbSizeChange(nil);
 end;
 
-procedure TfrmAmpel.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+{$ifdef fpc}
+  procedure TfrmAmpel.FormShortCut(var Msg: TLMKey; var Handled: Boolean);
+{$else}
+  procedure TfrmAmpel.FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+{$endif}
 var
   KeyCode: word;
 begin
-{$ifdef dcc}
   if (Msg.KeyData and $40000000) <> 0 then // auto repeat
   begin
     Handled := true;
@@ -1176,7 +1167,6 @@ begin
   end;
   if (KeyCode and $fff) = vk_Return then
     Handled := true;
-{$endif}
 end;
 
 procedure TfrmAmpel.FormShow(Sender: TObject);
@@ -1193,12 +1183,40 @@ begin
   Height := lbUnten.Top + 100;
 end;
 
-procedure TfrmAmpel.PaintAmpel_(Row: byte {1..6}; index: integer {0..12}; Push, On_: boolean);
+procedure TfrmAmpel.PaintNote(const rect: TRect; Pitch: byte);
+const
+  Noten: array [0..11] of AnsiString =
+    ('C', 'Des', 'D', 'Es', 'E', 'F', 'Ges', 'G', 'As', 'A', 'B', 'H');
+var
+  s: string;
+  i, l, m: integer;
+begin
+  Canvas.Font.Color := $ffffff;
+  s := Noten[Pitch mod 12];
+  if Pitch >= 36 then
+  begin
+    if Pitch >= 48 then
+    begin
+      m := (Pitch div 12) - 3;
+      for i := 1 to m do
+        s := s + '''';
+    end;
+    inc(s[1], ord('a')-ord('A'));
+  end;
+  //s := IntToStr(Pitch);
+  l := Canvas.TextWidth(s);
+  Canvas.Font.Size := round(KnopfGroesse / 3.8);
+  m := KnopfGroesse - 2*Canvas.Font.Size;
+  Canvas.TextOut(rect.left + (KnopfGroesse-l) div 2, rect.Top + m div 2, s);
+end;
+
+procedure TfrmAmpel.PaintAmpel(Row: byte {1..6}; index: integer {0..12}; Push, On_: boolean);
 var
   rect: TRect;
+  Pitch: integer;
 begin
-
-  if (Instrument = nil) or (Instrument.GetPitch(Row, Index, Push) <= 0) then
+  Pitch := Instrument.GetPitch(Row, Index, Push);
+  if (Instrument = nil) or (Pitch <= 0) then
     exit;
 
   if (Row >= 5) and not Instrument.BassDiatonic then
@@ -1215,6 +1233,10 @@ begin
   else
     canvas.Brush.Color := $ffff00;
   canvas.Ellipse(rect);
+  if On_ and cbxNoteAnzeigen.Checked then
+  begin
+    PaintNote(rect, Pitch)
+  end;
 
   if ((index = 5) and (row = 2)) or
      ( Instrument.BassDiatonic and
@@ -1279,7 +1301,6 @@ var
   Event: TMouseEvent;
   Key: word;
   GriffEvent: TGriffEvent;
-  Tail: integer;
   Data: TMidiInData;
 
   function GetInstr(var Event: TMouseEvent): boolean;
@@ -1307,22 +1328,18 @@ var
   end;
 
 begin
-  while MidiBufferHead <> MidiBufferTail do
+  while MidiInBuffer.Get(Data) do
   begin
-    Tail := -1;
-    CriticalMidiIn.Acquire;
-    try
-      Tail := MidiBufferTail;
-      Data := MidiInBuffer[Tail];
-      MidiBufferTail := (MidiBufferTail + 1) mod Length(MidiInBuffer);
-    finally
-      CriticalMidiIn.Release;
-    end;
-    if Tail < 0 then
-      continue;
-
+    if ((Data.Status shr 4) = 12) and (Data.Data2 = 0) then
+      MidiOutput.Send(MicrosoftIndex, Data.Status, Data.Data1, Data.Data2)
+    else
     if (Data.Status shr 4) in [8, 9, 11] then
     begin
+      if ((Data.Status shr 4) = 9) and (Data.Data2 = 0) then
+      begin
+        dec(Data.Status, $10);
+        Data.Data2 := 64;
+      end;
       Event.Clear;
       Event.Pitch := Data.Data1;
       Event.Row_ := (Data.Status and $f);
@@ -1332,7 +1349,7 @@ begin
 
       if (Data.Status shr 4) = 11 then
       begin
-        if(Data.Data1 = 64) or (Data.Data1 = ControlSustain) then
+        if (Data.Data1 = ControlPushPull) then
         begin
           Sustain_ := Data.Data2 > 0;
           Key := 0;
@@ -1404,9 +1421,6 @@ begin
             AmpelEvents.EventOff(Event);
         end;
       end else begin
-    {$ifdef CONSOLE}
-    //    writeln(Format('MIDI IN: $%2.2x %3d  $%2.2x' ,[Data.Status, Data.Data1, Data.Data2]));
-    {$endif}
       end;
     end;
   end;
@@ -1414,42 +1428,23 @@ end;
 
 procedure TfrmAmpel.OnMidiInData(aDeviceIndex: integer; aStatus, aData1, aData2: byte; aTimestamp: Int64);
 var
-  old: word;
   t: int64;
+  Data: TMidiInData;
 begin
   t := trunc(Now*24000*3600);
-  CriticalMidiIn.Acquire;
-  try
-    old := MidiBufferHead;
-    MidiBufferHead := (MidiBufferHead + 1) mod Length(MidiInBuffer);
-    if MidiBufferHead = MidiBufferTail then
-      MidiBufferTail := (MidiBufferTail + 1) mod Length(MidiInBuffer);
-
-    with MidiInBuffer[old] do
-    begin
-      DeviceIndex := aDeviceIndex;
-      Status := aStatus;
-      Data1 := aData1;
-      Data2 := aData2;
-      Timestamp := t; // ms
-//      if (Status shr 4) <> 11 then
-//        writeln(Format('$%2.2x  $%2.2x  $%2.2x --' ,[Status, Data1, Data2]));
-    end;
-  finally
-    CriticalMidiIn.Release;
-  end;
-  if @PRecordMidiIn <> nil then
-    PRecordMidiIn(aStatus, aData1, aData2, t);
+  Data.DeviceIndex := aDeviceIndex;
+  Data.Status := aStatus;
+  Data.Data1 := aData1;
+  Data.Data2 := aData2;
+  Data.Timestamp := t; // ms
+  MidiInBuffer.Put(Data);
 end;
 
-{$ifdef dcc}
+// Keys vom Hauptfenster
 procedure TfrmAmpel.KeyMessageEvent(var Msg: TMsg; var Handled: Boolean);
 begin
   if ((Msg.message = WM_KEYDOWN) or (Msg.message = WM_KEYUP)) then
   begin
-{$ifdef CONSOLE}
-//    writeln(Msg.wParam, '  ', IntToHex(Msg.lParam));
-{$endif}
     if frmAmpel.IsActive then
     begin
       if (Msg.lParam and $fff0000) = $0150000 then    // Z
@@ -1505,7 +1500,59 @@ begin
     end;
   end;
 end;
-{$endif}
+
+constructor TMidiInBuffer.Create;
+begin
+  Critical := TCriticalSection.Create;
+  Head := 0;
+  Tail := 0;
+  FillChar(Buffer, sizeof(Buffer), 0);
+end;
+
+destructor TMidiInBuffer.Destroy;
+begin
+  Critical.Free;
+end;
+
+function TMidiInBuffer.Empty: boolean;
+begin
+  result := Tail = Head;
+end;
+
+function TMidiInBuffer.Get(var rec: TMidiInData): boolean;
+begin
+  result := false;
+  Critical.Acquire;
+  try
+    result := not Empty;
+    if result then
+    begin
+      rec := Buffer[Tail];
+      Tail := (Tail + 1) mod Length(Buffer);
+    end;
+  finally
+    Critical.Release;
+  end;
+end;
+
+function TMidiInBuffer.Put(const rec: TMidiInData): boolean;
+var
+  oldHead: word;
+begin
+  result := false;
+  Critical.Acquire;
+  try
+    oldHead := Head;
+    Head := (Head + 1) mod Length(Buffer);
+    if Empty then
+      Tail := (Tail + 1) mod Length(Buffer);
+
+    Buffer[oldHead] := rec;
+    result := true;
+  finally
+    Critical.Release;
+  end;
+end;
 
 end.
 

@@ -1,11 +1,11 @@
 object frmAmpel: TfrmAmpel
-  Left = 400
-  Height = 560
-  Top = 0
-  Width = 606
+  Left = 26
+  Height = 561
+  Top = 146
+  Width = 610
   Caption = 'Griff-Ampel'
-  ClientHeight = 560
-  ClientWidth = 606
+  ClientHeight = 561
+  ClientWidth = 610
   Color = clBtnFace
   Constraints.MinHeight = 400
   Constraints.MinWidth = 200
@@ -28,7 +28,7 @@ object frmAmpel: TfrmAmpel
   OnResize = FormResize
   OnShortCut = FormShortCut
   OnShow = FormShow
-  LCLVersion = '2.2.6.0'
+  LCLVersion = '3.6.0.0'
   object lbUnten: TLabel
     Left = 310
     Height = 27
@@ -42,28 +42,16 @@ object frmAmpel: TfrmAmpel
     ParentColor = False
     ParentFont = False
   end
-  object lbTastatur: TLabel
-    Left = 8
-    Height = 17
-    Top = 5
-    Width = 64
-    Caption = 'PC-Tastatur'
-    Font.Color = clWindowText
-    Font.Height = -12
-    Font.Name = 'Tahoma'
-    ParentColor = False
-    ParentFont = False
-  end
   object btnFlip: TButton
     Left = 300
     Height = 22
     Top = 47
     Width = 46
     Caption = 'Flip'
+    TabOrder = 0
     OnClick = btnFlipClick
     OnKeyDown = FormKeyDown
     OnKeyUp = FormKeyUp
-    TabOrder = 0
   end
   object btnFlipHorz: TButton
     Left = 310
@@ -74,38 +62,49 @@ object frmAmpel: TfrmAmpel
     Font.Color = clWindowText
     Font.Height = -11
     Font.Name = 'Tahoma'
+    ParentFont = False
+    TabOrder = 1
     OnClick = btnFlipHorzClick
     OnKeyDown = FormKeyDown
     OnKeyUp = FormKeyUp
-    ParentFont = False
-    TabOrder = 1
   end
   object cbxLinkshaender: TCheckBox
     Left = 8
     Height = 21
-    Top = 18
+    Top = 20
     Width = 108
     Caption = 'für Linkshänder'
+    TabOrder = 2
     OnClick = cbxLinkshaenderClick
     OnKeyDown = FormKeyDown
     OnKeyUp = FormKeyUp
-    TabOrder = 2
   end
   object cbxVerkehrt: TCheckBox
     Left = 8
     Height = 21
-    Top = 33
+    Top = 40
     Width = 69
     Caption = 'verkehrt'
+    TabOrder = 3
     OnClick = cbxLinkshaenderClick
     OnKeyDown = FormKeyDown
     OnKeyUp = FormKeyUp
-    TabOrder = 3
+  end
+  object cbxNoteAnzeigen: TCheckBox
+    Left = 8
+    Height = 21
+    Top = 0
+    Width = 99
+    Caption = 'Note anzeigen'
+    TabOrder = 4
+    OnClick = cbxLinkshaenderClick
+    OnKeyDown = FormKeyDown
+    OnKeyUp = FormKeyUp
   end
   object Timer1: TTimer
     Interval = 1
     OnTimer = Timer1Timer
-    Left = 272
-    Top = 224
+    Left = 162
+    Top = 167
   end
 end

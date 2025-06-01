@@ -32,7 +32,7 @@ uses
 {$ENDIF}
   Classes, SysUtils, Types, Variants, Graphics,
   UInstrument, UMyMemoryStream, UMyMidiStream, UEventArray,
-  UGriffEvent, UFormHelper, UMidiEvent;
+  UGriffEvent, UFormHelper, UMidiEvent, UMidiDataStream;
 
 const
   row_height = 15;
@@ -88,7 +88,8 @@ type
     PlayFactor: double;
     PlayDelay: integer;
     playLocation: integer;
-    iSkipEvent: integer;
+    iSkipPlayEvent: integer;
+    iSkipAmpelEvent: integer;
     iAEvent, iBEvent: integer;
     Volume: double;
     IsPlaying: boolean;
@@ -121,15 +122,18 @@ type
     procedure SetRubberOff;
 
     function LoadFromEventPartitur(const EventPartitur: TEventArray; AsGriffPartitur: boolean = false): boolean;
+    function LoadFromNewEventPartitur(const EventPartitur: TEventArray): boolean;
     function LoadFromRecorded(const EventPartitur: TEventArray): boolean;
     function AppendEventArray(const Events: TMidiEventArray): boolean;
     function LoadFromGriffFile(const FileName: string): boolean;
     procedure LoadChanges;
     function SaveToGriffFile(const FileName: string): boolean;
 //    function SavePasFile(const FileName: string): boolean;
-    function SaveToMidiFile(const FileName: string; realGriffschrift: boolean): boolean;
-    function SaveToNewMidiFile(const FileName: string): boolean;
-    function SaveToZip(const FileName: string): boolean;
+    function SaveToMidiStream(realGriffschrift: boolean): TMidiSaveStream;
+    function SaveToMidiFile(FileName: string; realGriffschrift: boolean): boolean;
+    function SaveToNewMidiStream: TMidiSaveStream;
+    function SaveToNewMidiFile(FileName: string): boolean;
+    function SaveToBmp(const FileName: string): boolean;
 
     function AppendFile(const FileName: string): boolean;
     procedure PurgeBass;
@@ -762,6 +766,7 @@ begin
   result := true;
 end;
 {$endif}
+
 function TGriffPartitur.LoadFromEventPartitur(const EventPartitur: TEventArray; AsGriffPartitur: boolean): boolean;
 var
   iEvent: integer;
@@ -775,6 +780,7 @@ var
   _Repeat: TRepeat;
   PTrack: PMidiEventArray;
   Event: TMidiEvent;
+  Sound: integer;
 begin
   Clear;
   
@@ -786,8 +792,8 @@ begin
   iMidiTrack := 0;
 
   copyright := EventPartitur.GetCopyright;
-
   GriffHeader.Details := EventPartitur.DetailHeader;
+  SetInstrument(AnsiString(EventPartitur.Instrument));
 
   Guard := 0;
   _Repeat := rRegular;
@@ -801,12 +807,12 @@ begin
         for iEvent := 1 to Length(PTrack^)-1 do
         begin
           Event := PTrack^[iEvent];
-          if Event.IsSustain then
+          if Event.IsPushPull then
             In_Push := Event.IsPush
           else
           if (Event.Event = 11) then
           begin
-            case Event.d1-ControlSustain of
+            case Event.d1-ControlPushPull of
               4: with GriffEvent do
                  begin
                    Clear;
@@ -835,7 +841,7 @@ begin
               1, 2:
                  begin
                    Guard := Event.d2;
-                   IsCross := Event.d1 = ControlSustain+2;
+                   IsCross := Event.d1 = ControlPushPull+2;
                  end;
             end;
           end else
@@ -857,15 +863,13 @@ begin
             begin
               if GriffEvent.NoteType = ntBass then
               begin
-                GriffEvent.SetGriffEvent(Instrument, false, false);
+                GriffEvent.Cross := IsCross;
                 GriffEvent.AbsRect.Top := -1;
                 GriffEvent.GriffPitch := Guard;
                 if Instrument.BassDiatonic then
-                begin
-                  GriffEvent.InPush := In_Push;
-                end;
-                GriffEvent.Cross := IsCross;
-                GriffEvent.GetSoundPitch(Instrument);
+                  GriffEvent.InPush := In_Push
+                else
+                  GriffEvent.InPush := true;
               end else begin
                 if Guard = 0 then
                 begin
@@ -874,10 +878,6 @@ begin
                   GriffEvent.Cross := IsCross;
                 GriffEvent.InPush := In_Push;
                 if copyright = griffCopy then
-                begin
-                  GriffEvent.GriffPitch := Guard;
-                end else
-                if GriffEvent.NoteType = ntBass then
                   GriffEvent.GriffPitch := Guard
                 else begin
                   GriffEvent.GriffPitch := GriffEvent.SoundPitch;
@@ -885,8 +885,17 @@ begin
                 end;
                 GriffEvent.AbsRect.Top := GetPitchLine(GriffEvent.GriffPitch);
               end;
-              if AsGriffPartitur and (copyright = griffCopy) then
-                GriffEvent.GriffToSound(Instrument);
+
+              Sound := GriffEvent.GetSound(Instrument);
+              if Sound <> GriffEvent.SoundPitch then
+              begin
+            {$ifdef CONSOLE}
+                writeln('new soundpitch');
+            {$endif}
+                if Sound > 0 then
+                  GriffEvent.SoundPitch := Sound;
+              end;
+
               GriffEvent.AbsRect.Height := 1;
               GriffEvent.Repeat_ := _Repeat;
               AppendGriffEvent(GriffEvent);
@@ -922,6 +931,7 @@ begin
     PartiturLoaded := false;
   end;
   SortEvents;
+
   PartiturLoaded := true;
   LoadChanges;
 end;
@@ -960,7 +970,7 @@ begin
         for iEvent := 1 to Length(PTrack^)-1 do
         begin
           Event := PTrack^[iEvent];
-          if Event.IsSustain then
+          if Event.IsPushPull then
             In_Push := Event.IsPush
           else
           if Event.Event = 9 then
@@ -1076,7 +1086,7 @@ begin
       end else begin
   //      diff := Instrument.Push.Col[2, 6] - Instrument.Push.Col[2, 6];
         for iEvent := 0 to UsedEvents-1 do
-          GriffEvents[iEvent].GriffToSound(Instrument, 0);
+          GriffEvents[iEvent].GriffToSound(Instrument);
       end;
     end;
   end;  
@@ -1119,9 +1129,7 @@ begin
   AppendGriffEvent(GriffEvent);
   fSelected := GriffHeader.UsedEvents-1;
   SortEvents;
-{$ifdef __FRM_GRIFF__}
   frmGriff.Invalidate;
-{$endif}
 end;
 
 function TGriffPartitur.TrimTakt: double;
@@ -1958,7 +1966,7 @@ begin
     PlayEvent.Clear;
   offset := GriffEvents[PlayEvent.iEvent].AbsRect.Left;
   LastPush := GriffEvents[PlayEvent.iEvent].InPush;
-  MidiOutput.Send(MicrosoftIndex, $B0, ControlSustain, ord(LastPush));
+  MidiOutput.Send(MicrosoftIndex, $B0, ControlPushPull, ord(LastPush));
 
   for Row := 1 to High(Dur) do
     for i := 0 to 127 do
@@ -1968,7 +1976,6 @@ begin
         // 41 9  73
 
   Sound := 0;
-  GriffHeader.Details.Write_;
   TickOffset := GriffHeader.Details.GetTicks;
   try
     repeat
@@ -1978,6 +1985,12 @@ begin
             (round(Offset) >= GriffEvents[PlayEvent.iEvent].AbsRect.Left) and
             not StopPlay do
       begin
+        if (iSkipPlayEvent >= 0) then
+        begin
+          SkipEvent(iSkipPlayEvent, true);
+          iSkipPlayEvent := -1;
+          continue;
+        end;
         if (iAEvent >= 0) and (iBEvent > iAEvent + 2) and (PlayEvent.iEvent >= iBEvent) then
         begin
           SkipEvent(iAEvent, true);
@@ -2011,7 +2024,7 @@ begin
             if InPush <> LastPush then
             begin
               LastPush := InPush;
-              MidiOutput.Send(MicrosoftIndex, $B0, ControlSustain, ord(LastPush));
+              MidiOutput.Send(MicrosoftIndex, $B0, ControlPushPull, ord(LastPush));
               frmAmpel.PaintBalg(LastPush);
             end;
             Max := trunc($7e*Volume);
@@ -2168,9 +2181,7 @@ var
     offset := PlayStart;
 
     playLocation := -1;
-{$ifdef __FRM_GRIFF__}
     frmGriff.Invalidate;
-{$endif}
   end;
 
 begin
@@ -2193,7 +2204,6 @@ begin
   screenRect.Left := TickToScreen(playStart);
   screenRect.Width := 10;
 
-  GriffHeader.Details.Write_;
   TickOffset := GriffHeader.Details.GetTicks;
   repeat
     while (PlayEvent.iEvent < UsedEvents) and
@@ -2204,6 +2214,11 @@ begin
       begin
         SkipEvent(iAEvent, true);
         continue;
+      end else
+      if iSkipAmpelEvent >= 0 then
+      begin
+        SkipEvent(iSkipAmpelEvent, false);
+        iSkipAmpelEvent := -1;
       end;
 
       with GriffEvents[PlayEvent.iEvent] do
@@ -2281,12 +2296,8 @@ begin
     for i := 0 to 15 do
       SetAmpelToOff(k, i);
 
-{$if defined(__AMPEL__)}
   frmAmpel.FormPaint(nil);
-{$endif}
-{$ifdef __FRM_GRIFF__}
   frmGriff.Invalidate;
-{$endif}
 end;
 
 function TGriffPartitur.GetDrawDuration(Index: integer; In__Push: boolean): integer;
@@ -2342,41 +2353,77 @@ begin
   StopPlay := true;
 end;
 
-function TGriffPartitur.SaveToMidiFile(const FileName: string; realGriffschrift: boolean): boolean;
+function TGriffPartitur.SaveToMidiStream(realGriffschrift: boolean): TMidiSaveStream;
 begin
-  result := false;
+  result := nil;
   if not PartiturLoaded then
     exit;
 
   SortEvents;
 
-  TGriffArray.SaveMidiToFile(FileName, GriffEvents, Instrument, GriffHeader.Details, realGriffschrift);
-  result := true;
+  result := TGriffArray.MakeStreamFromGriffEvents(GriffEvents, Instrument, GriffHeader.Details, realGriffschrift);
 end;
 
-
-function TGriffPartitur.SaveToNewMidiFile(const FileName: string): boolean;
+function TGriffPartitur.SaveToMidiFile(FileName: string; realGriffschrift: boolean): boolean;
+var
+  SaveStream: TMidiSaveStream;
 begin
-  result := false;
+  SaveStream := SaveToMidiStream(realGriffschrift);
+  result := SaveStream <> nil;
+  if result then
+  begin
+    SaveStream.SaveToFile(FileName);
+  {$ifdef DEBUG}
+    TSimpleDataStream.SaveMidiToSimpleFile(FileName, SaveStream);
+  {$endif}
+  end;
+  SaveStream.Free;
+end;
+
+function TGriffPartitur.SaveToNewMidiStream: TMidiSaveStream;
+begin
+  result := nil;
   if not PartiturLoaded then
     exit;
 
   SortEvents;
 
-  TGriffArray.SaveNewMidiToFile(FileName, GriffEvents, Instrument, GriffHeader.Details);
-  result := true;
+  result := TGriffArray.MakeNewStreamFromGriffEvents(GriffEvents, Instrument, GriffHeader.Details);
 end;
 
-function TGriffPartitur.SaveToZip(const FileName: string): boolean;
+function TGriffPartitur.SaveToNewMidiFile(FileName: string): boolean;
+var
+  SaveStream: TMidiSaveStream;
+begin
+  SaveStream := SaveToNewMidiStream;
+  result := SaveStream <> nil;
+  if result then
+  begin
+    SaveStream.SaveToFile(FileName);
+  {$ifdef DEBUG}
+    TSimpleDataStream.SaveMidiToSimpleFile(FileName, SaveStream);
+  {$endif}
+  end;
+
+  SaveStream.Free;
+end;
+
+function TGriffPartitur.SaveToBmp(const FileName: string): boolean;
 const
   rand = 40;
   yAbstand = 250;
-  breite = 4*6*PixelPerQuarter;
+  maxBreite = 4*6; // 24 Viertel
 var
   bitmap: TBitmap;
   rect: TRect;
   i: integer;
-  quarter, line: integer;
+  Fact: integer;
+  quarters, lines: integer;
+  MeasuresPerLine: integer;
+  s: string;
+  breite: integer;
+  pixelPerUnit: integer;
+  units: integer;
 begin
   result := false;
   if not PartiturLoaded then
@@ -2384,15 +2431,38 @@ begin
 
   SortEvents;
 
-  quarter := trunc(PartiturLength/quarterNote) + 1;
-  line := quarter div 24;
-  if (quarter mod 24) > 0 then
-    inc(line);
-  bitmap := TBitmap.Create;
-  bitmap.SetSize(2*rand + breite, line*yAbstand);
-
-  for i := 0 to line-1 do
+  pixelPerUnit := PixelPerQuarter;
+  units := quarterNote;
+  if GriffHeader.Details.measureDiv = 8 then
   begin
+    pixelPerUnit := PixelPerQuarter div 2;
+    units := quarterNote div 2;
+  end;
+
+  Fact := GriffHeader.Details.measureFact;
+  MeasuresPerLine := maxBreite div Fact;
+  breite := MeasuresPerLine*Fact*pixelPerUnit;
+
+  quarters := trunc(PartiturLength/units) + 1;
+  lines := quarters div (MeasuresPerLine*Fact);
+  if (quarters mod (MeasuresPerLine*Fact)) > 0 then
+    inc(lines);
+
+  bitmap := TBitmap.Create;
+  bitmap.SetSize(2*rand + breite, lines*yAbstand);
+  bitmap.canvas.Brush.Color := $ffffff;
+  rect := TRect.Create(0, 0, 2*rand + breite, lines*yAbstand);
+  bitmap.canvas.FillRect(rect);
+
+  for i := 0 to lines-1 do
+  begin
+    // Taktnummer
+    bitmap.canvas.Font.Color := $000000;
+    bitmap.canvas.Font.Size := 16;
+    bitmap.Canvas.Brush.Color := $ffffff;
+    s := IntToStr(i*MeasuresPerLine + 1);
+    bitmap.Canvas.TextOut(rand, i*yAbstand + 20, s);
+
     rect := TRect.Create(i*breite, 0, (i+1)*breite+1, bitmap.Height);
     frmGriff.DrawSmallNotes(bitmap.Canvas, rect, i*breite, 60 + i*yAbstand, rand);
     frmGriff.DrawBalg(bitmap.Canvas, rect, i*breite, -210 + i*yAbstand, rand);
@@ -2436,16 +2506,16 @@ begin
   while iEvent < Length(Events) do
   begin
     MidiEvent := Events[iEvent];
-    if MidiEvent.IsSustain then
+    if MidiEvent.IsPushPull then
       In_Push := MidiEvent.IsPush
     else
     if MidiEvent.Event = 11 then
     begin
-      if (MidiEvent.d1 = ControlSustain+3) then
+      if (MidiEvent.d1 = ControlPushPull+3) then
       begin
         NextRepeat := TRepeat(MidiEvent.d2);
       end else
-      if (MidiEvent.d1 = ControlSustain+4) then
+      if (MidiEvent.d1 = ControlPushPull+4) then
       begin
         with GriffEvent do
         begin
@@ -2851,6 +2921,20 @@ begin
   ch := #0;
 //  writeln(charcode, '  ', Inttohex(Keydata));
   Key := (KeyData shr 16) and $1ff;
+{$ifdef fpc}
+case Key of
+  87..89: ch := chr(Key-87+ord('1'));
+  83..85: ch := chr(Key-83+ord('4'));
+  79..81: ch := chr(Key-79+ord('7'));
+  82:     ch := '-';
+  63:     ch := '*';
+  362:    ch := '/';
+  90:     ch := '0';
+  91:     ch := '.';
+  360:    ch := chr(13);
+  86:     ch := '+';
+end;
+{$else}
   case Key of
     79..81: ch := chr(Key-79+ord('1'));
     75..77: ch := chr(Key-75+ord('4'));
@@ -2863,6 +2947,7 @@ begin
     $11c:   ch := chr(13);
     78:     ch := '+';
   end;
+{$endif}
   result := ch <> #0;
 
   case ch of
@@ -2887,7 +2972,8 @@ begin
            SetRubberOff;
            if IsPlaying then
            begin
-             iSkipEvent := -1;
+             iSkipAmpelEvent := -1;
+             iSkipPlayEvent := -1;
              StopPlay := true;
            end else begin
              PlayEvent.Clear;
@@ -2895,18 +2981,21 @@ begin
            end;
          end;
     '.': // 4 Sekunden zurück
+         if IsPlaying then
          begin
            i := PlayEvent.iEvent;
            if (i >= 0) and (i < UsedEvents) then
            begin
              t := GriffEvents[i].AbsRect.Left - GriffHeader.Details.MsDelayToTicks(4000);
+             if t < 0 then
+               t := 0;
              i := 0;
-             while (i < UsedEvents) and (GriffEvents[i].AbsRect.Left < t) do
+             while (i < PlayEvent.iEvent) and (GriffEvents[i].AbsRect.Left < t) do
                inc(i);
              if i < UsedEvents then
              begin
-               iSkipEvent := i;
-               StopPlay := true;
+               iSkipAmpelEvent := i;
+               iSkipPlayEvent := i;
              end;
            end;
          end;
@@ -3188,6 +3277,107 @@ begin
   end;
   GriffHeader.UsedEvents := iEvent;
   SortEvents;
+end;
+
+function TGriffPartitur.LoadFromNewEventPartitur(const EventPartitur: TEventArray): boolean;
+var
+  iEvent: integer;
+  delay: integer;
+  GriffEvent: TGriffEvent;
+  In_Push: boolean;
+  Guard: byte;
+  iMidiTrack: integer;
+  IsCross: boolean;
+  copyright: TCopyright;
+  _Repeat: TRepeat;
+  Event: TMidiEvent;
+begin
+  Clear;
+
+  result := Length(EventPartitur.SingleTrack) > 10;
+  if not result then
+    exit;
+
+  IsCross := false;
+  iMidiTrack := 0;
+
+  copyright := EventPartitur.GetCopyright;
+  GriffHeader.Details := EventPartitur.DetailHeader;
+  SetInstrument(AnsiString(EventPartitur.Instrument));
+
+  Guard := 0;
+  _Repeat := rRegular;
+  try
+    delay := EventPartitur.SingleTrack[0].var_len;
+    In_Push := false;
+    for iEvent := 1 to Length(EventPartitur.SingleTrack)-1 do
+    begin
+      Event := EventPartitur.SingleTrack[iEvent];
+      if Event.IsPushPull then
+        In_Push := Event.IsPush
+      else
+      if (Event.Event = 11) then
+      begin
+        case Event.d1-ControlPushPull of
+          4: with GriffEvent do
+             begin
+               Clear;
+               NoteType := TNoteType(Event.d2);
+               Repeat_ := _Repeat;
+              _Repeat := rRegular;
+              SoundPitch := 70;
+              GriffPitch := 70;
+              if UsedEvents > 0 then
+              begin
+                AbsRect.Left := GriffEvents[UsedEvents-1].AbsRect.Right;
+                AbsRect.Right := delay;
+                if AbsRect.Width < 10 then
+                begin
+                  with GriffHeader.Details do
+                    if measureDiv > 0 then
+                      AbsRect.Width := TicksPerMeasure - (delay mod TicksPerMeasure)
+                    else
+                      AbsRect.Width := DeltaTimeTicks;
+                end;
+              end;
+              if Repeat_ <> rRegular then
+                AppendGriffEvent(GriffEvent);
+            end;
+          3: _Repeat := TRepeat(Event.d2);
+          1, 2:
+             begin
+               Guard := Event.d2;
+               IsCross := Event.d1 = ControlPushPull+2;
+             end;
+        end;
+      end else
+      if Event.Event = 9 then
+      begin
+        GriffEvent.Clear;
+        if Event.Channel in [5, 6] then
+          GriffEvent.NoteType := ntBass
+        else
+          GriffEvent.NoteType := ntDiskant;
+        GriffEvent.SoundPitch := Event.d1;
+        GriffEvent.AbsRect.Create(0,0,0,0);
+        GriffEvent.AbsRect.Left := delay;
+        GriffEvent.AbsRect.Width := TEventArray.GetDelayEvent(EventPartitur.SingleTrack, iEvent);
+        GriffEvent.InPush := In_Push;
+        GriffEvent.SetNewGriffEvent(Instrument, Event);
+        GriffEvent.Repeat_ := _Repeat;
+        AppendGriffEvent(GriffEvent);
+        _Repeat := rRegular;
+      end;
+      if Event.Event in [8..14] then
+        inc(delay, Event.var_len);
+    end;
+  finally
+    PartiturLoaded := false;
+  end;
+  SortEvents;
+
+  PartiturLoaded := true;
+  LoadChanges;
 end;
 
 initialization

@@ -1,12 +1,12 @@
 object frmSequenzer: TfrmSequenzer
-  Left = 642
+  Left = 1379
   Height = 510
-  Top = 501
+  Top = 473
   Width = 898
   HorzScrollBar.Smooth = True
   HorzScrollBar.Tracking = True
   ActiveControl = btnOpen
-  Caption = 'MIDI Griffschrift-Sequenzer'
+  Caption = 'MIDI Griffschrift-Sequenzer für Schwyzerörgeli und Steirische Harmonika'
   ClientHeight = 510
   ClientWidth = 898
   Color = clBtnFace
@@ -17,8 +17,9 @@ object frmSequenzer: TfrmSequenzer
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnShortCut = FormShortCut
   OnShow = FormShow
-  LCLVersion = '2.2.6.0'
+  LCLVersion = '3.6.0.0'
   object gbLoadSave: TGroupBox
     Left = 0
     Height = 110
@@ -28,6 +29,7 @@ object frmSequenzer: TfrmSequenzer
     Caption = 'Load/Save Midi Partitur'
     ClientHeight = 93
     ClientWidth = 896
+    ParentBackground = False
     TabOrder = 0
     object Label12: TLabel
       Left = 566
@@ -45,8 +47,8 @@ object frmSequenzer: TfrmSequenzer
       Width = 99
       Anchors = [akTop, akRight]
       Caption = 'Choose mid-File'
-      OnClick = btnOpenClick
       TabOrder = 0
+      OnClick = btnOpenClick
     end
     object btnLoadPartitur: TButton
       Left = 757
@@ -55,28 +57,18 @@ object frmSequenzer: TfrmSequenzer
       Width = 99
       Anchors = [akTop, akRight]
       Caption = 'Load Partitur'
-      OnClick = btnLoadPartiturClick
       TabOrder = 1
+      OnClick = btnLoadPartiturClick
     end
     object btnSaveMidi: TButton
       Left = 22
       Height = 25
       Top = 46
       Width = 100
-      Caption = 'Save Midi-Partitur'
+      Caption = 'Save Partitur'
+      TabOrder = 2
       OnClick = btnSaveMidiClick
       OnEnter = edtStopEnter
-      TabOrder = 2
-    end
-    object cbxLoadAsGriff: TCheckBox
-      Left = 347
-      Height = 21
-      Top = 20
-      Width = 135
-      Alignment = taLeftJustify
-      Anchors = [akTop, akRight]
-      Caption = 'Load as Griff Partitur'
-      TabOrder = 3
     end
     object cbxTranspose: TComboBox
       Left = 686
@@ -116,7 +108,7 @@ object frmSequenzer: TfrmSequenzer
         '15'
       )
       Style = csDropDownList
-      TabOrder = 4
+      TabOrder = 3
       Text = '0'
     end
     object edtMidiFile: TComboBox
@@ -126,28 +118,29 @@ object frmSequenzer: TfrmSequenzer
       Width = 413
       Anchors = [akTop, akRight]
       ItemHeight = 0
-      TabOrder = 5
+      TabOrder = 4
     end
     object btnRealSound: TButton
-      Left = 148
+      Left = 181
       Height = 25
       Top = 45
       Width = 100
       Caption = 'Save Griff-Partitur'
+      TabOrder = 5
+      Visible = False
       OnClick = btnSaveMidiClick
       OnEnter = edtStopEnter
-      TabOrder = 6
-      Visible = False
     end
     object btnSaveTest: TButton
-      Left = 148
+      Left = 181
       Height = 25
       Top = 5
       Width = 100
       Caption = 'Save Test-Partitur'
+      TabOrder = 6
+      Visible = False
       OnClick = btnSaveTestClick
       OnEnter = edtStopEnter
-      TabOrder = 7
     end
   end
   object gbGriffEvent: TGroupBox
@@ -159,6 +152,7 @@ object frmSequenzer: TfrmSequenzer
     Caption = 'Selected Griff Event'
     ClientHeight = 383
     ClientWidth = 248
+    ParentBackground = False
     TabOrder = 1
     object Label1: TLabel
       Left = 22
@@ -229,9 +223,9 @@ object frmSequenzer: TfrmSequenzer
       Height = 28
       Top = 33
       Width = 121
+      TabOrder = 0
       OnExit = edtSoundPitchExit
       OnKeyPress = edtKeyPress
-      TabOrder = 0
     end
     object edtGriffPitch: TEdit
       Left = 100
@@ -239,9 +233,9 @@ object frmSequenzer: TfrmSequenzer
       Top = 60
       Width = 121
       Enabled = False
+      TabOrder = 1
       OnExit = edtGriffPitchExit
       OnKeyPress = edtKeyPress
-      TabOrder = 1
     end
     object cbxCross: TCheckBox
       Left = 22
@@ -250,9 +244,9 @@ object frmSequenzer: TfrmSequenzer
       Width = 52
       Alignment = taLeftJustify
       Caption = 'Cross'
+      TabOrder = 2
       OnExit = cbxCrossClick
       OnMouseUp = cbxCrossMouseUp
-      TabOrder = 2
     end
     object cbxPush: TCheckBox
       Left = 22
@@ -261,9 +255,9 @@ object frmSequenzer: TfrmSequenzer
       Width = 50
       Alignment = taLeftJustify
       Caption = 'Push'
+      TabOrder = 3
       OnExit = cbxPushClick
       OnMouseUp = cbxPushMouseUp
-      TabOrder = 3
     end
     object edtGriffLine: TEdit
       Left = 100
@@ -271,9 +265,9 @@ object frmSequenzer: TfrmSequenzer
       Top = 133
       Width = 121
       Enabled = False
+      TabOrder = 4
       OnExit = edtGriffPitchExit
       OnKeyPress = edtKeyPress
-      TabOrder = 4
     end
     object edtIndex: TEdit
       Left = 100
@@ -281,27 +275,27 @@ object frmSequenzer: TfrmSequenzer
       Top = 160
       Width = 121
       Enabled = False
+      TabOrder = 5
       OnExit = edtGriffPitchExit
       OnKeyPress = edtKeyPress
-      TabOrder = 5
     end
     object edtLeftPos: TEdit
       Left = 100
       Height = 28
       Top = 187
       Width = 121
+      TabOrder = 6
       OnExit = edtLeftPosExit
       OnKeyPress = edtKeyPress
-      TabOrder = 6
     end
     object edtWidth: TEdit
       Left = 100
       Height = 28
       Top = 214
       Width = 121
+      TabOrder = 7
       OnExit = edtWidthExit
       OnKeyPress = edtKeyPress
-      TabOrder = 7
     end
     object cbxVolta: TComboBox
       Left = 100
@@ -318,10 +312,10 @@ object frmSequenzer: TfrmSequenzer
         'start volta 2'
         'stop volta 2'
       )
-      OnExit = cbxVoltaChange
-      OnKeyUp = cbxVoltaKeyUp
       TabOrder = 8
       Text = 'regular'
+      OnExit = cbxVoltaChange
+      OnKeyUp = cbxVoltaKeyUp
     end
     object cbxNoteType: TComboBox
       Left = 100
@@ -336,9 +330,9 @@ object frmSequenzer: TfrmSequenzer
         'Rest'
         'Repeat'
       )
-      OnExit = cbxNoteTypeChange
       TabOrder = 9
       Text = 'Diskant'
+      OnExit = cbxNoteTypeChange
     end
   end
   object gbOptimize: TGroupBox
@@ -350,6 +344,7 @@ object frmSequenzer: TfrmSequenzer
     Caption = 'Optimization'
     ClientHeight = 383
     ClientWidth = 148
+    ParentBackground = False
     TabOrder = 2
     object btnBassSynch: TButton
       Left = 25
@@ -358,9 +353,9 @@ object frmSequenzer: TfrmSequenzer
       Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Bass Synch.'
+      TabOrder = 0
       OnClick = btnBassSynchClick
       OnEnter = edtStopEnter
-      TabOrder = 0
     end
     object btnSmallest: TButton
       Left = 25
@@ -369,9 +364,9 @@ object frmSequenzer: TfrmSequenzer
       Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Optimize'
+      TabOrder = 1
       OnClick = btnSmallestClick
       OnEnter = edtStopEnter
-      TabOrder = 1
     end
     object btnLongerPitches: TButton
       Left = 25
@@ -380,9 +375,9 @@ object frmSequenzer: TfrmSequenzer
       Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Longer Pitches'
+      TabOrder = 2
       OnClick = btnLongerPitchesClick
       OnEnter = edtStopEnter
-      TabOrder = 2
     end
     object btnPurgeBass: TButton
       Left = 25
@@ -390,9 +385,9 @@ object frmSequenzer: TfrmSequenzer
       Top = 13
       Width = 100
       Caption = 'Remove Bass'
+      TabOrder = 3
       OnClick = btnPurgeBassClick
       OnEnter = edtStopEnter
-      TabOrder = 3
     end
     object Button1: TButton
       Left = 25
@@ -400,10 +395,10 @@ object frmSequenzer: TfrmSequenzer
       Top = 105
       Width = 100
       Caption = 'Check Push/Pull'
-      OnClick = Button1Click
-      OnEnter = edtStopEnter
       TabOrder = 4
       Visible = False
+      OnClick = Button1Click
+      OnEnter = edtStopEnter
     end
     object btnRemoveSmall: TButton
       Left = 25
@@ -412,9 +407,9 @@ object frmSequenzer: TfrmSequenzer
       Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Remove Small'
+      TabOrder = 5
       OnClick = btnRemoveSmallClick
       OnEnter = edtStopEnter
-      TabOrder = 5
     end
     object Button2: TButton
       Left = 25
@@ -423,9 +418,9 @@ object frmSequenzer: TfrmSequenzer
       Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Bässe gleichlang'
+      TabOrder = 6
       OnClick = Button2Click
       OnEnter = edtStopEnter
-      TabOrder = 6
     end
   end
   object Panel1: TPanel
@@ -437,6 +432,7 @@ object frmSequenzer: TfrmSequenzer
     BevelOuter = bvNone
     ClientHeight = 400
     ClientWidth = 498
+    ParentBackground = False
     TabOrder = 3
     object gbHeader: TGroupBox
       Left = 0
@@ -447,6 +443,7 @@ object frmSequenzer: TfrmSequenzer
       Caption = 'Partitur Header'
       ClientHeight = 124
       ClientWidth = 496
+      ParentBackground = False
       TabOrder = 0
       object Label5: TLabel
         Left = 22
@@ -491,11 +488,11 @@ object frmSequenzer: TfrmSequenzer
           'Quarter'
           '8-th'
         )
-        OnChange = cbxViertelChange
-        OnEnter = edtStopEnter
         Style = csDropDownList
         TabOrder = 1
         Text = 'Quarter'
+        OnChange = cbxViertelChange
+        OnEnter = edtStopEnter
       end
       object cbxTakt: TComboBox
         Left = 141
@@ -517,11 +514,11 @@ object frmSequenzer: TfrmSequenzer
           '11'
           '12'
         )
-        OnChange = cbxTaktChange
-        OnEnter = edtStopEnter
         Style = csDropDownList
         TabOrder = 0
         Text = '4'
+        OnChange = cbxTaktChange
+        OnEnter = edtStopEnter
       end
       object edtDeltaTimeTicks: TEdit
         Left = 141
@@ -529,11 +526,11 @@ object frmSequenzer: TfrmSequenzer
         Top = 68
         Width = 70
         Alignment = taRightJustify
+        TabOrder = 3
+        Text = '192'
         OnEnter = edtStopEnter
         OnExit = edtDeltaTimeTicksExit
         OnKeyPress = edtKeyPress
-        TabOrder = 3
-        Text = '192'
       end
       object cbxSmallestNote: TComboBox
         Left = 141
@@ -547,11 +544,11 @@ object frmSequenzer: TfrmSequenzer
           '16th'
           '32th'
         )
-        OnChange = cbxSmallestNoteChange
-        OnEnter = edtStopEnter
         Style = csDropDownList
         TabOrder = 2
         Text = '8th'
+        OnChange = cbxSmallestNoteChange
+        OnEnter = edtStopEnter
       end
       object cbxTrimNote: TCheckBox
         Left = 22
@@ -560,9 +557,9 @@ object frmSequenzer: TfrmSequenzer
         Width = 76
         Alignment = taLeftJustify
         Caption = 'Trim Note'
-        OnClick = cbxTrimNoteClick
         TabOrder = 5
         Visible = False
+        OnClick = cbxTrimNoteClick
       end
       object edtBPM: TEdit
         Left = 141
@@ -570,11 +567,11 @@ object frmSequenzer: TfrmSequenzer
         Top = 95
         Width = 70
         Alignment = taRightJustify
+        TabOrder = 4
+        Text = '120'
         OnEnter = edtStopEnter
         OnExit = edtBPMExit
         OnKeyPress = edtKeyPress
-        TabOrder = 4
-        Text = '120'
       end
     end
     object gbMidiSound: TGroupBox
@@ -586,6 +583,7 @@ object frmSequenzer: TfrmSequenzer
       Caption = 'Midi / Sound'
       ClientHeight = 170
       ClientWidth = 496
+      ParentBackground = False
       TabOrder = 1
       object Label11: TLabel
         Left = 217
@@ -634,9 +632,9 @@ object frmSequenzer: TfrmSequenzer
         Top = 71
         Width = 156
         ItemHeight = 0
-        OnChange = cbxMidiOutChange
         Style = csDropDownList
         TabOrder = 0
+        OnChange = cbxMidiOutChange
       end
       object edtPlayDelay: TEdit
         Left = 306
@@ -644,11 +642,11 @@ object frmSequenzer: TfrmSequenzer
         Top = 44
         Width = 67
         Alignment = taRightJustify
+        TabOrder = 1
+        Text = '0'
         OnEnter = edtStopEnter
         OnExit = edtPlayDelayExit
         OnKeyPress = edtKeyPress
-        TabOrder = 1
-        Text = '0'
       end
       object cbxMuteBass: TCheckBox
         Left = 22
@@ -657,8 +655,8 @@ object frmSequenzer: TfrmSequenzer
         Width = 77
         Alignment = taLeftJustify
         Caption = 'Mute Bass'
-        OnClick = cbxMuteBassClick
         TabOrder = 4
+        OnClick = cbxMuteBassClick
       end
       object cbxNoSound: TCheckBox
         Left = 22
@@ -667,8 +665,8 @@ object frmSequenzer: TfrmSequenzer
         Width = 51
         Alignment = taLeftJustify
         Caption = 'Mute'
-        OnClick = cbxNoSoundClick
         TabOrder = 2
+        OnClick = cbxNoSoundClick
       end
       object btnPlay: TButton
         Left = 381
@@ -676,8 +674,8 @@ object frmSequenzer: TfrmSequenzer
         Top = 46
         Width = 100
         Caption = 'Play Partitur'
-        OnClick = btnPlayClick
         TabOrder = 5
+        OnClick = btnPlayClick
       end
       object cbxMidiInput: TComboBox
         Left = 217
@@ -685,9 +683,9 @@ object frmSequenzer: TfrmSequenzer
         Top = 12
         Width = 156
         ItemHeight = 0
-        OnChange = cbxMidiInputChange
         Style = csDropDownList
         TabOrder = 6
+        OnChange = cbxMidiInputChange
       end
       object cbxMuteTreble: TCheckBox
         Left = 22
@@ -696,8 +694,8 @@ object frmSequenzer: TfrmSequenzer
         Width = 95
         Alignment = taLeftJustify
         Caption = 'Mute Descant'
-        OnClick = cbxMuteTrebleClick
         TabOrder = 3
+        OnClick = cbxMuteTrebleClick
       end
       object btnResetMidi: TButton
         Left = 381
@@ -705,8 +703,8 @@ object frmSequenzer: TfrmSequenzer
         Top = 77
         Width = 100
         Caption = 'Clear Synth.'
-        OnClick = btnResetMidiClick
         TabOrder = 7
+        OnClick = btnResetMidiClick
       end
       object cbxVirtual: TComboBox
         Left = 217
@@ -714,10 +712,10 @@ object frmSequenzer: TfrmSequenzer
         Top = 105
         Width = 156
         ItemHeight = 0
-        OnChange = cbxVirtualChange
         Style = csDropDownList
         TabOrder = 8
         Visible = False
+        OnChange = cbxVirtualChange
       end
       object sbVolumeOut: TScrollBar
         Left = 134
@@ -752,6 +750,7 @@ object frmSequenzer: TfrmSequenzer
       Caption = 'Schwyzerörgeli / Steirische Harmonika'
       ClientHeight = 55
       ClientWidth = 496
+      ParentBackground = False
       TabOrder = 2
       object Label13: TLabel
         Left = 22
@@ -793,10 +792,10 @@ object frmSequenzer: TfrmSequenzer
           '10'
           '11'
         )
-        OnChange = cbxTransInstrumentChange
         Style = csDropDownList
         TabOrder = 0
         Text = '0'
+        OnChange = cbxTransInstrumentChange
       end
       object cbTransInstrument: TComboBox
         Left = 217
@@ -809,20 +808,20 @@ object frmSequenzer: TfrmSequenzer
           'B-Örgeli'
           'A-Örgeli'
         )
-        OnChange = cbTransInstrumentChange
         Style = csDropDownList
         TabOrder = 1
         Text = 'B-Örgeli'
+        OnChange = cbTransInstrumentChange
       end
     end
   end
   object FileOpenDialog1: TOpenDialog
-    Filter = 'Midi Files|*.mid;*.midi|All Files|*.*|Griff Filles|*.griff|MuseScore Files|*.mscx;*.mscz'
+    Filter = 'Midi Files|*.mid;*.midi|All Files|*.*|Griff Filles|*.griff'
     Left = 576
     Top = 22
   end
   object SaveDialog1: TSaveDialog
-    Filter = 'Midi File|*.mid|MuseScore|*.mscz; *.mscx|LilyPond|*.ly|Standard MusicXML|*.xml;*.musicxml|new Midi File|*.mid|Sequenzer Noten|*.zip'
+    Filter = 'Midi File|*.mid|MuseScore|*.mscz; *.mscx|LilyPond|*.ly|Standard MusicXML|*.xml;*.musicxml|old Midi File|*.mid|Noten|*.bmp'
     Left = 624
     Top = 83
   end
