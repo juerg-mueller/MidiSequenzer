@@ -2,14 +2,14 @@
 <CONFIG>
   <ProjectSession>
     <Version Value="12"/>
-    <BuildModes Active="Win32"/>
+    <BuildModes Active="Win64"/>
     <Units>
       <Unit>
         <Filename Value="MidiSequenzer.dpr"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="9"/>
-        <CursorPos X="57" Y="16"/>
-        <UsageCount Value="169"/>
+        <EditorIndex Value="14"/>
+        <CursorPos Y="12"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
@@ -19,10 +19,11 @@
         <ComponentName Value="frmSequenzer"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
-        <TopLine Value="1266"/>
-        <CursorPos X="12" Y="1284"/>
-        <UsageCount Value="169"/>
+        <TopLine Value="1109"/>
+        <CursorPos X="104" Y="1113"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -30,10 +31,10 @@
       <Unit>
         <Filename Value="UInstrument.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="8"/>
+        <EditorIndex Value="13"/>
         <TopLine Value="20"/>
-        <CursorPos Y="20"/>
-        <UsageCount Value="169"/>
+        <CursorPos X="21" Y="29"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
@@ -42,7 +43,7 @@
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="77" Y="25"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -54,23 +55,26 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="43"/>
         <CursorPos Y="66"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="UGriffPartitur.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <UsageCount Value="169"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="3330"/>
+        <CursorPos X="55" Y="3340"/>
+        <UsageCount Value="172"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="Midi.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="7"/>
+        <EditorIndex Value="12"/>
         <TopLine Value="232"/>
         <CursorPos X="35" Y="254"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
@@ -80,7 +84,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="785"/>
         <CursorPos Y="806"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -89,11 +93,10 @@
         <ComponentName Value="frmAmpel"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="6"/>
+        <EditorIndex Value="10"/>
         <TopLine Value="178"/>
-        <CursorPos X="33" Y="196"/>
-        <UsageCount Value="169"/>
+        <CursorPos X="50" Y="204"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -103,16 +106,16 @@
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="13" Y="26"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="UEventArray.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="16"/>
-        <CursorPos X="54" Y="34"/>
-        <UsageCount Value="169"/>
+        <TopLine Value="282"/>
+        <CursorPos X="25" Y="293"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
@@ -120,9 +123,9 @@
         <Filename Value="UGriffEvent.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="5"/>
-        <TopLine Value="769"/>
-        <CursorPos X="34" Y="786"/>
-        <UsageCount Value="169"/>
+        <TopLine Value="251"/>
+        <CursorPos X="5" Y="265"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
@@ -132,14 +135,14 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="41"/>
         <CursorPos X="80" Y="41"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="UGriffArray.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="894"/>
-        <CursorPos Y="945"/>
+        <TopLine Value="844"/>
+        <CursorPos X="46" Y="853"/>
         <ExtraEditorCount Value="1"/>
         <ExtraEditor1>
           <EditorIndex Value="-1"/>
@@ -147,7 +150,7 @@
           <TopLine Value="317"/>
           <CursorPos Y="434"/>
         </ExtraEditor1>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
@@ -156,7 +159,7 @@
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="9" Y="18"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -165,7 +168,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="568"/>
         <CursorPos X="14" Y="586"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -173,15 +176,17 @@
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="9" Y="18"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="UMuseScore.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <CursorPos X="9" Y="18"/>
-        <UsageCount Value="169"/>
+        <EditorIndex Value="9"/>
+        <TopLine Value="1037"/>
+        <CursorPos X="93" Y="1049"/>
+        <UsageCount Value="172"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -189,16 +194,16 @@
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="10" Y="27"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="UVirtual.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="84"/>
-        <CursorPos X="77" Y="26"/>
-        <UsageCount Value="169"/>
+        <TopLine Value="88"/>
+        <CursorPos X="67" Y="101"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -207,16 +212,16 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="20"/>
         <CursorPos Y="36"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
         <Filename Value="UMidiEvent.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="452"/>
-        <CursorPos X="15" Y="457"/>
-        <UsageCount Value="169"/>
+        <TopLine Value="94"/>
+        <CursorPos X="20" Y="108"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
@@ -227,7 +232,7 @@
         <EditorIndex Value="4"/>
         <TopLine Value="39"/>
         <CursorPos X="32" Y="57"/>
-        <UsageCount Value="169"/>
+        <UsageCount Value="172"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
@@ -235,10 +240,11 @@
         <Filename Value="umidi.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="UMidi"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="78"/>
-        <CursorPos X="83" Y="103"/>
-        <UsageCount Value="169"/>
+        <EditorIndex Value="11"/>
+        <TopLine Value="6"/>
+        <CursorPos Y="6"/>
+        <UsageCount Value="172"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -248,7 +254,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="33"/>
+        <UsageCount Value="36"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -262,10 +268,11 @@
       </Unit>
       <Unit>
         <Filename Value="IMusicXmlHelper.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="778"/>
-        <CursorPos Y="815"/>
-        <UsageCount Value="2"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="776"/>
+        <CursorPos X="52" Y="786"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit>
       <Unit>
@@ -398,133 +405,143 @@
         <CursorPos X="22" Y="1366"/>
         <UsageCount Value="10"/>
       </Unit>
+      <Unit>
+        <Filename Value="ILilyPondHelper.pas"/>
+        <EditorIndex Value="8"/>
+        <TopLine Value="216"/>
+        <CursorPos X="75" Y="227"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
     </Units>
-    <OtherDefines Count="6">
+    <OtherDefines Count="5">
       <Define0 Value="Borland"/>
       <Define1 Value="Ver150"/>
       <Define2 Value="Delphi7"/>
       <Define3 Value="Compiler6_Up"/>
       <Define4 Value="PUREPASCAL"/>
-      <Define5 Value="CONSOLE"/>
     </OtherDefines>
     <JumpHistory HistoryIndex="29">
       <Position>
-        <Filename Value="UAmpel.pas"/>
+        <Filename Value="MidiSequenzer.dpr"/>
+        <Caret Line="12"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="200" Column="13" TopLine="171"/>
+        <Filename Value="UEventArray.pas"/>
+        <Caret Line="293" Column="25" TopLine="282"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="527" Column="68" TopLine="498"/>
+        <Filename Value="UGriffEvent.pas"/>
+        <Caret Line="265" Column="71" TopLine="251"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="1368" Column="42" TopLine="1340"/>
+        <Filename Value="UMidiEvent.pas"/>
+        <Caret Line="457" Column="15" TopLine="452"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="1372" Column="42" TopLine="1344"/>
+        <Filename Value="UMidiEvent.pas"/>
+        <Caret Line="108" Column="20" TopLine="94"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="1406" Column="24" TopLine="1378"/>
+        <Filename Value="UGriffPartitur.pas"/>
+        <Caret Line="187" Column="72" TopLine="177"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="200" TopLine="183"/>
+        <Filename Value="UGriffArray.pas"/>
+        <Caret Line="770" Column="46" TopLine="760"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="526" Column="43" TopLine="508"/>
+        <Filename Value="UGriffArray.pas"/>
+        <Caret Line="853" Column="46" TopLine="844"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="200" Column="13" TopLine="189"/>
+        <Filename Value="UGriffPartitur.pas"/>
+        <Caret Line="298" Column="40" TopLine="288"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="527" Column="73" TopLine="498"/>
+        <Filename Value="UMidiEvent.pas"/>
+        <Caret Line="110" Column="18" TopLine="94"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="1428" Column="61" TopLine="1415"/>
+        <Filename Value="UGriffPartitur.pas"/>
+        <Caret Line="307" Column="38" TopLine="297"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
+        <Filename Value="UMidiEvent.pas"/>
+        <Caret Line="108" Column="20" TopLine="94"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="66" Column="10" TopLine="36"/>
+        <Filename Value="UGriffPartitur.pas"/>
+        <Caret Line="834" Column="60" TopLine="824"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="67" Column="10" TopLine="37"/>
+        <Filename Value="UGriffPartitur.pas"/>
+        <Caret Line="2539" Column="51" TopLine="2529"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="69" Column="23" TopLine="39"/>
+        <Filename Value="UGriffPartitur.pas"/>
+        <Caret Line="3041" Column="67" TopLine="3031"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="75" Column="23" TopLine="45"/>
+        <Filename Value="UGriffPartitur.pas"/>
+        <Caret Line="3340" Column="55" TopLine="3330"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="100" Column="75" TopLine="70"/>
+        <Filename Value="IMusicXmlHelper.pas"/>
+        <Caret Line="248" Column="73" TopLine="233"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="199" TopLine="170"/>
+        <Filename Value="IMusicXmlHelper.pas"/>
+        <Caret Line="251" Column="48" TopLine="241"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="289" TopLine="259"/>
+        <Filename Value="IMusicXmlHelper.pas"/>
+        <Caret Line="786" Column="52" TopLine="776"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="1442" TopLine="1413"/>
+        <Filename Value="ILilyPondHelper.pas"/>
+        <Caret Line="227" Column="75" TopLine="216"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="100" Column="8" TopLine="81"/>
+        <Filename Value="UMuseScore.pas"/>
+        <Caret Line="268" Column="48" TopLine="257"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="122" Column="18" TopLine="105"/>
+        <Filename Value="UMuseScore.pas"/>
+        <Caret Line="417" Column="74" TopLine="407"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="264" Column="7" TopLine="245"/>
+        <Filename Value="UMuseScore.pas"/>
+        <Caret Line="442" Column="109" TopLine="432"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="642" Column="27" TopLine="624"/>
+        <Filename Value="UMuseScore.pas"/>
+        <Caret Line="456" Column="82" TopLine="446"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="658" Column="39" TopLine="628"/>
+        <Filename Value="UMuseScore.pas"/>
+        <Caret Line="540" Column="94" TopLine="528"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="667" Column="6" TopLine="649"/>
+        <Filename Value="UMuseScore.pas"/>
+        <Caret Line="576" Column="98" TopLine="566"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="1226" Column="15" TopLine="1209"/>
+        <Filename Value="UMuseScore.pas"/>
+        <Caret Line="1049" Column="93" TopLine="1037"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="1227" Column="15" TopLine="1209"/>
+        <Filename Value="UMidiSequenzer.pas"/>
+        <Caret Line="344" Column="60" TopLine="335"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="646" Column="91" TopLine="637"/>
+        <Filename Value="UMidiSequenzer.pas"/>
+        <Caret Line="1095" Column="47" TopLine="1085"/>
       </Position>
       <Position>
-        <Filename Value="UAmpel.pas"/>
-        <Caret Line="195" TopLine="178"/>
+        <Filename Value="UMidiSequenzer.pas"/>
+        <Caret Line="1100" Column="53" TopLine="1089"/>
       </Position>
     </JumpHistory>
     <RunParams>

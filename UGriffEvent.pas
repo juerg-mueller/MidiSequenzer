@@ -118,12 +118,7 @@ type
 
   PSelectedProc = procedure (SelectedEvent: PGriffEvent) of object;
 
-const
-  NoteNames: array [0..7] of string =
-    ('whole', 'half', 'quarter', 'eighth', '16th', '32nd', '64th', '128th');
 
-function GetFraction_(const sLen: string): integer; overload;
-function GetFraction_(const sLen: integer): string; overload;
 function GetLen_(var t32: integer; var dot: boolean; t32Takt: integer): integer;
 function GetLen2_(var t32: integer; var dot: boolean; t32Takt: integer): integer;
 function MakeDuration(const rect: TRect): TGriffDuration;
@@ -133,33 +128,6 @@ function GetLen2(var t32: integer; var dot: boolean; t32Takt: integer): string;
 function GetLyricLen(Len: string): integer;
 
 implementation
-
-function GetFraction_(const sLen: string): integer; overload;
-var
-  idx: integer;
-begin
-  result := 128;
-  for idx := High(NoteNames) downto 1 do
-    if sLen = NoteNames[idx] then
-      break
-    else
-      result := result shr 1;
-end;
-
-function GetFraction_(const sLen: integer): string; overload;
-var
-  idx, i: integer;
-begin
-  result := '?';
-  idx := 128;
-  for i := High(NoteNames) downto 1 do
-    if sLen = idx then
-    begin
-      result := NoteNames[i];
-      break
-    end else
-      idx := idx shr 1;
-end;
 
 function GetLen_(var t32: integer; var dot: boolean; t32Takt: integer): integer;
 // at most one dot
@@ -291,8 +259,8 @@ begin
   result := AbsRect.Width;
   if NoteType = ntBass then
   begin
-    if result < GriffHeader.Details.DeltaTimeTicks div 2 then
-      result := GriffHeader.Details.DeltaTimeTicks div 2;
+    if result < GriffHeader.Details.TicksPerQuarter div 2 then
+      result := GriffHeader.Details.TicksPerQuarter div 2;
   end;
 end;
 
@@ -827,7 +795,7 @@ end;
 
 function TGriffEvent.IsAppoggiatura(const GriffHeader: TGriffHeader): boolean;
 begin
-  result := AbsRect.Width = GriffHeader.Details.DeltaTimeTicks div 8 - 1
+  result := AbsRect.Width = GriffHeader.Details.TicksPerQuarter div 8 - 1
 end;
 
 function TGriffEvent.UniqueSoundToGriff(const Instrument: TInstrument; Channel: byte): boolean;

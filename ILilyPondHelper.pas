@@ -224,7 +224,7 @@ var
         WriteString('noten = ');
         WritelnString('\absolute {');
         WritelnString('\set Staff.midiInstrument = "' + 'accordion' + '"');
-        WritelnString('\tempo 4 = ' + IntToStr(GriffHeader.Details.beatsPerMin));
+        WritelnString('\tempo 4 = ' + IntToStr(GriffHeader.Details.QuarterPerMin));
         WritelnString('\time ' + IntToStr(GriffHeader.Details.measureFact) + '/' +
           IntToStr(GriffHeader.Details.measureDiv));
         if Instrument.Sharp then

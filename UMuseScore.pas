@@ -265,7 +265,7 @@ begin
           Staff := Score.ChildNodes[iStaff];
           if Staff.Name = 'Division' then
           begin
-            GriffHeader.Details.DeltaTimeTicks := StrToIntDef(Staff.Value, 120);
+            GriffHeader.Details.TicksPerQuarter := StrToIntDef(Staff.Value, 120);
           end else
           if Staff.Name = 'Staff' then
           begin
@@ -414,7 +414,7 @@ begin
                         if (MeasureNr = 1) and (Auftakt <> '') and (OffsetAuftakt = 0) then
                         begin
                           OffsetAuftakt := GriffHeader.Details.TicksPerMeasure
-                            - round(4*GriffHeader.Details.DeltaTimeTicks*GetFactor(Auftakt));
+                            - round(4*GriffHeader.Details.TicksPerQuarter*GetFactor(Auftakt));
                           Offset := OffsetAuftakt;
                           for k := Low(RepOffsets) to High(RepOffsets) do
                             inc(RepOffsets[k].offset, OffsetAuftakt);
@@ -439,7 +439,7 @@ begin
                           end else
                           if IsRest and (Note.Name = 'duration') then
                           begin
-                            duration := round(GetFactor(Note.Value)* 4 * GriffHeader.Details.DeltaTimeTicks);
+                            duration := round(GetFactor(Note.Value)* 4 * GriffHeader.Details.TicksPerQuarter);
                           end else
                           if (Note.Name = 'durationType') then
                           begin
@@ -453,7 +453,7 @@ begin
                                 writeln('error: ', s)
                          {$endif}
                               else
-                                duration := 4*GriffHeader.Details.DeltaTimeTicks div l;
+                                duration := 4*GriffHeader.Details.TicksPerQuarter div l;
                             end;
                             if dots = 1 then
                               inc(duration, duration div 2);
@@ -535,9 +535,9 @@ begin
                               if appoggiatura or prevAppoggiatura then
                               begin
                                 if appoggiatura then
-                                  event.AbsRect.Width := GriffHeader.Details.DeltaTimeTicks div 8 - 1
+                                  event.AbsRect.Width := GriffHeader.Details.TicksPerQuarter div 8 - 1
                                 else
-                                  inc(event.AbsRect.Left, GriffHeader.Details.DeltaTimeTicks div 8 + 1);
+                                  inc(event.AbsRect.Left, GriffHeader.Details.TicksPerQuarter div 8 + 1);
                               end;
                               if not diskantRead then
                               begin
@@ -573,7 +573,7 @@ begin
                                       begin
                                         event.NoteType := ntBass;
                                         event.GriffPitch := k;
-                                        event.AbsRect.Width:= GriffHeader.Details.DeltaTimeTicks div 2;
+                                        event.AbsRect.Width:= GriffHeader.Details.TicksPerQuarter div 2;
                                         event.AbsRect.Top := -1;
                                         event.AbsRect.Height := 1;
                                         //event.Repeat_ := rRegular;
@@ -1044,9 +1044,9 @@ var
 
         Child := VoiceNode.AppendChildNode('Tempo');
         Child.AppendChildNode('tempo',
-          Format('%f', [GriffHeader.Details.beatsPerMin / 60.0]));
+          Format('%f', [GriffHeader.Details.QuarterPerMin / 60.0]));
         Child.AppendChildNode('followText', '1');
-        Child1 := Child.AppendChildNode('text', ' = ' + IntToStr(GriffHeader.Details.beatsPerMin));
+        Child1 := Child.AppendChildNode('text', ' = ' + IntToStr(GriffHeader.Details.QuarterPerMin));
         Child2 := NewXmlNode('sym', 'metNoteQuarterUp');
         Child1.InsertChildNode(0, Child2);
       end else

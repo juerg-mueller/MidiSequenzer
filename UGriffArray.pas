@@ -767,7 +767,7 @@ var
 begin
   result := TMidiSaveStream.Create;
 
-  result.SetHead(DetailHeader.DeltaTimeTicks);
+  result.SetHead(DetailHeader.TicksPerQuarter);
   result.AppendTrackHead;
 
   if realGriffschrift then
@@ -850,7 +850,7 @@ var
 begin
   result := TMidiSaveStream.Create;
 
-  result.SetHead(DetailHeader.DeltaTimeTicks);
+  result.SetHead(DetailHeader.TicksPerQuarter);
   result.AppendTrackHead;
 
   MidiEvent.MakeMetaEvent(2, CopyrightNewGriff);

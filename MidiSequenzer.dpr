@@ -18,13 +18,11 @@ uses
   UMyMidiStream in 'UMyMidiStream.pas',
   UfrmGriff in 'UfrmGriff.pas' {frmGriff},
   UGriffPartitur in 'UGriffPartitur.pas',
-{$ifdef dcc}
-  teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
-  UVirtual in 'UVirtual.pas',
-{$endif}
   umidi,
 {$ifdef mswindows}
   Midi in 'Midi.pas',
+  teVirtualMIDIdll in 'teVirtual\teVirtualMIDIdll.pas',
+  UVirtual in 'UVirtual.pas',
 {$else}
   urtmidi,
 {$endif}

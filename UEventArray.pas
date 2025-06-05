@@ -290,9 +290,9 @@ begin
       if not Lyrics then
       begin
         WriteTrackHeader(0);
-        if DetailHeader.beatsPerMin > 0 then
+        if DetailHeader.QuarterPerMin > 0 then
         begin
-          bpm := 6e7 / DetailHeader.beatsPerMin;
+          bpm := 6e7 / DetailHeader.QuarterPerMin;
           l := round(bpm);
           WriteString('    0 ' + cSimpleMetaEvent + ' 255 81 3 '); // beats
           WritelnString(IntToStr(l shr 16) + ' ' + IntToStr((l shr 8) and $ff) + ' ' +
@@ -334,7 +334,7 @@ begin
           end;
           if Event.Event = 9 then
           begin
-            takt := Offset div MidiHeader.Details.DeltaTimeTicks;
+            takt := Offset div MidiHeader.Details.TicksPerQuarter;
             if MidiHeader.Details.measureDiv = 8 then
               takt := 2*takt;
             d := MidiHeader.Details.measureFact;
@@ -372,7 +372,7 @@ var
 begin
   SaveStream := TMidiSaveStream.Create;
 
-  SaveStream.SetHead(DetailHeader.DeltaTimeTicks);
+    SaveStream.SetHead(DetailHeader.TicksPerQuarter);
   SaveStream.AppendTrackHead;
   SaveStream.AppendHeaderMetaEvents(DetailHeader);
   SaveStream.AppendTrackEnd(false);

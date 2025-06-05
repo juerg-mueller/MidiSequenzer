@@ -184,7 +184,7 @@ type
 
     property UsedEvents: integer read GriffHeader.UsedEvents;
     property Selected: integer read fSelected write SetSelected;
-    property quarterNote: word read GriffHeader.Details.DeltaTimeTicks;
+    property quarterNote: word read GriffHeader.Details.TicksPerQuarter;
   end;
 
 
@@ -295,7 +295,7 @@ begin
   if (abs(quarterNote - iMax) > 4) and
      (count > 10) and (iMax > 60) then
   begin
-    GriffHeader.Details.DeltaTimeTicks := 192;
+    GriffHeader.Details.TicksPerQuarter := 192;
     r := 192.0/iMax;
     for i := 0 to UsedEvents-1 do
       with GriffEvents[i].AbsRect do
@@ -304,7 +304,7 @@ begin
         Left := round(Left*r);
         Width := d;
       end;
-    GriffHeader.Details.beatsPerMin := round(GriffHeader.Details.beatsPerMin*r);
+    GriffHeader.Details.QuarterPerMin := round(GriffHeader.Details.QuarterPerMin*r);
     SortEvents;
   end;
 end;
@@ -831,7 +831,7 @@ begin
                          if measureDiv > 0 then
                            AbsRect.Width := TicksPerMeasure - (delay mod TicksPerMeasure)
                          else
-                           AbsRect.Width := DeltaTimeTicks;
+                           AbsRect.Width := TicksPerQuarter;
                      end;
                    end;
                    if Repeat_ <> rRegular then
@@ -2536,7 +2536,7 @@ begin
                 if measureDiv > 0 then
                   AbsRect.Width := TicksPerMeasure - (offset_ mod TicksPerMeasure)
                 else
-                  AbsRect.Width := DeltaTimeTicks;
+                  AbsRect.Width := TicksPerQuarter;
             end;
             AppendGriffEvent(GriffEvent);
           end;
@@ -3038,7 +3038,7 @@ end;
     '2': writeln('loop end set');
     '3': writeln('loop cleared');
     '4', '5': writeln('play factor: ', PlayFactor:4:1, '   beats per minute: ',
-                      round(PlayFactor*GriffHeader.Details.beatsPerMin));
+                      round(PlayFactor*GriffHeader.Details.QuarterPerMin));
     '+', '-': writeln('volume: ', Volume:4:1);
   end;
 {$endif}
@@ -3337,7 +3337,7 @@ begin
                     if measureDiv > 0 then
                       AbsRect.Width := TicksPerMeasure - (delay mod TicksPerMeasure)
                     else
-                      AbsRect.Width := DeltaTimeTicks;
+                      AbsRect.Width := TicksPerQuarter;
                 end;
               end;
               if Repeat_ <> rRegular then

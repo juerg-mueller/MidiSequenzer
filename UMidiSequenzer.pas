@@ -341,7 +341,7 @@ var
       edtDeltaTimeTicks.Text := IntToStr(quarterNote);
       if GriffHeader.Details.IsSet then
       begin
-        edtBPM.Text := IntToStr(GriffHeader.Details.beatsPerMin);
+        edtBPM.Text := IntToStr(GriffHeader.Details.QuarterPerMin);
         cbxTakt.ItemIndex := GriffHeader.Details.MeasureFact - 2;
         if GriffHeader.Details.MeasureDiv = 8 then
           cbxViertel.ItemIndex := 1
@@ -1092,12 +1092,12 @@ var
 begin
   b := StrToIntDef(edtBPM.Text, 0);
   if b >= 20 then
-    GriffPartitur_.GriffHeader.Details.beatsPerMin := b;
+    GriffPartitur_.GriffHeader.Details.QuarterPerMin := b;
 end;
 
 procedure TfrmSequenzer.edtDeltaTimeTicksExit(Sender: TObject);
 begin
-  GriffPartitur_.GriffHeader.Details.DeltaTimeTicks := StrToInt(edtDeltaTimeTicks.Text);
+  GriffPartitur_.GriffHeader.Details.TicksPerQuarter := StrToInt(edtDeltaTimeTicks.Text);
   cbxSmallestNoteChange(Sender);
   cbxViertelChange(Sender);
 end;
@@ -1116,8 +1116,8 @@ procedure TfrmSequenzer.AktualizeHeader;
 begin
   with GriffPartitur_.GriffHeader.Details do
   begin
-    edtDeltaTimeTicks.Text := IntToStr(DeltaTimeTicks);
-    edtBPM.Text := IntToStr(beatsPerMin);
+    edtDeltaTimeTicks.Text := IntToStr(TicksPerQuarter);
+    edtBPM.Text := IntToStr(QuarterPerMin);
   end;
 end;
 

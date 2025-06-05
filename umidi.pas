@@ -7,7 +7,7 @@ unit UMidi;
 interface
 
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, UMidiEvent,
 {$ifndef mswindows}
   Urtmidi;
 {$else}
@@ -38,6 +38,7 @@ procedure ChangeBank(Index, Channel, Bank, Instr: byte);
 procedure ResetMidiOut;
 procedure OpenMidiMicrosoft;
 procedure SendMidi(Status, Data1, Data2: byte);
+procedure SendMidiEvent(MidiEvent: TMidiEvent);
 procedure DoSoundPitch(Pitch: byte; On_: boolean);
 
 implementation
@@ -90,6 +91,11 @@ procedure SendMidi(Status, Data1, Data2: byte);
 begin
   if (MicrosoftIndex >= 0) then
     MidiOutput.Send(MicrosoftIndex, Status, Data1, Data2);
+end;
+
+procedure SendMidiEvent(MidiEvent: TMidiEvent);
+begin
+  SendMidi(MidiEvent.command, MidiEvent.d1, MidiEvent.d2);
 end;
 
 end.

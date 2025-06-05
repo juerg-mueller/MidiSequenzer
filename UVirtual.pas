@@ -66,7 +66,7 @@ begin
 
   if not virtualMIDISendData( midiport, mididatabytes, datalength ) then
     begin
-{$if defined(CONSOLE)}
+{$if defined(CONSOLE) and defined(dcc)}
       writeln('error sending data: '+virtualMIDIError(GetLastError()));
 {$endif}
       exit;
@@ -90,7 +90,7 @@ begin
 {$endif}
 
     port2 := virtualMIDICreatePortEx2( PWideChar(s), teVMCallback, nil, 65535, TE_VM_FLAGS_PARSE_RX );
-{$if defined(CONSOLE)}
+{$if defined(CONSOLE) and defined(dcc)}
 
     if port2=nil then
     begin

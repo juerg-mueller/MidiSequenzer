@@ -243,12 +243,12 @@ var
       Child1 := Child2.AddChild('beat-unit');
       Child1.Value := 'quarter';
       Child1 := Child2.AddChild('per-minute');
-      Child1.Value := IntToStr(GriffHeader.Details.beatsPerMin);
+      Child1.Value := IntToStr(GriffHeader.Details.QuarterPerMin);
       Child1 := Child.AddChild('sound');
-      Child1.Attributes['tempo'] := IntToStr(GriffHeader.Details.beatsPerMin);
+      Child1.Attributes['tempo'] := IntToStr(GriffHeader.Details.QuarterPerMin);
     end;
 
-    Takt := GriffHeader.Details.DeltaTimeTicks;
+    Takt := GriffHeader.Details.TicksPerQuarter;
     if GriffHeader.Details.measureDiv = 8 then
       Takt := Takt div 2;
     Takt := GriffHeader.Details.measureFact*Takt;
@@ -783,7 +783,7 @@ begin
             begin
               Child := Note.ChildNodes[o];
               if (Child.Name = 'divisions') then
-                GriffHeader.Details.DeltaTimeTicks := StrToIntDef(Child.Value, 192)
+                GriffHeader.Details.TicksPerQuarter := StrToIntDef(Child.Value, 192)
               else
               if (Child.Name = 'time') then
               begin
