@@ -33,3 +33,12 @@ Vorteile
 
 - Ebenso kann der Sequenzer auch für Linux und für den MAC generiert werden. Dazu ist für die MIDI-Schnittstelle jeweils
 eine Dynamische Library notwendig (https://github.com/thestk/rtmidi).
+
+Erweiterung Juli 2025
+---------------------
+
+Beim Speichern des Stücks konnte man bisher Notenblätter für MuseScore 3.6 und eingeschränkt
+für LillyPond und MusicXML generieren.
+
+Neu kann man auch Grifftabellen erstellen. Für jedes Blatt wird eine Bitmap-Datei (.bmp) abgespeichert. 16-tel Noten gehen
+dabei verloren.
