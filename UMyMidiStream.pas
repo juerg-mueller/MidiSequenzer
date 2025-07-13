@@ -73,7 +73,11 @@ end;
 
 procedure TMyMidiStream.StartMidi;
 begin
+{$if false}
   time := GetTickCount64;
+{$else}
+  time := now;
+{$endif}
 end;
 
 function TMyMidiStream.ReadByte: byte;

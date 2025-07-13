@@ -69,7 +69,6 @@ type
     procedure ScrollBar1Change(Sender: TObject);
   private
     procedure GetClippedMousePos(var Pos : TPoint; X, Y : integer);
-//    function GetKeyIndex(var Event: UAmpel.TMouseEvent; Key: word): boolean;
     procedure DrawGriff(ClipRect: TRect; Horz_pos: integer);
 
   public
@@ -232,45 +231,6 @@ begin
   end;
 end;
 
-{
-function TfrmGriff.GetKeyIndex(var Event: UAmpel.TMouseEvent; Key: word): boolean;
-var
-  i: integer;
-  Row: byte;
-begin
-  result := false;
-  Event.Clear;
-  Event.Key := Key;
-  Event.P := TPoint.Create(0, 0);
-  if Key in [vk_F5 .. vk_F12] then
-  begin
-    if GetKeyState(vk_Control) < 0 then
-      Event.Row_ := 5
-    else
-      Event.Row_ := 6;
-    Event.Index_ := Key - vk_F5 + 1;
-    Result := true;
-  end else
-  for Row := 1 to 4 do
-    for i := 0 to High(TKeys) do
-      if (TastKeys[Row][i] > #0) and (TastKeys[Row][i] = AnsiChar(Key)) then
-      begin
-        Event.Row_ := Row;
-        Event.Index_ := 11-i;
-        result := GriffPartitur_.Instrument.Push.Col[Row][Event.Index_] > 0;
-        break;
-      end;
-  if (Event.Row_ = 4) and (GriffPartitur_.Instrument.Columns = 3) then
-  begin
-    Event.Row_ := 5;
-    if Event.Index_>= 2  then
-    begin
-      dec(Event.Index_, 2);
-      result := true;
-    end;
-  end;
-end;
-}
 procedure TfrmGriff.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 var
@@ -309,6 +269,7 @@ begin
       sChangingCursor := [];
       Cursor:= crDefault;
     end;
+    Key := 0;
     invalidate;
   end;
 end;
@@ -335,6 +296,8 @@ begin
     GriffPartitur_.ScreenToNotePoint(NotenPoint, Pos);
     pDrag := NotenPoint;
 
+    if GriffPartitur_.bRubberBandOk then
+      invalidate;
     GriffPartitur_.bRubberBand:= false;
     GriffPartitur_.bRubberBandOk:= false;
     if Cursor = crDefault then
@@ -648,9 +611,14 @@ begin
     rect.Offset(-HorzScrollPos, -VertScrollBar.Position);
     if (rect.Right >= 0) and (rect.Bottom >= 0) and
        ((rect.Left <> rect.Right) or (rect.Top <> rect.Bottom)) then begin
-      Canvas.Brush.Color:= (not clBlack) and $ffffff;
-      Canvas.DrawFocusRect(rect);
-      Canvas.Brush.Color:= Color;
+      Canvas.Pen.Color := $ff0000;// (not clBlack) and $ffffff;
+      //Canvas.DrawFocusRect(rect);
+      Canvas.MoveTo(rect.left, rect.top);
+      Canvas.LineTo(rect.right, rect.top);
+      Canvas.LineTo(rect.right, rect.bottom);
+      Canvas.LineTo(rect.left, rect.bottom);
+      Canvas.LineTo(rect.left, rect.top);
+//      Canvas.Pen.Color:= Color;
     end;
   end;
 end;

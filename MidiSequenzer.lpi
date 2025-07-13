@@ -356,6 +356,11 @@
         <Filename Value="Ujson.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="ugrifftabelle.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="UGrifftabelle"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

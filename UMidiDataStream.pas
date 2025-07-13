@@ -38,26 +38,26 @@ const
 type
   TMidiSaveStream = class;
    
-  // Zur Analyse von Midi-Files (.mid).
-  // Zur Generierung von Midi-Files aus einem einfachen Text-File (simple file).
+  // Zur Analyse und Bildung von Midi-Files (.mid).
   TMidiDataStream = class(TMyMidiStream)
   public
     constructor Create;
+
+    // analisieren eines MIDI-Files
     function ReadVariableLen: cardinal;
-    procedure WriteVariableLen(c: cardinal);
-    procedure WriteHeader(const Header: TMidiHeader);
-    procedure WriteTrackHeader(Delta: integer);
-  
     function ReadMidiHeader(RaiseExcept: boolean = false): boolean;
     function ReadMidiTrackHeader(var Header: TTrackHeader; RaiseExcept: boolean = false): boolean;
     function ReadMidiEvent(var event: TMidiEvent): boolean;
-    function TranslateEvent(var d1: byte;
-                            toDo: eTranslate;
-                            const Instrument: PInstrument): boolean;
+
+    // bilden eines MIDI-Files
+    procedure WriteVariableLen(c: cardinal);
+    procedure WriteHeader(const Header: TMidiHeader);
+    procedure WriteTrackHeader(Delta: integer);
 
     function MakeMidiEventsArr(var Events: TMidiEventArray): boolean;
     function MakeMidiTrackEvents(var Tracks: TTrackEventArray): boolean;
     function MakeEventArray(var EventArray: TEventArray; Lyrics: boolean = false): boolean;
+    function Compare(SecondStream: TMidiDataStream): integer;
 //    function MakePartitur(SimpleFile: TSimpleDataStream): boolean;
   end;
 
@@ -65,7 +65,7 @@ type
   // Zur Generierung von einfachen Text-Files aus Midi-Files.
   TSimpleDataStream = class(TMyMidiStream)
   public
-    // analysieren
+    // textbasiert analysieren
     procedure ReadLine;
     function NextNumber: integer;
     function ReadNumber: integer;
@@ -80,7 +80,7 @@ type
     function NextString: AnsiString;
     function ReadString: AnsiString;
 
-    // generieren
+    // Text generieren
     procedure WriteHeader(const Header: TMidiHeader);
     procedure WriteTrackHeader(Delta: integer);
 
@@ -206,8 +206,6 @@ begin
   Signature := ReadCardinal;
   if Signature <> $4D546864 then   // MThd
   begin
-    if RaiseExcept then
-      raise Exception.Create('Falsche Header-Signatur!');
     exit;
   end;
   ChunkSize := ReadCardinal;
@@ -245,47 +243,26 @@ begin
   result := true;
 end;
 
-function TMidiDataStream.TranslateEvent(var d1: byte;
-                                        toDo: eTranslate;
-                                        const Instrument: PInstrument): boolean;
-var
-  iCol, i, Index: integer;
-begin
-  iCol := 0;
-  i := -1;
-  if (toDo <> nothing) and (Instrument <> nil) then
-  begin
-    if toDo = toSound then
-      i := Instrument^.GriffToSound(d1, InPull, CrossTest)
-    else
-      i := Instrument^.SoundToGriff(d1, InPull, iCol, Index);
-    if i >= 0 then
-      d1 := i;
-  end;
-  result := i > 0;
-end;
-
-
 function TMidiDataStream.ReadMidiTrackHeader(var Header: TTrackHeader; RaiseExcept: boolean = false): boolean;
 var
   Signature: cardinal;
 begin
+  result := false;
   Signature := ReadCardinal;
   if Signature <> $4D54726B then              // MTrk
-  begin
-    if RaiseExcept then
-      raise Exception.Create('Wrong Track Signatur!');
-  end;
+    exit;
 
   Header.ChunkSize := ReadCardinal;
   ChunkSize := Header.ChunkSize;
   Header.DeltaTime := ReadVariableLen;
+  result := true;
   if (Size - Position + 2 < Header.ChunkSize) then
   begin
-//    if RaiseExcept then
-//      raise Exception.Create('Restliche Dateigröße kleiner als die angegebene Chunkgröße!');
+{$ifdef CONSOLE}
+    system.writeln('Restliche Dateigröße kleiner, als die angegebene Chunkgrösse!');
+{$endif}
+    //result := false;
   end;
-  result := true;
 end;
 
 function TMidiDataStream.MakeMidiEventsArr(var Events: TMidiEventArray): boolean;
@@ -536,6 +513,16 @@ begin
   result := true;
 end;
 
+function TMidiDataStream.Compare(SecondStream: TMidiDataStream): integer;
+begin
+  result := 0;
+  while (result < Size) and (result < SecondStream.Size) and
+        (self.GetByte(result) = SecondStream.GetByte(result)) do
+    inc(result);
+  if (result = Size) and (result = SecondStream.Size) then
+    result := -1;
+end;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 function TSimpleDataStream.MakeMidiFromSimpleStream: TMidiSaveStream;
@@ -550,10 +537,14 @@ begin
 
   Position := 0;
   if not ReadSimpleHeader then
+  begin
+    FreeAndNil(result);
     exit;
+  end;
 
+  result.SetHead(MidiHeader.Details.TicksPerQuarter);
   result.MidiHeader := MidiHeader;
-  result.AppendHeaderMetaEvents(MidiHeader.Details);
+  TrackHeader_.DeltaTime := 192;
 
   while (Position + 20 < Size) do
   begin
@@ -579,6 +570,7 @@ begin
         if t >= 0 then
           Event.var_len := t;
         result.AppendEvent(Event);
+        Readline;
         continue;
       end;
 
@@ -701,12 +693,15 @@ begin
   MidiDataStream.Position := 0;
 
   try
-    result.MidiHeader := MidiDataStream.MidiHeader;
     if not MidiDataStream.ReadMidiHeader(false) then
+    begin
+      result.Free;
+      result := nil;
       exit;
-      
-    result.WriteHeader(MidiDataStream.MidiHeader);
-    result.MidiHeader.Details.TicksPerQuarter := MidiDataStream.MidiHeader.Details.TicksPerQuarter;
+    end;
+
+    result.MidiHeader := MidiDataStream.MidiHeader;
+    result.WriteHeader(result.MidiHeader);
     MidiDataStream.MidiHeader := result.MidiHeader;
     Offset := 0;
 
@@ -754,6 +749,14 @@ begin
               result.MidiHeader.Details.SetDurMinor(event, ba);
             end;
           8..14: begin
+              if event.IsPushPull then
+              begin
+                if event.IsPush then
+                  result.WriteString(cPush)
+                else
+                  result.WriteString(cPull);
+                result.WriteString(' ' + IntToStr(event.var_len));
+              end else
               if HexOutput then
                 result.WriteString(Format('%5d $%2.2x $%2.2x $%2.2x', 
                                    [event.var_len, event.command, event.d1, event.d2]))
@@ -934,9 +937,9 @@ end;
 procedure TMidiSaveStream.AppendHeaderMetaEvents(const Details: TDetailHeader);
 begin
   AppendMetaEvent($51, Details.GetMetaBeats51);
+  AppendMetaEvent($58, Details.GetMetaMeasure58);
   if (Details.CDur <> 0) or Details.Minor then
     AppendMetaEvent($59, Details.GetMetaDurMinor59);
-  AppendMetaEvent($58, Details.GetMetaMeasure58);
 end;
 
 procedure TMidiSaveStream.AppendTrackHead(delay: integer);
@@ -1200,32 +1203,28 @@ finalization
 
 end.
 
+<! vom Sequenzer zum Laden verwendet und
+!! zum Speichern verwendet
 
 TGriffPartitur:
 
-  function LoadFromEventPartitur(const EventPartitur: TEventArray; AsGriffPartitur: boolean = false): boolean;
-  function LoadFromNewEventPartitur(const EventPartitur: TEventArray): boolean;
-  function LoadFromRecorded(const EventPartitur: TEventArray): boolean;
-  function LoadFromTrackEventArray(const Partitur: TEventArray): boolean;
+!  function LoadFromEventPartitur(const EventPartitur: TEventArray; AsGriffPartitur: boolean = false): boolean;
+!  function LoadFromNewEventPartitur(const EventPartitur: TEventArray): boolean;
+!  function LoadFromRecorded(const EventPartitur: TEventArray): boolean;
+//  function LoadFromTrackEventArray(const Partitur: TEventArray): boolean;
 
-  function SaveToMidiStream(realGriffschrift: boolean): TMidiSaveStream;
-  function SaveToNewMidiStream: TMidiSaveStream;
-
+!!  function SaveToMidiStream(realGriffschrift: boolean): TMidiSaveStream;
+!!  function SaveToNewMidiStream: TMidiSaveStream;
 
 TEventArray:
 
-  function LoadMidiFromFile(FileName: string; Lyrics: boolean): boolean;
-  function LoadMidiFromSimpleFile(FileName: string; Lyrics: boolean): boolean;
+!  function LoadMidiFromFile(FileName: string; Lyrics: boolean): boolean;
+!  function LoadMidiFromSimpleFile(FileName: string; Lyrics: boolean): boolean;
   function LoadMidiFromDataStream(Midi: TMyMidiStream; Lyrics: boolean): boolean;
   function SaveMidiToStream(Lyrics: boolean): TMemoryStream; overload;
   class function SaveMidiToStream(
     const TrackArr: TTrackEventArray; const DetailHeader: TDetailHeader;
     Lyrics: boolean): TMemoryStream; overload;
-  function SaveSimpleMidiToFile(FileName: string; Lyrics: boolean = false): boolean; overload;
-  class function SaveSimpleMidiToFile(FileName: string;
-    const TrackArr: TTrackEventArray; const DetailHeader: TDetailHeader;
-    Lyrics: boolean = false): boolean; overload;
-
   TMidiDataStream.MakeEventArray(self, Lyrics);
 
 
@@ -1239,14 +1238,12 @@ TGriffArray
                                     const Instrument: TInstrument;
                                     const DetailHeader: TDetailHeader): TMidiSaveStream;
 
-  class function MakeSimpleFromDataStream(const GriffEvents: TGriffEventArray;
-                                       const Instrument: TInstrument;
-                                       const DetailHeader: TDetailHeader;
-                                       realGriffschrift: boolean): TSimpleDataStream;
+  class function MakeSimpleGriff(const GriffEvents: TGriffEventArray; DiatonicBass: boolean): TSimpleDataStream;
+  class function MakeGriffEvents(var SimpleGriffEvents: TSimpleDataStream; DiatonicBass: boolean = false): TGriffEventArray;
+
 
 TSimpleDataStream
 
   class function MakeSimpleDataStream(MidiDataStream: TMidiSaveStream): TSimpleDataStream;
-  class function SaveMidiToSimpleFile(FileName: string; MidiDataStream: TMidiSaveStream): boolean;
-
+!!  class function SaveMidiToSimpleFile(FileName: string; MidiDataStream: TMidiSaveStream): boolean;
 

@@ -25,9 +25,10 @@ uses
 {$if defined(DCC)}
   AnsiStrings,
 {$endif}
-{$IFnDEF FPC}
+{$IFDEF mswindows}
   Windows,
-{$ELSE}
+{$endif}
+{$ifdef fpc}
   LCLIntf, LCLType, LMessages,
 {$ENDIF}
   Classes, SysUtils, Types, Variants, Graphics,
@@ -36,7 +37,7 @@ uses
 
 const
   row_height = 15;
-  PixelPerQuarter = 64; // pixel per quarter
+  PixelPerQuarter = 64;
   rows = 23;
   MoveVert = 20;
   LoadStartPush = true;
@@ -121,6 +122,7 @@ type
     procedure Unselect;
     procedure SetRubberOff;
 
+    function LoadFromEvents(const EventPartitur: TEventArray; Copyright: TCopyright): boolean;
     function LoadFromEventPartitur(const EventPartitur: TEventArray; AsGriffPartitur: boolean = false): boolean;
     function LoadFromNewEventPartitur(const EventPartitur: TEventArray): boolean;
     function LoadFromRecorded(const EventPartitur: TEventArray): boolean;
@@ -134,6 +136,7 @@ type
     function SaveToNewMidiStream: TMidiSaveStream;
     function SaveToNewMidiFile(FileName: string): boolean;
     function SaveToBmp(const FileName: string): boolean;
+    function SaveToPdf(const FileName: string): boolean;
 
     function AppendFile(const FileName: string): boolean;
     procedure PurgeBass;
@@ -169,8 +172,6 @@ type
     procedure PlayAmpel(var PlayEvent: TPlayRecord; PlayDelay: integer);
     function PlayControl(CharCode: word; KeyData: LongInt): boolean;
 
-    // MidiPartitur uses this
-    function LoadFromTrackEventArray(const Partitur: TEventArray): boolean;
     function DeleteMp3(VelocityDelta: byte): boolean;
     procedure DeleteDouble;
     procedure BassSynch;
@@ -195,16 +196,10 @@ var
 implementation
 
 uses
-  Zip,
   UAmpel,
   UfrmGriff,
   umidi,
-{$ifdef mswindows}
-  Midi,
-{$else}
-  urtmidi,
-{$endif}
-  UGriffArray, UXmlNode, UXmlParser;
+  UGriffArray;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -767,6 +762,17 @@ begin
 end;
 {$endif}
 
+function TGriffPartitur.LoadFromEvents(const EventPartitur: TEventArray; Copyright: TCopyright): boolean;
+begin
+  case Copyright of
+    griffCopy: result := LoadFromEventPartitur(EventPartitur, false);
+    realCopy:  result := LoadFromEventPartitur(EventPartitur, true);
+    newCopy:   result := LoadFromNewEventPartitur(EventPartitur);
+    prepCopy:  result := LoadFromRecorded(EventPartitur);
+    else       result := LoadFromRecorded(EventPartitur);
+  end;
+end;
+
 function TGriffPartitur.LoadFromEventPartitur(const EventPartitur: TEventArray; AsGriffPartitur: boolean): boolean;
 var
   iEvent: integer;
@@ -813,7 +819,7 @@ begin
           if (Event.Event = 11) then
           begin
             case Event.d1-ControlPushPull of
-              4: with GriffEvent do
+              4: with GriffEvent do   // rest
                  begin
                    Clear;
                    NoteType := TNoteType(Event.d2);
@@ -833,6 +839,9 @@ begin
                          else
                            AbsRect.Width := TicksPerQuarter;
                      end;
+                     // zum Suchen braucht es eine Hoehe
+                     AbsRect.Top := 0;
+                     AbsRect.Height := 1;
                    end;
                    if Repeat_ <> rRegular then
                      AppendGriffEvent(GriffEvent);
@@ -890,7 +899,8 @@ begin
               if Sound <> GriffEvent.SoundPitch then
               begin
             {$ifdef CONSOLE}
-                writeln('new soundpitch');
+                if GriffEvent.NoteType <> ntBass then
+                  writeln('new soundpitch');
             {$endif}
                 if Sound > 0 then
                   GriffEvent.SoundPitch := Sound;
@@ -1902,13 +1912,13 @@ var
     if Dur[Row, index].d > 0 then
     begin
 //      if not noSound then
-      MidiOutput.Send(MicrosoftIndex, $80 + Row, index, $40);
+      SendMidi($80 + Row, index, $40);
       case Row of
         6:    if PolyphonBass and
                  not Instrument.BassDiatonic then
               begin
-                MidiOutput.Send(MicrosoftIndex, $87, index+4, $40);
-                MidiOutput.Send(MicrosoftIndex, $87, index+7, $40);
+                SendMidi($87, index+4, $40);
+                SendMidi($87, index+7, $40);
               end;
         else begin end;
       end;
@@ -1966,7 +1976,7 @@ begin
     PlayEvent.Clear;
   offset := GriffEvents[PlayEvent.iEvent].AbsRect.Left;
   LastPush := GriffEvents[PlayEvent.iEvent].InPush;
-  MidiOutput.Send(MicrosoftIndex, $B0, ControlPushPull, ord(LastPush));
+  SendMidi($B0, ControlPushPull, ord(LastPush));
 
   for Row := 1 to High(Dur) do
     for i := 0 to 127 do
@@ -1985,12 +1995,6 @@ begin
             (round(Offset) >= GriffEvents[PlayEvent.iEvent].AbsRect.Left) and
             not StopPlay do
       begin
-        if (iSkipPlayEvent >= 0) then
-        begin
-          SkipEvent(iSkipPlayEvent, true);
-          iSkipPlayEvent := -1;
-          continue;
-        end;
         if (iAEvent >= 0) and (iBEvent > iAEvent + 2) and (PlayEvent.iEvent >= iBEvent) then
         begin
           SkipEvent(iAEvent, true);
@@ -2024,7 +2028,7 @@ begin
             if InPush <> LastPush then
             begin
               LastPush := InPush;
-              MidiOutput.Send(MicrosoftIndex, $B0, ControlPushPull, ord(LastPush));
+              SendMidi($B0, ControlPushPull, ord(LastPush));
               frmAmpel.PaintBalg(LastPush);
             end;
             Max := trunc($7e*Volume);
@@ -2032,19 +2036,19 @@ begin
             case AmpelRect.row of
               1..4:
                  if not noTreble then
-                   MidiOutput.Send(MicrosoftIndex, $90 + AmpelRect.row, Sound, Max);
+                   SendMidi($90 + AmpelRect.row, Sound, Max);
               5: if not noBass then
                  begin
-                   MidiOutput.Send(MicrosoftIndex, $95, Sound, MaxBass);
+                   SendMidi($95, Sound, MaxBass);
                  end;
               6: if not NoBass then
                  begin
-                   MidiOutput.Send(MicrosoftIndex, $96, Sound, MaxBass);
+                   SendMidi($96, Sound, MaxBass);
                    if PolyphonBass and
                       not Instrument.BassDiatonic then
                    begin
-                     MidiOutput.Send(MicrosoftIndex, $97, Sound+4, MaxBass - 10);
-                     MidiOutput.Send(MicrosoftIndex, $97, Sound+7, MaxBass - 10);
+                     SendMidi($97, Sound+4, MaxBass - 10);
+                     SendMidi($97, Sound+7, MaxBass - 10);
                    end;
                  end;
             end;
@@ -2590,21 +2594,6 @@ begin
   iAEvent := -1;
   iBEvent := -1;
   IsPlaying := false;
-end;
-
-function TGriffPartitur.LoadFromTrackEventArray(const Partitur: TEventArray): boolean;
-begin
-  Clear;
-  LoadChanges;
-  GriffHeader.Details := Partitur.DetailHeader;
-  GriffHeader.UsedEvents := 0;
-  result := AppendEventArray(Partitur.SingleTrack);
-
-  SortEvents;
-  SetBassGriff;
-
-  PartiturLoaded := GriffHeader.UsedEvents > 0;
-  result := PartiturLoaded;
 end;
 
 procedure TGriffPartitur.OptimisePairs(iFirst, iLast: integer);
@@ -3374,10 +3363,555 @@ begin
   finally
     PartiturLoaded := false;
   end;
+  SetLength(GriffEvents, UsedEvents);
   SortEvents;
 
   PartiturLoaded := true;
   LoadChanges;
+end;
+
+function TGriffPartitur.SaveToPdf(const FileName: string): boolean;
+const
+  radius = 10;
+  rand = radius div 2;
+  abstand = radius*3;
+  h = 11*abstand + 2*rand;
+  w = round(3*abstand*1.732/2) + 2*rand;
+  LinesPerPage = 4;
+  xAbstand = (w+ 4*rand);
+  yAbstand = (h + 26*rand) + 2;
+  xRand = 4*rand;
+
+var
+  bitmaps: array of TBitmap;
+  l, j: integer;
+  Takt: integer;
+  Pt: TPoint;
+  AchtelProZeile: integer;
+  iPage: integer;
+  bitRechts, bitLinks, bitRechtsRing, bitLinksRing: TBitmap;
+
+  function makeRect(index, row: integer): TRect;
+  var
+    l, t: double;
+  begin
+    if row = 1 then
+      index := 10 - index
+    else
+      index := 9 - index;
+    row := 2 - row;
+    l := h / 2 + (index-5) * abstand;
+    t := w / 2;
+    if row <> 1 then
+      l := l + abstand/2;
+    if row = 0 then
+      t := t - abstand*1.732/2
+    else
+    if row = 2 then
+      t := t + abstand * 1.732/2;
+    result.Left := round(t - radius);
+    result.Top := round(l - radius);
+    result.Width := 2*radius;
+    result.Height := 2*radius;
+  end;
+
+  // Für jede Viertelsnote eine Tabelle
+  function TabellenPoint(index, zeile: integer): TPoint;
+  begin
+    iPage := zeile div LinesPerPage;
+    zeile := zeile mod LinesPerPage;
+    result.X := index*xAbstand + xRand;
+    result.Y := zeile*yAbstand + 100;
+  end;
+
+  function TabellenPoint_(left: integer): TPoint;
+  var
+    index, zeile: integer;
+  begin
+    index := (left mod AchtelProZeile) div 2;
+    zeile := (left div AchtelProZeile);
+    result := TabellenPoint(index, zeile);
+  end;
+
+  procedure DrawBass(x, y: integer; Gross, Klein: string);
+  var
+    t: string;
+  begin
+    with bitmaps[iPage] do
+    begin
+      Canvas.Brush.Color := $ffffff;
+      if (Gross <> '') and (Klein <> '') then
+      begin
+        t := Klein;
+        Canvas.Font.Height := 2*radius;
+        Canvas.TextOut(x + w div 2 - Canvas.TextWidth(t) div 2,
+                            y + h + rand + 4*radius, t);
+      end;
+      if Gross <> '' then
+      begin
+        Canvas.Font.Height := 3*radius;
+        Canvas.Font.Bold := true;
+        t := Gross;
+      end else begin
+        t := Klein;
+        Canvas.Font.Height := 2*radius;
+      end;
+      Canvas.TextOut(x + w div 2 - Canvas.TextWidth(t) div 2,
+                          y + h + rand, t);
+      Canvas.Font.Bold := false;
+    end;
+  end;
+
+  function GetTastenRect(left: integer; index, row: integer): TRect;
+  var
+    Pt: TPoint;
+    t: integer;
+  begin
+    Pt := TabellenPoint_(left);
+    result := makeRect(index, row);
+    result.offset(Pt.X, Pt.Y);
+  end;
+
+  function GenerateAchtel(Brush, Pen: TColor): TBitmap;
+  begin
+    result := TBitmap.Create;
+    result.SetSize(radius, 2*radius);
+    result.Canvas.Brush.Color := $ffffff;
+    result.Canvas.FillRect(0, 0, radius, 2*radius);
+    result.Canvas.Font.Name := 'Sans';
+    result.Canvas.Brush.Color := Brush;
+    result.Canvas.Pen.Color := Pen;
+  end;
+
+  procedure DrawDiskant(rect: TRect; push: boolean);
+  begin
+    with bitmaps[iPage] do
+    begin
+      if Push then
+      begin
+        Canvas.Pen.Width := 2;
+        Canvas.Pen.Color := $0000ff;
+        Canvas.Brush.Color := $0000ff
+      end else begin
+        Canvas.Pen.Width := 6;
+        Canvas.Pen.Color := $ff0000;
+        Canvas.Brush.Color := $ffffff;
+        rect.Offset(2, 2);
+        rect.Width := rect.Width  - 4;
+        rect.Height := rect.Height - 4;
+      end;
+      canvas.Ellipse(rect);
+      Canvas.Pen.Width := 2;
+    end;
+  end;
+
+  procedure DrawDiskantLinks(rect: TRect; push: boolean);
+  var
+    source: TRect;
+  begin
+    source := TRect.Create(0, 0, radius-2, 2*radius);
+    rect.Width := radius - 2;
+    with bitmaps[iPage] do
+      if Push then
+        Canvas.CopyRect(rect, bitLinks.Canvas, source)
+      else
+        Canvas.CopyRect(rect, bitLinksRing.Canvas, source);
+  end;
+
+  procedure DrawDiskantRechts(rect: TRect; push: boolean);
+  var
+    source: TRect;
+  begin
+    source := TRect.Create(2, 0, radius, 2*radius);
+    rect.Width := radius-2;
+    rect.Offset(radius+2, 0);
+    with bitmaps[iPage] do
+      if Push then
+        Canvas.CopyRect(rect, bitRechts.Canvas, source)
+      else
+        Canvas.CopyRect(rect, bitRechtsRing.Canvas, source);
+  end;
+
+  procedure DrawBox(x, y: integer; Takt: integer);
+  const
+    delta = radius div 3;
+    ecke = radius;
+  var
+    i, k: integer;
+    rect: TRect;
+  begin
+    rect.Left := 0;
+    rect.Top := 0;
+    rect.Right := w;
+    rect.Bottom := h;
+    rect.Offset(x, y);
+    with bitmaps[iPage] do
+    begin
+      Canvas.Pen.Color := 0;
+      Canvas.Pen.Width := 2;
+
+      Canvas.MoveTo(rect.Left + ecke,  rect.Top);
+      Canvas.LineTo(rect.Right - ecke, rect.Top);
+      Canvas.LineTo(rect.Right,        rect.Top + ecke);
+      Canvas.LineTo(rect.Right,        rect.Bottom - ecke);
+      Canvas.LineTo(rect.Right - ecke, rect.Bottom);
+      Canvas.LineTo(rect.Left + ecke,  rect.Bottom);
+      Canvas.LineTo(rect.Left,         rect.Bottom - ecke);
+      Canvas.LineTo(rect.Left,         rect.Top + ecke);
+      Canvas.LineTo(rect.Left + ecke,  rect.Top);
+      if Takt > 0 then
+      begin
+        Canvas.Pen.Width := 4;
+        Canvas.MoveTo(rect.Left - 2*rand, rect.Top - 4*rand);
+        Canvas.LineTo(rect.Left - 2*rand, rect.Top + 6*rand);
+        Canvas.Font.Height := 2*radius;
+        Canvas.TextOut(rect.Left, rect.Top - 6*rand, IntToStr(Takt));
+      end;
+      Canvas.Pen.Width := 2;
+      Canvas.Font.Bold := false;
+      for k := 0 to 2 do
+        for i := 0 to 10 do
+          if (i < 10) or (k = 1) then
+          begin
+            rect := makeRect(i, k);
+            rect.Offset(x, y);
+            canvas.Ellipse(rect);
+            if (k = 1) and (i = 5) then // Kreuz
+            begin
+              Canvas.MoveTo(rect.Left + delta, rect.Top + delta);
+              Canvas.LineTo(rect.Right - delta, rect.Bottom - delta);
+              Canvas.MoveTo(rect.Left + delta, rect.Bottom - delta);
+              Canvas.LineTo(rect.Right - delta, rect.Top + delta);
+            end;
+          end;
+    end;
+  end;
+
+  procedure DrawBogen(const rect1, rect2: TRect; InPush: boolean);
+  var
+    rect: TRect;
+  begin
+    rect.Left := rect1.Left + rect1.Width div 2;
+    rect.Right := rect2.Left + rect2.Width div 2;
+    rect.Top := rect1.Top - 40;
+    rect.Bottom := rect1.Top + 3;
+
+    with bitmaps[iPage] do
+    begin
+      Canvas.Pen.Width := 6;
+      if InPush then
+        Canvas.Pen.Color := $0000ff
+      else
+        Canvas.Pen.Color := $ff0000;
+      Canvas.Brush.Color := $ffffff;
+      Canvas.MoveTo(rect.Left + 4, rect.Bottom);
+      Canvas.LineTo(rect.Right - 4, rect.Bottom);
+      {Canvas.Arc(rect.Left, rect.Top,
+                      rect.Right, rect.Bottom,
+                      rect.Right, rect.Bottom,
+                      rect.Left, rect.Bottom); }
+      Canvas.Pen.Width := 2;
+    end;
+  end;
+
+var
+  dur, eighth, lines, Fact: integer;
+  rect, rect1, rect2: TRect;
+  i: integer;
+  index, row: integer;
+  event: TGriffEvent;
+  left, right: integer;
+  iPageRight: integer;
+  TicksPerEighth: integer;
+  PtBass: TPoint;
+  sBass, s: string;
+  goOn: boolean;
+  pages: integer;
+  rep: TRepeat;
+begin
+  Fact := GriffHeader.Details.measureFact;
+  if (GriffHeader.Details.measureDiv <> 4) or
+     not (Fact in [2, 3, 4]) then
+  begin
+    result := false;
+    exit;
+  end;
+
+  //SortEvents;
+
+  bitRechts := GenerateAchtel($0000ff, $0000ff);
+  bitLinks := GenerateAchtel($0000ff, $0000ff);
+  rect := TRect.Create(0, 0, 2*radius, 2*radius);
+  bitLinks.Canvas.Ellipse(rect);
+  rect.Offset(-radius, 0);
+  bitRechts.Canvas.Ellipse(rect);
+
+  bitLinksRing := GenerateAchtel($ffffff, $ff0000);
+  bitLinksRing.Canvas.Pen.Width := 6;
+  rect := TRect.Create(0, 0, 2*radius-4, 2*radius-4);
+  rect.Offset(2, 2);
+  bitLinksRing.Canvas.Ellipse(rect);
+
+  bitRechtsRing := GenerateAchtel($ffffff, $ff0000);
+  rect.Offset(-radius, 0);
+  bitRechtsRing.Canvas.Pen.Width := 6;
+  bitRechtsRing.Canvas.Ellipse(rect);
+
+  if Fact = 3 then
+    AchtelProZeile := 18
+  else
+    AchtelProZeile := 16;
+
+  dur := GetTotalDuration;
+  TicksPerEighth := GriffHeader.Details.TicksPerQuarter div 2;
+  eighth := (dur + TicksPerEighth - 1) div TicksPerEighth;
+  lines := (eighth + AchtelProZeile - 1) div AchtelProZeile;
+  Pt := TabellenPoint(AchtelProZeile, LinesPerPage);
+  pages := (lines + LinesPerPage - 1) div LinesPerPage + 1;
+  SetLength(bitmaps, pages);
+  for i := 0 to pages-1 do
+  begin
+    bitmaps[i] := TBitmap.Create;
+    bitmaps[i].SetSize(1000, 2000);
+    bitmaps[i].Canvas.Brush.Color := $ffffff;
+    bitmaps[i].Canvas.FillRect(0, 0, 1000, 2000);
+    bitmaps[i].Canvas.Font.Name := 'Sans';
+  end;
+  for j := 0 to lines-1 do
+    for l := 0 to AchtelProZeile div 2 - 1 do
+    begin
+      Takt := j*AchtelProZeile div 2 + l;
+      if (Takt mod Fact) = 0 then
+        Takt := Takt div Fact + 1
+      else
+        Takt := -1;
+      Pt := TabellenPoint(l, j);
+      DrawBox(Pt.X, Pt.Y, Takt);
+    end;
+
+  PtBass.X := -1;
+  i := 0;
+  while i < UsedEvents do
+  begin
+    event := GriffEvents[i];
+    if event.Repeat_ = rStart then
+    begin
+      //  ||:   Zeichen setzen
+      left := Event.AbsRect.Left div TicksPerEighth;
+      Pt := TabellenPoint_(left);
+      with bitmaps[iPage] do
+      begin
+        Canvas.Pen.Width := 3;
+        Canvas.Pen.Color := 0;
+        Canvas.Brush.Color := $ffffff;
+        Canvas.MoveTo(Pt.X, Pt.Y - 30);
+        Canvas.LineTo(Pt.X, Pt.Y - 60);
+        Canvas.MoveTo(Pt.X + 7, Pt.Y - 30);
+        Canvas.LineTo(Pt.X + 7, Pt.Y - 60);
+        rect.Left := Pt.X + 15;
+        rect.Top := Pt.Y - 40;
+        rect.Width := 6;
+        rect.Height := 6;
+        Canvas.Brush.Color := 0;
+        Canvas.Ellipse(rect);
+        rect.Offset(0, -15);
+        Canvas.Ellipse(rect);
+      end;
+    end else
+    if event.Repeat_ in [rStop, rVolta1Stop] then
+    begin
+      //  :||  Zeichen setzen
+      left := Event.AbsRect.Left div TicksPerEighth;
+      Pt := TabellenPoint_(left);
+      inc(Pt.X, xAbstand);
+      with bitmaps[iPage] do
+      begin
+        Canvas.Pen.Width := 3;
+        Canvas.Pen.Color := 0;
+        Canvas.Brush.Color := $ffffff;
+        Canvas.MoveTo(Pt.X - 24, Pt.Y - 30);
+        Canvas.LineTo(Pt.X - 24, Pt.Y - 60);
+        Canvas.MoveTo(Pt.X - 31, Pt.Y - 30);
+        Canvas.LineTo(Pt.X - 31, Pt.Y - 60);
+        rect.Left := Pt.X - 41;
+        rect.Top := Pt.Y - 40;
+        rect.Width := 6;
+        rect.Height := 6;
+        Canvas.Brush.Color := 0;
+        Canvas.Ellipse(rect);
+        rect.Offset(0, -15);
+        Canvas.Ellipse(rect);
+      end;
+    end;
+    if event.Repeat_ in [rVolta1Start, rVolta2Start] then
+    begin
+      // Voltabogen setzen
+      if event.Repeat_ = rVolta1Start then
+        rep := rVolta1Stop
+      else
+        rep := rVolta2Stop;
+      j := i + 1;
+      // rVolta1/2Stop suchen
+      while (j < UsedEvents) and (GriffEvents[j].Repeat_ <> rep) do
+        inc(j);
+      if j < UsedEvents then
+      begin
+        right := GriffEvents[j].AbsRect.Right div TicksPerEighth;
+        left := Event.AbsRect.Left div TicksPerEighth;
+        dur := right - left;
+        with bitmaps[iPage] do
+        begin
+          Canvas.Pen.Width := 3;
+          Canvas.Pen.Color := 0;
+          Canvas.Brush.Color := $ffffff;
+          Canvas.Font.Size := 25;
+          Canvas.Font.Bold := true;
+          Pt := TabellenPoint_(left);
+          if event.Repeat_ = rVolta1Start then
+            s := '1.'
+          else
+            s := '2.';
+          Canvas.TextOut(Pt.X + 35, Pt.Y - 65, s);
+          Canvas.Font.Bold := false;
+          Canvas.MoveTo(Pt.X, Pt.Y - 60); // senkrechter Anfangsstrich
+          Canvas.LineTo(Pt.X, Pt.Y - 30);
+          while dur > 0 do
+          begin
+            j := left mod AchtelProZeile;
+            l := AchtelProZeile - j;
+            if l > dur then
+              l := dur;
+            Pt := TabellenPoint_(left);
+            Canvas.MoveTo(Pt.X, Pt.Y - 60);
+            Canvas.LineTo(Pt.X + l*xAbstand div 2 - 4*rand - 5, Pt.Y - 60);
+            if (dur = l) and (event.Repeat_ = rVolta2Start) then
+            begin
+              Canvas.LineTo(Pt.X + l*xAbstand div 2 - 4*rand - 5, Pt.Y - 30);
+            end;
+            inc(left, l);
+            dec(dur, l);
+          end;
+        end;
+      end;
+    end;
+    if event.NoteType in [ntBass, ntDiskant] then
+    begin
+      dur := event.AbsRect.Width div TicksPerEighth;
+      left := event.AbsRect.Left div TicksPerEighth;
+      index := event.GetIndex;
+      if (dur <= 0) and (event.NoteType = ntDiskant) then
+      begin
+      end else
+      if (event.NoteType = ntDiskant) then
+      begin
+        row := event.GetRow - 1;
+        if row in [0, 2] then
+          dec(index);
+        rect := GetTastenRect(left, index, row);
+
+        rect1 := rect;
+        if (dur = 1) or odd(left) then
+        begin
+          if odd(left) then
+            DrawDiskantRechts(rect, event.InPush)
+          else
+            DrawDiskantLinks(rect, event.InPush);
+          dec(dur);
+          inc(left);
+          rect1.Offset(1, 0);
+        end else begin
+          DrawDiskant(rect, event.InPush);
+          dec(dur, 2);
+          inc(left, 2);
+          rect1.Offset(2, 0);
+        end;
+        goOn := false;
+        while dur > 0 do
+        begin
+          if (((left mod AchtelProZeile) <> 0) and
+             ((left mod AchtelProZeile) + dur <= AchtelProZeile)) or GoOn then
+          begin
+            inc(left, dur);
+            if not odd(dur) then
+              dec(left);
+            rect1 := GetTastenRect(left, index, row);
+            if odd(dur) then
+              DrawDiskantLinks(rect1, event.InPush)
+            else
+              DrawDiskant(rect1, event.InPush);
+            if rect1.Left < rect.Left then
+              left :=  left;
+            DrawBogen(rect, rect1, event.InPush);
+            dur := 0;
+          end else begin
+            j := left mod AchtelProZeile;
+            if (j > 0) then
+            begin
+              l := AchtelProZeile - j;
+              if l > dur then
+                l := dur;
+              inc(left, l);
+              dec(dur, l);
+              // -1: sonst ist es auf der nächsten Zeile
+              rect1 := GetTastenRect(left-1, index, row);
+            end;
+            j := 0;
+            if Row <> 1 then
+              j := round(abstand*1.73/2);
+            if Row = 0 then
+              j := -j;
+
+            rect1.Offset(w + j, 0);
+            if rect1.Left < rect.Left then
+              left :=  left;
+            DrawBogen(rect, rect1, event.InPush);
+
+            rect := GetTastenRect(left, index, row);
+            rect.Offset(-w + j, 0);
+            goOn := true;
+          end;
+        end;
+      end else begin                               // Bass
+       Pt := TabellenPoint_(left);
+       if odd(left) then
+         inc(Pt.X, 3*radius);
+       if event.Cross then
+       begin
+         if Pt <> PtBass then
+           DrawBass(Pt.X, Pt.Y, '', IntToStr(index))
+       end else begin
+         sBass := '';
+         j := i + 1;
+         while (j < UsedEvents) and (Event.AbsRect.Left = GriffEvents[j].AbsRect.Left) do
+         begin
+           if (GriffEvents[j].NoteType = ntBass) and (GriffEvents[j].Cross) then
+           begin
+             PtBass := Pt;
+             sBass := IntToStr(GriffEvents[j].GetIndex);
+             break;
+           end;
+           inc(j);
+         end;
+         DrawBass(Pt.X, Pt.Y, IntToStr(index), sBass);
+       end;
+      end;
+    end;
+    inc(i);
+  end;
+
+  s := Filename;
+  SetLength(s, Length(s) - Length(ExtractFileExt(s)));
+  for i := 0 to Pages-1 do
+  begin
+    bitmaps[i].Canvas.Font.Size := 30;
+    bitmaps[i].Canvas.Font.Color := $0;
+    bitmaps[i].Canvas.Brush.Color := $ffffff;
+    //bitmaps[i].Canvas.TextOut(50, 30, ExtractFileName(s) + ' ' + IntToStr(i+1));
+    bitmaps[i].SaveToFile(s + '_' + IntToStr(i+1) + '.bmp');
+    bitmaps[i].Free;
+  end;
+  SetLength(bitmaps, 0);
+  result := true;
 end;
 
 initialization

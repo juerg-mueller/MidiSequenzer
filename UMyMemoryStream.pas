@@ -27,6 +27,7 @@ uses
 
 type
 
+  // binary handling
   TMyMemoryStream = class(TMemoryStream)
   public
     BigEndian: boolean;
@@ -56,7 +57,7 @@ type
 
     procedure WriteDec(d: integer);
     procedure WriteAnsiString(s: AnsiString);
-    procedure WriteString(s: String);
+    procedure WriteString(s: String); // UTF-8 String
     procedure WritelnAnsiString(s: AnsiString);
     procedure WritelnString(s: String);
     procedure Writeln;
@@ -167,9 +168,9 @@ end;
 function TMyMemoryStream.ReadCardinal: cardinal;
 begin
   if BigEndian then
-    Result := ReadByte shl 24 + ReadByte shl 16 + ReadByte shl 8 + ReadByte
+    Result := (ReadByte shl 24) + (ReadByte shl 16) + (ReadByte shl 8) + ReadByte
   else
-    Result := ReadByte + ReadByte shl 8 + ReadByte shl 16 + ReadByte shl 24;
+    Result := ReadByte + (ReadByte shl 8) + (ReadByte shl 16) + (ReadByte shl 24);
 end;
 
 function TMyMemoryStream.GetCardinal(const Offset: cardinal): cardinal;

@@ -23,13 +23,7 @@ interface
 
 uses
   SysUtils, Types,
-  umidi,
-{$ifdef mswindows}
-  Midi,
-{$else}
-  urtmidi,
-{$endif}
-  UMidiEvent,  UInstrument;
+  umidi, UMidiEvent, UInstrument;
 
 type
 
@@ -38,10 +32,11 @@ type
     index: integer;
   end;
 
-  // da capo            anfang bis ende marke
+  // da capo            Anfang bis Ende-Marke
   // da capo al fine
   // dal segno al fine
-  // dal segno al coda   to coda marke    codab marke
+  // dal segno al coda   vom Zeichen bis coda
+  // Coda
   TRepeat = (rRegular, rStart, rStop, rVolta1Start, rVolta1Stop, rVolta2Start,
              rVolta2Stop {, rDaCapo, rSegno, rDalSegno, rCoda, rToCoda, rFine});
   TNoteType = (ntDiskant, ntBass, ntRest, ntRepeat);
@@ -75,13 +70,14 @@ type
   TGriffEvent = record
     NoteType: TNoteType;
     SoundPitch: byte;
-    GriffPitch: byte; // für Bass 1..8
+    GriffPitch: byte; // für Bass 1..9
     Cross: boolean;   // für Bass2 true
     InPush: boolean;
     AbsRect: TRect;   // width = duration; für 5. und 6. Reihe: Height = 1  Top = -1
-    Velocity: byte;
+    Velocity: byte;   // wird nicht verwendet
     Repeat_: TRepeat;
 
+    // Row und Index beziehen sich auf TInstrument.
     function GetRow: byte;
     function GetIndex: integer;
     function SpecialBassWidth(const GriffHeader: TGriffHeader): integer;
@@ -93,7 +89,7 @@ type
     function GetAmpelRec: TAmpelRec;
     procedure Transpose(delta: integer);
     function Contains(P: TPoint): boolean;
-    function GetBass: boolean;
+    function IsBass: boolean;
     procedure SetBass(NewBass: boolean);
     function GetSteiBass: string;
     function IsAppoggiatura(const GriffHeader: TGriffHeader): boolean;
@@ -295,13 +291,13 @@ var
 begin
   Pitch := GetSoundPitch(Instrument);
   Channel := GetRow;
-  if (Pitch > 20) and (Channel > 0) and (MicrosoftIndex >= 0) then
+  if (Pitch > 20) and (Channel > 0) then
   begin
     if On_ then
     begin
-      MidiOutput.Send(MicrosoftIndex, $90 + (Channel and 15), Pitch, $4f);
+      SendMidi($90 + (Channel and 15), Pitch, $4f);
     end else
-      MidiOutput.Send(MicrosoftIndex, $80 + (Channel and 15), Pitch, $40);
+      SendMidi($80 + (Channel and 15), Pitch, $40);
   end;
 end;
 
@@ -452,14 +448,19 @@ end;
 function TGriffEvent.IsEqual(const GriffEvent: TGriffEvent): boolean;
 begin
   result := (NoteType = GriffEvent.NoteType) and
+            (Repeat_ = GriffEvent.Repeat_) and
+            (AbsRect.Left = GriffEvent.AbsRect.Left) and
+            (AbsRect.Right = GriffEvent.AbsRect.Right) and
+            (AbsRect.Top = GriffEvent.AbsRect.Top);
+  if result and (NoteType <> ntRest) then
+    result :=
             (SoundPitch = GriffEvent.SoundPitch) and
             (GriffPitch = GriffEvent.GriffPitch) and
             (Cross = GriffEvent.Cross) and
-            (InPush = GriffEvent.InPush) and
-            AbsRect.IntersectsWith(GriffEvent.AbsRect);
+            (InPush = GriffEvent.InPush);
 end;
 
-function TGriffEvent.GetBass: boolean;
+function TGriffEvent.IsBass: boolean;
 begin
   result := NoteType = ntBass;
 end;
@@ -787,9 +788,11 @@ procedure TGriffEvent.MakeRest;
 begin
   Clear;
   NoteType := ntRest;
-  SoundPitch := 70;
-  GriffPitch := 70;
+  SoundPitch := 0;
+  GriffPitch := 0;
   AbsRect.Width := 10;
+  AbsRect.Height := 1;
+  AbsRect.Top := 11;
   AbsRect.Height := 1;
 end;
 

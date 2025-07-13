@@ -109,12 +109,12 @@ type
     sbVolumeOut: TScrollBar;
     lbBegleitung: TLabel;
     cbxTurboSound: TCheckBox;
+    procedure cbxCrossChange(Sender: TObject);
+    procedure cbxPushChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnOpenClick(Sender: TObject);
     procedure btnLoadPartiturClick(Sender: TObject);
     procedure btnShowGriffClick(Sender: TObject);
-    procedure cbxCrossClick(Sender: TObject);
-    procedure cbxPushClick(Sender: TObject);
     procedure edtSoundPitchExit(Sender: TObject);
     procedure edtGriffPitchExit(Sender: TObject);
     procedure btnPlayClick(Sender: TObject);
@@ -126,6 +126,13 @@ type
     procedure cbxNoSoundClick(Sender: TObject);
     procedure cbxTrimNoteClick(Sender: TObject);
     procedure cbxMidiOutChange(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FormKeyPress(Sender: TObject; var Key: char);
+    procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure FormMouseLeave(Sender: TObject);
+    procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure FormShow(Sender: TObject);
     procedure edtBPMExit(Sender: TObject);
     procedure btnSaveMidiClick(Sender: TObject);
@@ -153,10 +160,6 @@ type
     procedure cbxMuteTrebleClick(Sender: TObject);
     procedure cbxVoltaChange(Sender: TObject);
     procedure btnResetMidiClick(Sender: TObject);
-    procedure cbxPushMouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
-    procedure cbxCrossMouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
     procedure Button1Click(Sender: TObject);
     procedure cbxVoltaKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
   {$ifdef dcc}
@@ -421,7 +424,8 @@ begin
       PrepareFinally;
       frmGriff.Show;
       frmGriff.Invalidate;
-    end;
+    end else
+      Application.MessageBox(PChar('Datei "' + PartiturFileName + '" nicht gelesen!'), 'Fehler');
     exit;
   end;
 
@@ -438,7 +442,11 @@ begin
       Ok := Partitur.LoadMidiFromFile(PartiturFileName, false);
     end;
     if not Ok then
-      raise Exception.Create('File not read!');
+    begin
+      Application.MessageBox(PChar('Datei "' + PartiturFileName + '" nicht gelesen!'), 'Fehler');
+      Partitur.Free;
+      exit;
+    end;
 
   {$ifdef DEBUG}
     SaveStream := Partitur.SaveMidiToStream(Partitur.TrackArr, Partitur.DetailHeader, false) as TMidiSaveStream;
@@ -454,6 +462,7 @@ begin
 
     ChangeInstrument(Partitur.Instrument);
     Partitur.Repair;
+  {$ifdef DEBUG}
     SaveStream := Partitur.SaveMidiToStream(Partitur.TrackArr, Partitur.DetailHeader, false) as TMidiSaveStream;
     if SaveStream <> nil then
     begin
@@ -461,19 +470,14 @@ begin
       TSimpleDataStream.SaveMidiToSimpleFile(s, SaveStream);
       SaveStream.Free;
     end;
+  {$endif}
 
     Partitur.Transpose(cbxTranspose.ItemIndex - 11);
     cbxSmallestNoteChange(nil);
 
     GriffPartitur_.GriffHeader.Details := Partitur.DetailHeader;
-    case Partitur.GetCopyright of
-      griffCopy: GriffPartitur_.LoadFromEventPartitur(Partitur, false);
-      realCopy:  GriffPartitur_.LoadFromEventPartitur(Partitur, true);
-      newCopy:   GriffPartitur_.LoadFromNewEventPartitur(Partitur);
-      prepCopy:  GriffPartitur_.LoadFromRecorded(Partitur);
-      else       GriffPartitur_.LoadFromRecorded(Partitur);
-    end;
-    GriffPartitur_.RepeatToRest;
+    GriffPartitur_.LoadFromEvents(Partitur, Partitur.GetCopyright);
+    //GriffPartitur_.RepeatToRest;
 
     if not TGriffArray.CorrectSoundPitch(GriffPartitur_.GriffEvents, GriffPartitur_.Instrument) then
     begin
@@ -714,6 +718,7 @@ begin
       4: ok := GriffPartitur_.SaveToMusicXML(s, true);
       5: ok := GriffPartitur_.SaveToMidiFile(s, realSound);
       6: ok := GriffPartitur_.SaveToBmp(s);
+      7: ok := GriffPartitur_.SaveToPdf(s);
       else begin
          ok := GriffPartitur_.SaveToNewMidiFile(s);
       end;
@@ -886,40 +891,6 @@ begin
   end;
 end;
 
-procedure TfrmSequenzer.cbxCrossClick(Sender: TObject);
-var
-  Event: PGriffEvent;
-//  diatonic: boolean;
-begin
-  Event := GriffPartitur_.SelectedEvent;
-  if Event <> nil then
-  begin
-  //  diatonic := GriffPartitur_.Instrument.BassDiatonic;
-    with Event^ do
-      if (NoteType in [ntDiskant, ntBass]) and
-         (cbxCross.Checked <> Cross) then
-      begin
-        if NoteType = ntBass then
-        begin
-          Cross := cbxCross.Checked
-        end else
-        if (GriffPartitur_.Instrument.Columns < 4) and odd(AbsRect.Top) then
-          cbxCross.Checked := false
-        else begin
-          Cross := cbxCross.Checked;
-        end;
-        ChangeNote(Event, true);
-        SelectedChanges(Event);
-      end;
-  end;
-end;
-
-procedure TfrmSequenzer.cbxCrossMouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-begin
-  cbxCrossClick(Sender);
-end;
-
 procedure TfrmSequenzer.cbxMidiInputChange(Sender: TObject);
 begin
   Sustain_:= false;
@@ -943,6 +914,48 @@ begin
   end;
 end;
 
+procedure TfrmSequenzer.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  Msg: TMsg;
+  Handled: boolean;
+begin
+{$ifdef fpc}
+  Handled := false;
+  Msg.message := WM_KEYDOWN;
+  Msg.wParam := Key;
+  MessageEvent(Msg, Handled);
+{$endif}
+end;
+
+procedure TfrmSequenzer.FormKeyPress(Sender: TObject; var Key: char);
+begin
+  //
+end;
+
+procedure TfrmSequenzer.FormKeyUp(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  //
+end;
+
+procedure TfrmSequenzer.FormMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  //
+end;
+
+procedure TfrmSequenzer.FormMouseLeave(Sender: TObject);
+begin
+  //
+end;
+
+procedure TfrmSequenzer.FormMouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Integer);
+begin
+  //
+end;
+
 procedure TfrmSequenzer.cbxMuteBassClick(Sender: TObject);
 begin
   GriffPartitur_.noBass := cbxMuteBass.Checked;
@@ -956,33 +969,6 @@ end;
 procedure TfrmSequenzer.cbxNoSoundClick(Sender: TObject);
 begin
   GriffPartitur_.noSound := cbxNoSound.Checked;
-end;
-
-procedure TfrmSequenzer.cbxPushClick(Sender: TObject);
-var
-  Event: PGriffEvent;
-begin
-  Event := GriffPartitur_.SelectedEvent;
-  if (Event <> nil) and
-     (Event.NoteType in [ntDiskant, ntBass]) then
-  begin
-    with Event^ do
-      if (NoteType = ntBass) and not GriffPartitur_.Instrument.BassDiatonic then
-        cbxPush.Checked := false
-      else
-      if (InPush <> cbxPush.Checked) then
-      begin
-        InPush := not InPush;
-        ChangeNote(Event, true);
-        SelectedChanges(Event);
-      end;
-  end;  
-end;
-
-procedure TfrmSequenzer.cbxPushMouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-begin
-  cbxPushClick(Sender);
 end;
 
 procedure TfrmSequenzer.cbxSmallestNoteChange(Sender: TObject);
@@ -1350,15 +1336,63 @@ begin
   sbVolumeOutChange(sbVolumeOut);
 end;
 
+procedure TfrmSequenzer.cbxPushChange(Sender: TObject);
+var
+  Event: PGriffEvent;
+begin
+  Event := GriffPartitur_.SelectedEvent;
+  if (Event <> nil) and
+     (Event.NoteType in [ntDiskant, ntBass]) then
+  begin
+    with Event^ do
+      if (NoteType = ntBass) and not GriffPartitur_.Instrument.BassDiatonic then
+        cbxPush.Checked := false
+      else
+      if (InPush <> cbxPush.Checked) then
+      begin
+        InPush := not InPush;
+        ChangeNote(Event, true);
+        SelectedChanges(Event);
+      end;
+  end;
+end;
+
+procedure TfrmSequenzer.cbxCrossChange(Sender: TObject);
+var
+  Event: PGriffEvent;
+begin
+  Event := GriffPartitur_.SelectedEvent;
+  if Event <> nil then
+  begin
+    with Event^ do
+      if (NoteType in [ntDiskant, ntBass]) and
+         (cbxCross.Checked <> Cross) then
+      begin
+        if NoteType = ntBass then
+        begin
+          Cross := cbxCross.Checked
+        end else
+        if (GriffPartitur_.Instrument.Columns < 4) and odd(AbsRect.Top) then
+          cbxCross.Checked := false
+        else begin
+          Cross := cbxCross.Checked;
+        end;
+        ChangeNote(Event, true);
+        SelectedChanges(Event);
+      end;
+  end;
+end;
+
 procedure TfrmSequenzer.MessageEvent(var Msg: TMsg; var Handled: Boolean);
 begin
+{$ifdef dcc}
   if (Msg.message = WM_KEYDOWN) and
      GriffPartitur_.PlayControl(Msg.wParam, Msg.lParam) then
   begin
     Handled := true;
     exit;
   end;
-
+{$endif}
   frmAmpel.KeyMessageEvent(Msg, Handled);
 
   // keine messages für die console

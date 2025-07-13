@@ -42,7 +42,7 @@ uses
 
 
 {$if defined(DEBUG) and defined(dcc)}
-  {$APPTYPE CONSOLE}
+//  {$APPTYPE CONSOLE}
 {$endif}
 
 {$R *.res}

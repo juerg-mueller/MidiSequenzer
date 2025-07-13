@@ -33,7 +33,7 @@ const
 type
   TCopyright = (noCopy, prepCopy, griffCopy, realCopy, newCopy);
 
-  TMidiEventArray = array of TMidiEvent;
+//  TMidiEventArray = array of TMidiEvent;
   PMidiEventArray = ^TMidiEventArray;
   TChannelEventArray = array [0..15] of TMidiEventArray;
   TTrackEventArray = array of TMidiEventArray;
@@ -57,15 +57,11 @@ type
     destructor Destroy; override;
     function LoadMidiFromFile(FileName: string; Lyrics: boolean): boolean;
     function LoadMidiFromSimpleFile(FileName: string; Lyrics: boolean): boolean;
-    function LoadMidiFromDataStream(Midi: TMyMidiStream; Lyrics: boolean): boolean;
+    function LoadMidiFromDataStream(Midi: {TMidiDataStream} TMyMidiStream; Lyrics: boolean): boolean;
     function SaveMidiToStream(Lyrics: boolean): TMemoryStream; overload;
     class function SaveMidiToStream(
       const TrackArr: TTrackEventArray; const DetailHeader: TDetailHeader;
       Lyrics: boolean): TMemoryStream; overload;
-    function SaveSimpleMidiToFile(FileName: string; Lyrics: boolean = false): boolean; overload;
-    class function SaveSimpleMidiToFile(FileName: string;
-      const TrackArr: TTrackEventArray; const DetailHeader: TDetailHeader;
-      Lyrics: boolean = false): boolean; overload;
     procedure Clear;
     procedure Move_var_len; overload;
     function Transpose(Delta: integer): boolean; overload;
@@ -73,7 +69,9 @@ type
     procedure SetNewTrackCount(Count: integer);
     function TrackCount: integer;
     function CheckMysOergeli: boolean;
+  {$ifndef LINUX}
     function MakeNewSingleTrack: boolean;
+  {$endif}
     procedure Repair;
 
     property TrackName: TAnsiStringArray read TrackName_;
@@ -139,11 +137,6 @@ implementation
 
 uses
   umidi,
-{$ifndef mswindows}
-  urtmidi,
-{$else}
-  Midi,
-{$endif}
 {$ifdef dcc}
   AnsiStrings,
 {$endif}
@@ -225,7 +218,7 @@ begin
   end;
 end;
 
-function TEventArray.LoadMidiFromDataStream(Midi: TMyMidiStream; Lyrics: boolean): boolean;
+function TEventArray.LoadMidiFromDataStream(Midi: {TMidiDataStream} TMyMidiStream; Lyrics: boolean): boolean;
 begin
   result := false;
   try
@@ -237,125 +230,6 @@ begin
     if not result then
       Clear;
   end;
-end;
-
-class function TEventArray.SaveSimpleMidiToFile(FileName: string;
-  const TrackArr: TTrackEventArray; const DetailHeader: TDetailHeader; Lyrics: boolean): boolean;
-var
-  iTrack, iEvent: integer;
-  Simple: TSimpleDataStream;
-  Event: TMidiEvent;
-  i: integer;
-  d: double;
-  takt, offset: integer;
-  Events: TMidiEventArray;
-  bpm: double;
-  l, k: integer;
-
-  procedure WriteMetaEvent(const Event: TMidiEvent);
-  var
-    i: integer;
-  begin
-    with Simple do
-    begin
-      WriteString(Format('%5d Meta-Event %d %3d %3d',
-                         [event.var_len, event.command, event.d1, event.d2]));
-      for i := 0 to Length(event.Bytes)-1 do
-        WriteString(' ' +IntToStr(event.bytes[i]));
-      WriteString('   ');
-      for i := 0 to Length(event.Bytes)-1 do
-        if (event.bytes[i] > ord(' ')) or
-           ((event.bytes[i] = ord(' ')) and
-            (i > 0) and (i < Length(event.Bytes)-1)) then
-          WriteString(Char(event.bytes[i]))
-        else
-          WriteString('.');
-    end;
-  end;
-
-begin
-  Simple := TSimpleDataStream.Create;
-  try
-    with Simple do
-    begin
-      with MidiHeader do
-      begin
-        Clear;
-        FileFormat := 1;
-        TrackCount := Length(TrackArr) + 1;
-        Details := DetailHeader;
-      end;
-      WriteHeader(MidiHeader);
-
-      if not Lyrics then
-      begin
-        WriteTrackHeader(0);
-        if DetailHeader.QuarterPerMin > 0 then
-        begin
-          bpm := 6e7 / DetailHeader.QuarterPerMin;
-          l := round(bpm);
-          WriteString('    0 ' + cSimpleMetaEvent + ' 255 81 3 '); // beats
-          WritelnString(IntToStr(l shr 16) + ' ' + IntToStr((l shr 8) and $ff) + ' ' +
-                        IntToStr(l and $ff) + ' 0');
-        end;
-
-        WriteString('    0 ' + cSimpleMetaEvent + ' 255 88 4 ' + IntToStr(DetailHeader.measureFact)); // time signature
-        i := DetailHeader.measureDiv;
-        k := 0;
-        while i > 0 do
-        begin
-          i := i div 2;
-          inc(k);
-        end;
-        WritelnString(' ' + IntToStr(k-1) + ' 24 8 0');
-
-        WritelnString('    0 ' + cSimpleMetaEvent + ' 255 47 0'); // end of track
-      end;
-
-      for iTrack := 0 to Length(TrackArr)-1 do
-      begin
-        WriteTrackHeader(TrackArr[iTrack][0].var_len);
-        offset := TrackArr[iTrack][0].var_len;
-        for iEvent := 1 to Length(TrackArr[iTrack])-1 do
-        begin
-          Event := TrackArr[iTrack][iEvent];
-          if Event.Event = $f then
-          begin
-            WriteMetaEvent(Event);
-          end else
-          if Event.Event in [8..14] then
-          begin
-            if HexOutput then
-              WriteString(Format('%5d $%2.2x $%2.2x $%2.2x',
-                                 [event.var_len, event.command, event.d1, event.d2]))
-            else
-              WriteString(Format('%5d %3d %3d %3d',
-                                 [event.var_len, event.command, event.d1, event.d2]));
-          end;
-          if Event.Event = 9 then
-          begin
-            takt := Offset div MidiHeader.Details.TicksPerQuarter;
-            if MidiHeader.Details.measureDiv = 8 then
-              takt := 2*takt;
-            d := MidiHeader.Details.measureFact;
-            WriteString(Format('  Takt: %.2f', [takt / d + 1]));
-          end;
-          inc(offset, Event.var_len);
-          WritelnString('');
-        end;
-        WritelnString('    0 ' + cSimpleMetaEvent + ' 255 47 0'); // end of track
-      end;
-    end;
-    Simple.SaveToFile(FileName);
-    result := true;
-  finally
-    Simple.Free;
-  end;
-end;
-
-function TEventArray.SaveSimpleMidiToFile(FileName: string; Lyrics: boolean = false): boolean;
-begin
-  result := SaveSimpleMidiToFile(FileName, TrackArr, DetailHeader, Lyrics);
 end;
 
 function TEventArray.SaveMidiToStream(Lyrics: boolean): TMemoryStream;
@@ -372,7 +246,7 @@ var
 begin
   SaveStream := TMidiSaveStream.Create;
 
-    SaveStream.SetHead(DetailHeader.TicksPerQuarter);
+  SaveStream.SetHead(DetailHeader.TicksPerQuarter);
   SaveStream.AppendTrackHead;
   SaveStream.AppendHeaderMetaEvents(DetailHeader);
   SaveStream.AppendTrackEnd(false);
@@ -1252,7 +1126,7 @@ begin
     inc(iEvent);
     if Event.Event <> 15 then
     begin
-      MidiOutput.Send(MicrosoftIndex, Event.command, Event.d1, Event.d2);
+      SendMidi(Event.command, Event.d1, Event.d2);
     end;
 
     if Assigned(SetPlayEvent) then
@@ -1306,7 +1180,6 @@ function TMidiEventPlayer.Terminated_: boolean;
 begin
   result := Terminated;
 end;
-{$endif}
 
 function TEventArray.MakeNewSingleTrack: boolean;
 var
@@ -1405,14 +1278,14 @@ begin
           if Cross then
             inc(channel, 2);
         end;
-        Event.command := (Event.Event << 4) + channel;
+        Event.command := (Event.Event shr 4) + channel;
         Cross := false;
         GriffPitch := 0;
         channels[Event.d1] := channel;
       end else
       if Event.Event = 8 then begin
         // Beim Off gleichen Kanal wie beim On verwenden.
-        Event.command := (Event.Event << 4) + channels[Event.d1];
+        Event.command := (Event.Event shr 4) + channels[Event.d1];
       end;
       AddEvent;
     end;
@@ -1481,6 +1354,7 @@ begin
         end;
   end;
 end;
+{$endif}
 
 
 procedure TEventArray.Repair;
