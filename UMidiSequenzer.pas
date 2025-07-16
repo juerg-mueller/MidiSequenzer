@@ -206,7 +206,8 @@ uses
 {$endif}
   UAmpel, UMidiDataStream, UEventArray, UGriffPlayer,
   UGriffArray, UXmlNode, UXmlParser,
-  USheetMusic, UMuseScore, UFormHelper, UMidiEvent;
+  USheetMusic, UMuseScore, UFormHelper, UMidiEvent,
+  UGrifftabelle;
 
 procedure InsertList(Combo: TComboBox; const arr: array of string);
 var
@@ -689,6 +690,7 @@ begin
       6: begin
            ext1 := '.bmp';
          end;
+      7: ext1 := '.bmp';
       else
          if ext <> '.mid' then
            ext1 := '.mid';
@@ -698,7 +700,7 @@ begin
       SetLength(s, Length(s) - Length(ext));
       s := s + ext1;
     end;
-    if FileExists(s) then
+    if FileExists(s) and (SaveDialog1.FilterIndex <> 7) then
       if Warning('File "' + s + '" existiert. Überschreiben?') <> IDYES then
         exit;
 
@@ -718,7 +720,7 @@ begin
       4: ok := GriffPartitur_.SaveToMusicXML(s, true);
       5: ok := GriffPartitur_.SaveToMidiFile(s, realSound);
       6: ok := GriffPartitur_.SaveToBmp(s);
-      7: ok := GriffPartitur_.SaveToPdf(s);
+      7: ok := UGrifftabelle.SaveToPdf(s);
       else begin
          ok := GriffPartitur_.SaveToNewMidiFile(s);
       end;

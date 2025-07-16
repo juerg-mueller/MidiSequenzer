@@ -43,7 +43,7 @@ end;
 
 function Warning(const warn: string): cardinal;
 begin
-  result := Application.MessageBox(PChar(warn), 'Warning', MB_YESNO);
+  result := Application.MessageBox(PChar(warn), 'Warning', MB_OK);
 end;
 
 function ShiftUsed: boolean;

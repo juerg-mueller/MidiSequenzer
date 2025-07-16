@@ -32,7 +32,7 @@ type
     index: integer;
   end;
 
-  // da capo            Anfang bis Ende-Marke
+  // da capo            Anfang
   // da capo al fine
   // dal segno al fine
   // dal segno al coda   vom Zeichen bis coda
@@ -238,7 +238,6 @@ begin
     else inc(result, 58595);
   end;
 end;
-
 
 function TGriffEvent.GetSteiBass: string;
 begin

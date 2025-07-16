@@ -769,7 +769,7 @@ object frmSequenzer: TfrmSequenzer
         ParentFont = False
       end
       object cbxTransInstrument: TComboBox
-        Left = 125
+        Left = 141
         Height = 28
         Top = 17
         Width = 46
