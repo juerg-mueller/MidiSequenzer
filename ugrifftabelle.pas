@@ -36,9 +36,9 @@ var
   l, j: integer;
   Takt: integer;
   Pt: TPoint;
-  AchtelProZeile: integer;
+  _16telProZeile: integer;
   iPage: integer;
-  bitRechts, bitLinks, bitRechtsRing, bitLinksRing: TBitmap;
+  bitKreis, bitRing: TBitmap;
 
   function makeRectOergeli(index, row: integer): TRect;
   var
@@ -104,8 +104,8 @@ var
   var
     index, zeile: integer;
   begin
-    index := (left mod AchtelProZeile) div 2;
-    zeile := (left div AchtelProZeile);
+    index := (left mod _16telProZeile) div 4;
+    zeile := (left div _16telProZeile);
     result := TabellenPoint(index, zeile);
   end;
 
@@ -119,7 +119,7 @@ var
     begin
       Canvas.Brush.Color := $ffffff;
       if not diatonic then
-        Canvas.Font.Color := $ff0000
+        Canvas.Font.Color := $000000
       else
       if InPush then
         Canvas.Font.Color := $0000ff
@@ -163,18 +163,18 @@ var
     result.offset(Pt.X, Pt.Y);
   end;
 
-  function GenerateAchtel(Brush, Pen: TColor): TBitmap;
+  function GenerateKreis(Brush, Pen: TColor): TBitmap;
   begin
     result := TBitmap.Create;
-    result.SetSize(radius, 2*radius);
+    result.SetSize(2*radius, 2*radius);
     result.Canvas.Brush.Color := $ffffff;
-    result.Canvas.FillRect(0, 0, radius, 2*radius);
+    result.Canvas.FillRect(0, 0, 2*radius, 2*radius);
     result.Canvas.Font.Name := 'Sans';
     result.Canvas.Brush.Color := Brush;
     result.Canvas.Pen.Color := Pen;
   end;
-
-  procedure DrawDiskant(rect: TRect; push: boolean);
+{
+  procedure DrawDiskant_(rect: TRect; push: boolean);
   begin
     with bitmaps[iPage] do
     begin
@@ -195,32 +195,99 @@ var
       Canvas.Pen.Width := 2;
     end;
   end;
-
-  procedure DrawDiskantLinks(rect: TRect; push: boolean);
+}
+  function DrawDiskant(rect: TRect; links: integer; dur: integer; push: boolean): integer;
+  const
+    delta = 1;
   var
     source: TRect;
-  begin
-    source := TRect.Create(0, 0, radius-2, 2*radius);
-    rect.Width := radius - 2;
-    with bitmaps[iPage] do
-      if Push then
-        Canvas.CopyRect(rect, bitLinks.Canvas, source)
-      else
-        Canvas.CopyRect(rect, bitLinksRing.Canvas, source);
-  end;
+    linksMod4: integer;
+    Pt: TPoint;
 
-  procedure DrawDiskantRechts(rect: TRect; push: boolean);
-  var
-    source: TRect;
+    procedure Draw;
+    begin
+      with bitmaps[iPage] do
+        if Push then
+          Canvas.CopyRect(rect, bitKreis.Canvas, source)
+        else
+          Canvas.CopyRect(rect, bitRing.Canvas, source);
+    end;
+
   begin
-    source := TRect.Create(2, 0, radius, 2*radius);
-    rect.Width := radius-2;
-    rect.Offset(radius+2, 0);
-    with bitmaps[iPage] do
-      if Push then
-        Canvas.CopyRect(rect, bitRechts.Canvas, source)
-      else
-        Canvas.CopyRect(rect, bitRechtsRing.Canvas, source);
+    Pt.X := rect.Left;
+    Pt.Y := rect.Top;
+    linksMod4 := links mod 4;
+    case linksMod4 of
+      0: if dur < 4 then
+           result := dur
+         else
+           result := 4;
+      1: if dur < 3 then
+           result := dur
+         else
+           result := 3;
+      2: if dur < 2 then
+           result := dur
+         else
+           result := 2;
+      3: result := 1;
+    end;
+    if result = 4 then
+    begin
+      source := TRect.Create(0, 0, 2*radius, 2*radius);
+      Draw;
+      exit;
+    end;
+    if linksMod4 < 2 then   // in linker Häfte
+    begin
+      source := TRect.Create(0, 0, radius-delta, 2*radius);
+      rect.Width := radius-delta;
+      if (result = 1) or (linksMod4 = 1) then
+      begin
+        source.Height := radius-delta;
+        rect.Height := radius-delta;
+        // 16. Note
+        if linksMod4 = 0 then // unten
+        begin
+          source.Offset(0, radius+delta);
+          rect.Offset(0, radius+delta);
+        end;
+      end;
+      Draw;
+    end;
+    if (links mod 4) + dur > 2 then // in der rechten Hälfte
+    begin
+      source := TRect.Create(radius+delta, 0, 2*radius, 2*radius);
+      rect.Width := radius-delta;
+      rect.Offset(radius+delta, 0);
+      if (linksMod4 + dur >= 4) and (linksMod4 < 3) then
+      begin
+        // Achtel
+      end else begin
+        rect.Height := radius-delta;
+        source.Height := radius-delta;
+        if (linksMod4 = 0) and (result = 3) then // punktierter Achtel
+        begin
+          with bitmaps[iPage] do
+          begin
+            Canvas.Pen.Width := 6;
+
+            if push then
+              Canvas.Pen.Color := $0000ff
+            else
+              Canvas.Pen.Color := $ff0000;
+            Canvas.MoveTo(Pt.X + radius div 2, Pt.Y + 3);
+            Canvas.LineTo(Pt.X + radius div 2 + 3, Pt.Y + 3);
+          end;
+        end else
+        if linksMod4 = 3 then     // unten
+        begin
+          Source.Offset(0, radius+delta);
+          rect.Offset(0, radius+delta);
+        end;
+      end;
+      Draw;
+    end;
   end;
 
   procedure DrawBoxSteirisch(x, y: integer; Takt: integer);
@@ -348,8 +415,8 @@ var
       else
         Canvas.Pen.Color := $ff0000;
       Canvas.Brush.Color := $ffffff;
-      Canvas.MoveTo(rect.Left + 4, rect.Bottom);
-      Canvas.LineTo(rect.Right - 4, rect.Bottom);
+      Canvas.MoveTo(rect.Left + 5, rect.Bottom);
+      Canvas.LineTo(rect.Right - 6, rect.Bottom);
       {Canvas.Arc(rect.Left, rect.Top,
                       rect.Right, rect.Bottom,
                       rect.Right, rect.Bottom,
@@ -367,14 +434,14 @@ var
   end;
 
 var
-  dur, eighth, lines, Fact: integer;
+  dur, _16tel, lines, Fact: integer;
   rect, rect1, rect2: TRect;
   iEvent: integer;
   index, row: integer;
   event: TGriffEvent;
-  left, right: integer;
+  left: integer;
   iPageRight: integer;
-  TicksPerEighth: integer;
+  TicksPer16tel: integer;
   PtBass: TPoint;
   sBass, sBassTief, s: string;
   goOn: boolean;
@@ -401,9 +468,9 @@ begin
     xAbstand := (w+ 4*rand);
     yAbstand := (h + 26*rand) + 2;
     if Fact = 4 then
-      AchtelProZeile := 8
+      _16telProZeile := 16
     else
-      AchtelProZeile := 12;
+      _16telProZeile := 24;
   end else begin
     LinesPerPage := 4;
     abstand := radius*3;
@@ -412,36 +479,29 @@ begin
     xAbstand := (w+ 4*rand);
     yAbstand := (h + 26*rand) + 2;
     if Fact = 3 then
-      AchtelProZeile := 18
+      _16telProZeile := 36
     else
-      AchtelProZeile := 16;
+      _16telProZeile := 32;
   end;
 
-
-  bitRechts := GenerateAchtel($0000ff, $0000ff);
-  bitLinks := GenerateAchtel($0000ff, $0000ff);
   rect := TRect.Create(0, 0, 2*radius, 2*radius);
-  bitLinks.Canvas.Ellipse(rect);
-  rect.Offset(-radius, 0);
-  bitRechts.Canvas.Ellipse(rect);
+  bitKreis := GenerateKreis($0000ff, $0000ff);
+  bitKreis.Canvas.Pen.Width := 2;
+  bitKreis.Canvas.Ellipse(rect);
 
-  bitLinksRing := GenerateAchtel($ffffff, $ff0000);
-  bitLinksRing.Canvas.Pen.Width := 6;
   rect := TRect.Create(0, 0, 2*radius-4, 2*radius-4);
+  bitRing := GenerateKreis($ffffff, $ff0000);
+  bitRing.Canvas.Pen.Width := 6;
   rect.Offset(2, 2);
-  bitLinksRing.Canvas.Ellipse(rect);
+  bitRing.Canvas.Ellipse(rect);
 
-  bitRechtsRing := GenerateAchtel($ffffff, $ff0000);
-  rect.Offset(-radius, 0);
-  bitRechtsRing.Canvas.Pen.Width := 6;
-  bitRechtsRing.Canvas.Ellipse(rect);
 
 
   dur := GriffPartitur_.GetTotalDuration;
-  TicksPerEighth := GriffPartitur_.GriffHeader.Details.TicksPerQuarter div 2;
-  eighth := (dur + TicksPerEighth - 1) div TicksPerEighth;
-  lines := (eighth + AchtelProZeile - 1) div AchtelProZeile;
-  Pt := TabellenPoint(AchtelProZeile, LinesPerPage);
+  TicksPer16tel := GriffPartitur_.GriffHeader.Details.TicksPerQuarter div 4;
+  _16tel := (dur + TicksPer16tel - 1) div TicksPer16tel;
+  lines := (_16tel + _16telProZeile - 1) div _16telProZeile;
+  Pt := TabellenPoint(_16telProZeile, LinesPerPage);
   pages := (lines + LinesPerPage - 1) div LinesPerPage + 1;
   SetLength(bitmaps, pages);
 
@@ -455,9 +515,9 @@ begin
     bitmaps[j].Canvas.Font.Name := 'Sans';
   end;
   for j := 0 to lines-1 do
-    for l := 0 to AchtelProZeile div 2 - 1 do
+    for l := 0 to _16telProZeile div 4 - 1 do
     begin
-      Takt := j*AchtelProZeile div 2 + l;
+      Takt := j*_16telProZeile div 4 + l;
       if (Takt mod Fact) = 0 then
         Takt := Takt div Fact + 1
       else
@@ -477,7 +537,7 @@ begin
     if event.Repeat_ = rStart then
     begin
       //  ||:   Zeichen setzen
-      left := Event.AbsRect.Left div TicksPerEighth;
+      left := Event.AbsRect.Left div TicksPer16tel;
       Pt := TabellenPoint_(left);
       with bitmaps[iPage] do
       begin
@@ -501,7 +561,7 @@ begin
     if event.Repeat_ in [rStop, rVolta1Stop] then
     begin
       //  :||  Zeichen setzen
-      left := Event.AbsRect.Left div TicksPerEighth;
+      left := (Event.AbsRect.Right-4) div TicksPer16tel; // vorletzter Viertel
       Pt := TabellenPoint_(left);
       inc(Pt.X, xAbstand);
       with bitmaps[iPage] do
@@ -534,11 +594,10 @@ begin
       // rVolta1/2Stop suchen
       while (j < GriffPartitur_.UsedEvents) and (GriffPartitur_.GriffEvents[j].Repeat_ <> rep) do
         inc(j);
-      if j < GriffPartitur_.UsedEvents then
+      if j < GriffPartitur_.UsedEvents then // bei "j" ist VoltaStop
       begin
-        right := GriffPartitur_.GriffEvents[j].AbsRect.Right div TicksPerEighth;
-        left := Event.AbsRect.Left div TicksPerEighth;
-        dur := right - left;
+        left := Event.AbsRect.Left div TicksPer16tel;
+        dur := (GriffPartitur_.GriffEvents[j].AbsRect.Right div TicksPer16tel) - left;
         with bitmaps[iPage] do
         begin
           Canvas.Pen.Width := 3;
@@ -557,16 +616,16 @@ begin
           Canvas.LineTo(Pt.X, Pt.Y - 30);
           while dur > 0 do
           begin
-            j := left mod AchtelProZeile;
-            l := AchtelProZeile - j;
+            j := left mod _16telProZeile;
+            l := _16telProZeile - j;
             if l > dur then
               l := dur;
             Pt := TabellenPoint_(left);
-            Canvas.MoveTo(Pt.X, Pt.Y - 60);
-            Canvas.LineTo(Pt.X + l*xAbstand div 2 - 4*rand - 5, Pt.Y - 60);
+            bitmaps[iPage].Canvas.MoveTo(Pt.X, Pt.Y - 60);
+            bitmaps[iPage].Canvas.LineTo(Pt.X + l*xAbstand div 4 - 4*rand - 5, Pt.Y - 60);
             if (dur = l) and (event.Repeat_ = rVolta2Start) then
             begin
-              Canvas.LineTo(Pt.X + l*xAbstand div 2 - 4*rand - 5, Pt.Y - 30);
+              bitmaps[iPage].Canvas.LineTo(Pt.X + l*xAbstand div 4 - 4*rand - 5, Pt.Y - 30);
             end;
             inc(left, l);
             dec(dur, l);
@@ -576,58 +635,41 @@ begin
     end;
     if event.NoteType in [ntBass, ntDiskant] then
     begin
-      dur := event.AbsRect.Width div TicksPerEighth;
-      left := event.AbsRect.Left div TicksPerEighth;
+      dur := event.AbsRect.Width div TicksPer16tel;
+      left := event.AbsRect.Left div TicksPer16tel;
       index := event.GetIndex;
       if (dur <= 0) and (event.NoteType = ntDiskant) then
       begin
       end else
-      if (event.NoteType = ntDiskant) then
+      if (event.NoteType = ntDiskant) then                // Diskant
       begin
         row := event.GetRow - 1;
-        if row in [0, 2] then
-          dec(index);
+        if not GriffPartitur_.Instrument.BassDiatonic then
+          if row in [0, 2] then
+            dec(index);
         rect := GetTastenRect(left, index, row);
-
         rect1 := rect;
-        if (dur = 1) or odd(left) then
-        begin
-          if odd(left) then
-            DrawDiskantRechts(rect, event.InPush)
-          else
-            DrawDiskantLinks(rect, event.InPush);
-          dec(dur);
-          inc(left);
-          rect1.Offset(1, 0);
-        end else begin
-          DrawDiskant(rect, event.InPush);
-          dec(dur, 2);
-          inc(left, 2);
-          rect1.Offset(2, 0);
-        end;
+        j := DrawDiskant(rect, left, dur, event.InPush);
+        dec(dur, j);
+        inc(left, j);
+        rect1.Offset(1, 0);
         goOn := false;
         while dur > 0 do
         begin
-          if (((left mod AchtelProZeile) <> 0) and
-             ((left mod AchtelProZeile) + dur <= AchtelProZeile)) or GoOn then
+          if (((left mod _16telProZeile) <> 0) and
+             ((left mod _16telProZeile) + dur <= _16telProZeile)) or GoOn then
           begin
-            inc(left, dur);
-            if not odd(dur) then
-              dec(left);
             rect1 := GetTastenRect(left, index, row);
-            if odd(dur) then
-              DrawDiskantLinks(rect1, event.InPush)
-            else
-              DrawDiskant(rect1, event.InPush);
+            DrawDiskant(rect1, left, dur, event.InPush);
             if rect1.Left < rect.Left then
               left :=  left;
             DrawBogen(rect, rect1, event.InPush);
             dur := 0;
           end else begin
-            j := left mod AchtelProZeile;
+            j := left mod _16telProZeile;
             if (j > 0) then
             begin
-              l := AchtelProZeile - j;
+              l := _16telProZeile - j;
               if l > dur then
                 l := dur;
               inc(left, l);
@@ -653,9 +695,8 @@ begin
         end;
       end else begin                               // Bass
        Pt := TabellenPoint_(left);
-       if odd(left) then
+       if (left mod 4) >= 2  then
          inc(Pt.X, 3*radius);
-       //event.TestBass;
        if event.Cross then
        begin
          sBass := GetBass(event);

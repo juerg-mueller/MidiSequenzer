@@ -49,7 +49,7 @@ object frmSequenzer: TfrmSequenzer
     object btnOpen: TButton
       Left = 757
       Height = 25
-      Top = 46
+      Top = 50
       Width = 99
       Anchors = [akTop, akRight]
       Caption = 'Choose mid-File'
@@ -59,7 +59,7 @@ object frmSequenzer: TfrmSequenzer
     object btnLoadPartitur: TButton
       Left = 757
       Height = 25
-      Top = 14
+      Top = 18
       Width = 99
       Anchors = [akTop, akRight]
       Caption = 'Load Partitur'
@@ -352,8 +352,8 @@ object frmSequenzer: TfrmSequenzer
     TabOrder = 2
     object btnBassSynch: TButton
       Left = 25
-      Height = 25
-      Top = 264
+      Height = 23
+      Top = 261
       Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Bass Synch.'
@@ -363,8 +363,8 @@ object frmSequenzer: TfrmSequenzer
     end
     object btnSmallest: TButton
       Left = 25
-      Height = 25
-      Top = 326
+      Height = 23
+      Top = 318
       Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Optimize'
@@ -374,8 +374,8 @@ object frmSequenzer: TfrmSequenzer
     end
     object btnLongerPitches: TButton
       Left = 25
-      Height = 25
-      Top = 295
+      Height = 23
+      Top = 290
       Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Longer Pitches'
@@ -406,8 +406,8 @@ object frmSequenzer: TfrmSequenzer
     end
     object btnRemoveSmall: TButton
       Left = 25
-      Height = 25
-      Top = 357
+      Height = 23
+      Top = 346
       Width = 99
       Anchors = [akLeft, akBottom]
       Caption = 'Remove Small'
@@ -417,7 +417,7 @@ object frmSequenzer: TfrmSequenzer
     end
     object Button2: TButton
       Left = 25
-      Height = 25
+      Height = 23
       Top = 233
       Width = 99
       Anchors = [akLeft, akBottom]
