@@ -47,7 +47,7 @@ type
 
   TGriffHeader = record
     Version: integer;
-    UsedEvents: integer;
+    //UsedEvents: integer;
     Details: TDetailHeader;
   end;
 
@@ -107,6 +107,7 @@ type
     function SoundToGriffBass(const Instrument: TInstrument): integer; overload;
     function SetEvent(Row, Index: integer; Push: boolean; const Instrument: TInstrument): boolean;
     function DoSound(const Instrument: TInstrument; On_: boolean): boolean;
+    function SetIndexSteiBass(s: string): integer;
   end;
   PGriffEvent = ^TGriffEvent;
 
@@ -783,7 +784,7 @@ begin
   result := AbsRect.Contains(p);
 end;
 
-procedure TGriffEvent.MakeRest;
+procedure TGriffEvent.MakeRest; // für MuseScore
 begin
   Clear;
   NoteType := ntRest;
@@ -847,6 +848,33 @@ begin
   begin
     GriffPitch := index
   end;
+end;
+
+function TGriffEvent.SetIndexSteiBass(s: string): integer;
+
+  function SteiIndex(const SteiB: TTBass): integer;
+  begin
+    result := High(TTBass);
+    while (result >= Low(TTBass)) and (s <> SteiB[result]) do
+      dec(result);
+  end;
+
+begin
+  if Cross then
+    result := SteiIndex(SteiBass[6])
+  else
+    result := SteiIndex(SteiBass[5]);;
+  if result <= 0 then
+  begin
+    if Cross then
+      result := SteiIndex(SteiBass[5])
+    else
+      result := SteiIndex(SteiBass[6]);
+    if result >= 1 then
+      Cross := not Cross;
+  end;
+  if result > 0 then
+    GriffPitch := result;
 end;
 
 end.

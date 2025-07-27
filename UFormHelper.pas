@@ -24,7 +24,7 @@ var
 
 procedure ProcessMessages;
 procedure ErrMessage(const err: string);
-function Warning(const warn: string): cardinal;
+function Warning(const warn: string; Flag: cardinal = MB_OKCANCEL): cardinal;
 
 function ShiftUsed: boolean;
 
@@ -41,9 +41,9 @@ begin
   Application.MessageBox(PChar(err), 'Error', MB_OK);
 end;
 
-function Warning(const warn: string): cardinal;
+function Warning(const warn: string; Flag: cardinal = MB_OKCANCEL): cardinal;
 begin
-  result := Application.MessageBox(PChar(warn), 'Warning', MB_OK);
+  result := Application.MessageBox(PChar(warn), 'Warning', Flag);
 end;
 
 function ShiftUsed: boolean;

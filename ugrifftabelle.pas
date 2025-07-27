@@ -12,14 +12,14 @@ uses
   UInstrument, UMyMemoryStream, UMyMidiStream, UEventArray,
   UGriffEvent;
 
-function SaveToPdf(const FileName: string): boolean;
+function SaveToGrifftabelle(const FileName: string): boolean;
 
 implementation
 
 uses
   UGriffPartitur;
 
-function SaveToPdf(const FileName: string): boolean;
+function SaveToGrifftabelle(const FileName: string): boolean;
 var
   radius: integer;
   rand: integer;

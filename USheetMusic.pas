@@ -208,7 +208,7 @@ begin
     end;
     inc(iEvent);
   end;
-  GriffHeader.UsedEvents := newUsed;
+  SetLength(GriffEvents, newUsed);
 end;
 
 

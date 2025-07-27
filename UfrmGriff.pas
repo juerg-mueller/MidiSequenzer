@@ -83,7 +83,7 @@ type
     SelectedChanges: PSelectedProc;
     procedure SetPlayRect(rect: TRect);
     procedure ShowSelected;
-    procedure GenerateNewNote(Event: TMouseEvent);
+//    procedure GenerateNewNote(Event: TMouseEvent);
     procedure DrawSmallNotes(const canvas_: TCanvas; const ClipRect: TRect;
                              const Horz_pos: integer; const NotenVersatz: integer;
                              const xOffset: integer = 0);
@@ -236,12 +236,17 @@ procedure TfrmGriff.FormKeyDown(Sender: TObject; var Key: Word;
 var
   Event: UAmpel.TMouseEvent;
 begin
+  {
   if (GetKeyState(vk_RMenu) < 0) and
      frmAmpel.GetKeyIndex(Event, Key) then
   begin
     GenerateNewNote(Event);
     exit;
   end;
+  }
+  if Key in [0, VK_SHIFT, VK_CONTROL, VK_MENU] then
+    exit;
+
   if Key = 27 then
   begin
     with GriffPartitur_ do
@@ -705,7 +710,7 @@ begin
   tickDur.Left := trunc(clipRect.Left/quot);
   tickDur.Right := trunc(clipRect.Right/quot)+1;
   PushStart := 0;
-  for i := 0 to GriffPartitur_.GriffHeader.UsedEvents-1 do
+  for i := 0 to GriffPartitur_.UsedEvents-1 do
   begin
     with GriffPartitur_.GriffEvents[i] do
     begin
@@ -870,54 +875,55 @@ begin
   canvas_.Pen.Color := 0;
   canvas_.Brush.Color := 0;
   canvas_.Brush.Style := bsClear;
-  for i := 0 to GriffPartitur_.GriffHeader.UsedEvents-1 do
-    with GriffPartitur_, GriffEvents[i] do
-    begin
-      d := GetDuration;
-      if (NoteType = ntBass) or
-         not d.IsIntersect(tickDur) then
-        continue;
-
-      rect := AbsRect;
-      rect.Left := round(rect.Left*quot);
-      rect.Right := round(rect.Right*quot);
-      rect.Offset(0, MoveVert);
-      if not MakeDuration(rect).IsIntersect(MakeDuration(clipR)) then
-        continue;
-
-      rect.Offset(-Horz_pos + 9, 0);
-      rect.Top := (MaxGriffIndex - AbsRect.Top - 8)*abstandKleineNoten div 2 + 4 + MoveVert + NotenVersatz;
-
-      // Zusatzstriche
-      for j := 20 to AbsRect.Top+3 do
-        if not odd(j) then
+  with GriffPartitur_ do
+    for i := 0 to UsedEvents-1 do
+      if GriffEvents[i].NoteType = ntDiskant then
+        with GriffEvents[i] do
         begin
-          k := (MaxGriffIndex-j-2)*abstandKleineNoten div 2 + MoveVert + NotenVersatz - 16;
-          canvas_.MoveTo(rect.Left + 22+xOffset, k);
-          canvas_.LineTo(rect.Left - 4+xOffset, k);
-        end;
-      for j := 8 downto AbsRect.Top+3 do
-        if not odd(j) then
-        begin
-          k := (MaxGriffIndex-j-2)*abstandKleineNoten div 2 + MoveVert + NotenVersatz - 16;
-          canvas_.MoveTo(rect.Left + 22+xOffset, k);
-          canvas_.LineTo(rect.Left - 4+xOffset, k);
-        end;
+          d := GetDuration;
+          if not d.IsIntersect(tickDur) then
+            continue;
 
-      j := round((GriffEvents[i].AbsRect.Width + quarterNote/32.0)/(quarterNote/4.0));
-      case j of
-        0, 1: Weight := nwShort;
-        2:    Weight := nwEight;    // 2
-        3:    Weight := nwEightDot;
-        4, 5: Weight := nwQuarter;  // 4
-        6:    Weight := nwQuarterDot;
-        7..10: Weight := nwHalf;    // 8
-        11..14: Weight := nwHalfDot;
-        15..20: Weight := nwFull;  // 16
-        else  Weight := nwFullDot
-      end;
-      PaintNote(rect.Left+xOffset, rect.Top, Cross, Weight);
-    end;
+          rect := AbsRect;
+          rect.Left := round(rect.Left*quot);
+          rect.Right := round(rect.Right*quot);
+          rect.Offset(0, MoveVert);
+          if not MakeDuration(rect).IsIntersect(MakeDuration(clipR)) then
+            continue;
+
+          rect.Offset(-Horz_pos + 9, 0);
+          rect.Top := (MaxGriffIndex - AbsRect.Top - 8)*abstandKleineNoten div 2 + 4 + MoveVert + NotenVersatz;
+
+          // Zusatzstriche
+          for j := 20 to AbsRect.Top+3 do
+            if not odd(j) then
+            begin
+              k := (MaxGriffIndex-j-2)*abstandKleineNoten div 2 + MoveVert + NotenVersatz - 16;
+              canvas_.MoveTo(rect.Left + 22+xOffset, k);
+              canvas_.LineTo(rect.Left - 4+xOffset, k);
+            end;
+          for j := 8 downto AbsRect.Top+3 do
+            if not odd(j) then
+            begin
+              k := (MaxGriffIndex-j-2)*abstandKleineNoten div 2 + MoveVert + NotenVersatz - 16;
+              canvas_.MoveTo(rect.Left + 22+xOffset, k);
+              canvas_.LineTo(rect.Left - 4+xOffset, k);
+            end;
+
+          j := round((GriffEvents[i].AbsRect.Width + quarterNote/32.0)/(quarterNote/4.0));
+          case j of
+            0, 1: Weight := nwShort;
+            2:    Weight := nwEight;    // 2
+            3:    Weight := nwEightDot;
+            4, 5: Weight := nwQuarter;  // 4
+            6:    Weight := nwQuarterDot;
+            7..10: Weight := nwHalf;    // 8
+            11..14: Weight := nwHalfDot;
+            15..20: Weight := nwFull;  // 16
+            else  Weight := nwFullDot
+          end;
+          PaintNote(rect.Left+xOffset, rect.Top, Cross, Weight);
+        end;
 end;
 
 procedure TfrmGriff.DrawGriff(ClipRect: TRect; Horz_pos: integer);
@@ -1074,7 +1080,7 @@ begin
   LastPush := false;
 //  frmAmpel.PaintBalg(LastPush);
   // Noten-Rechtecke zeichnen
-  for i := 0 to GriffPartitur_.GriffHeader.UsedEvents-1 do
+  for i := 0 to GriffPartitur_.UsedEvents-1 do
     with GriffPartitur_.GriffEvents[i] do
     begin
       d := GetDuration;
@@ -1203,7 +1209,7 @@ begin
   canvas.Font.Style := [fsBold];
   canvas.Brush.Style := bsSolid;
 end;
-
+{
 procedure TfrmGriff.GenerateNewNote(Event: UAmpel.TMouseEvent);
 var
   GriffEvent: TGriffEvent;
@@ -1248,7 +1254,7 @@ begin
     Invalidate;
   end;
 end;
-
+}
 function TfrmGriff.GetHorzScrollPos: integer;
 begin
 {$ifdef fpc}

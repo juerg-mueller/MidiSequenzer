@@ -542,8 +542,9 @@ object frmSequenzer: TfrmSequenzer
         Top = 42
         Width = 70
         ItemHeight = 0
-        ItemIndex = 0
+        ItemIndex = 1
         Items.Strings = (
+          'fourth'
           '8th'
           '16th'
           '32th'
@@ -830,7 +831,7 @@ object frmSequenzer: TfrmSequenzer
   end
   object SaveDialog1: TSaveDialog
     Filter = 'Midi File|*.mid|MuseScore|*.mscz; *.mscx|LilyPond|*.ly|Standard MusicXML|*.xml;*.musicxml|old Midi File|*.mid|Noten|*.bmp|Grifftabellen|*.bmp'
-    FilterIndex = 7
+    FilterIndex = 0
     Left = 624
     Top = 83
   end

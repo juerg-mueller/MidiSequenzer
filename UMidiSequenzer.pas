@@ -250,7 +250,7 @@ begin
          (Ext = '.mid') or (Ext = '.midi') then
       begin
         if not GriffPartitur_.PartiturLoaded or
-           (Warning('Die Partitur wird überschrieben. Wollen Sie das?') = IDYES )then
+           not (Warning('Die Partitur wird überschrieben. Wollen Sie das?') in [IDYES, IDOK])then
         begin
           FileOpenDialog1.FileName := FileName;
           edtMidiFile.Text := FileName;
@@ -300,8 +300,8 @@ begin
       if (Event.Row_ > 0) and (Event.Index_ >= 0) then
       begin
         frmAmpel.AmpelEvents.NewEvent(Event);
-        if (GetKeyState(vk_scroll) = 1) then //   numlock pause scroll
-          frmGriff.GenerateNewNote(Event);
+//        if (GetKeyState(vk_scroll) = 1) then //   numlock pause scroll
+//          frmGriff.GenerateNewNote(Event, false);
       end;
     end;
   end;
@@ -657,6 +657,7 @@ var
   ext, ext1: string;
   Stream: TMyMemoryStream;
   Ok: boolean;
+  simple: TSimpleDataStream;
 begin
   if not GriffPartitur_.PartiturLoaded then
     exit;
@@ -701,7 +702,7 @@ begin
       s := s + ext1;
     end;
     if FileExists(s) and (SaveDialog1.FilterIndex <> 7) then
-      if Warning('File "' + s + '" existiert. Überschreiben?') <> IDYES then
+      if not (Warning('File "' + s + '" existiert. Überschreiben?') in [IDYES, IDOK]) then
         exit;
 
     case SaveDialog1.FilterIndex of
@@ -720,15 +721,19 @@ begin
       4: ok := GriffPartitur_.SaveToMusicXML(s, true);
       5: ok := GriffPartitur_.SaveToMidiFile(s, realSound);
       6: ok := GriffPartitur_.SaveToBmp(s);
-      7: ok := UGrifftabelle.SaveToPdf(s);
+      7: ok := UGrifftabelle.SaveToGrifftabelle(s);
       else begin
-         ok := GriffPartitur_.SaveToNewMidiFile(s);
+        GriffPartitur_.SortEvents;
+        simple := TGriffArray.MakeSimpleGriff(GriffPartitur_.GriffEvents, GriffPartitur_.Instrument.BassDiatonic);
+        simple.SaveToFile(s + '_griff.txt');
+        simple.Free;
+        ok := GriffPartitur_.SaveToNewMidiFile(s);
       end;
     end;
     if ok and (SaveDialog1.FilterIndex in [1, 5]) then
       frmGriff.Caption := ExtractFilename(s);
     if not ok then
-      Warning('File "' + s + '" nicht gespeichert')
+      Warning('File "' + s + '" nicht gespeichert', ID_OK)
     else begin
 {$if defined(CONSOLE)}
       writeln('File saved: ', s);
@@ -809,6 +814,7 @@ begin
   cbxTransInstrumentChange(nil);
 
   frmAmpel.ChangeInstrument(@GriffPartitur_.Instrument);
+  TGriffArray.CorrectSoundPitch(GriffPartitur_.GriffEvents, GriffPartitur_.Instrument);
   if Sender <> nil then
     OpenMidiMicrosoft;
 
@@ -871,7 +877,8 @@ begin
         ord(ntBass):
           begin
             NoteType := ntBass;
-            InPush := false;
+            if not Instrument.BassDiatonic then
+              InPush := false;
             Cross := false;
             GriffPitch := trunc(8*AbsRect.Top/22.0) + 1;
             if GriffPitch > 8 then
@@ -980,17 +987,17 @@ begin
     if not PartiturLoaded then
       exit;
     case cbxSmallestNote.ItemIndex of
-      0: GriffHeader.Details.smallestFraction := 8;
-      1: GriffHeader.Details.smallestFraction := 16;
-      2: GriffHeader.Details.smallestFraction := 32;
+      0: GriffHeader.Details.smallestFraction := 4;
+      2: GriffHeader.Details.smallestFraction := 16;
+      3: GriffHeader.Details.smallestFraction := 32;
       else GriffHeader.Details.smallestFraction := 8;
     end;
     if (GriffHeader.Details.smallestNote = 0) and (Sender <> nil) then
     begin
       case quarterNote of
-        1..3: cbxSmallestNote.ItemIndex := 0;
-        4..7: cbxSmallestNote.ItemIndex := 1;
-        else  cbxSmallestNote.ItemIndex := 2;
+        1..3: cbxSmallestNote.ItemIndex := 1;
+        4..7: cbxSmallestNote.ItemIndex := 2;
+        else  cbxSmallestNote.ItemIndex := 3;
       end;
       cbxSmallestNoteChange(nil);
     end;
@@ -1113,6 +1120,8 @@ procedure TfrmSequenzer.edtGriffPitchExit(Sender: TObject);
 var
   Event: PGriffEvent;
   Index: integer;
+  s: string;
+  i: integer;
 begin
   Event := GriffPartitur_.SelectedEvent;
   if (Event <> nil) and
@@ -1120,13 +1129,15 @@ begin
     with Event^ do
      if NoteType = ntBass then
      begin
-       Index := StrToIntDef(edtGriffPitch.Text, 6);
-       if Index < 1 then
-         Index := 1;
-       if Index > 8 then
-         Index := 8;
-       GriffPitch := Index;
-       edtGriffPitch.Text := IntToStr(Index);
+       Index := StrToIntDef(edtGriffPitch.Text, -1);
+       if (Index < 0) and GriffPartitur_.Instrument.BassDiatonic then
+       begin
+         s := (edtGriffPitch.Text);
+         Index := Event.SetIndexSteiBass(s);
+       end;
+       if (Index >= 1) and (Index <= 9) then
+         GriffPitch := Index;
+       //edtGriffPitch.Text := IntToStr(Index);
        ChangeNote(Event, true);
        SelectedChanges(Event);
      end;
@@ -1405,7 +1416,7 @@ begin
       vk_F1:
         begin
           if GriffPartitur_.PartiturLoaded then
-            if Warning('Die Partitur wird überschrieben. Wollen Sie das?') <> IDYES then
+            if not (Warning('Die Partitur wird überschrieben. Wollen Sie das?') in [IDYES, IDOK]) then
             begin
               frmGriff.Show;
               exit;
@@ -1418,7 +1429,7 @@ begin
           cbxViertelChange(Self);
           edtBPMExit(nil);
           cbTransInstrumentChange(nil);
-          GriffPartitur_.InsertNewEvent(-1);
+          GriffPartitur_.InsertNewEvent(-1, true);
           GriffPartitur_.Selected := 0;
           frmGriff.HorzScrollPos := 0;
           frmGriff.HorzScrollRange := 0;

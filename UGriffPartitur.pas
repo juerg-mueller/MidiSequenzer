@@ -70,7 +70,7 @@ type
   public
     fSelected: integer;
     function GetTotalDuration: integer;
-    procedure AppendEvent(const Event: TGriffEvent);
+    procedure AppendEvent(Event: TGriffEvent);
     procedure DeleteEvent(Index: integer);
     function AufViertelnotenAufrunden: boolean;
   public
@@ -113,15 +113,14 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure AppendGriffEvent(GriffEvent: TGriffEvent);
-    procedure InsertNewEvent(Index: Integer; Mute: boolean = false);
-    procedure DeleteGriffEvent(Index: integer);
+//    procedure AppendGriffEvent(GriffEvent: TGriffEvent);
+    procedure InsertNewEvent(Index: Integer; Mute: boolean; Shift: TShiftState = []);
+//    procedure DeleteGriffEvent(Index: integer);
     function GetDrawDuration(Index: integer; In__Push: boolean): integer;
 
     procedure Clear;
     procedure Unselect;
     procedure SetRubberOff;
-
     function LoadFromEvents(const EventPartitur: TEventArray; Copyright: TCopyright): boolean;
     function LoadFromEventPartitur(const EventPartitur: TEventArray; AsGriffPartitur: boolean = false): boolean;
     function LoadFromNewEventPartitur(const EventPartitur: TEventArray): boolean;
@@ -181,8 +180,9 @@ type
     // not used
     procedure NewVelocity;
     function PartiturLength: integer;
+    function GetLength: integer;
 
-    property UsedEvents: integer read GriffHeader.UsedEvents;
+    property UsedEvents: integer read GetLength;
     property Selected: integer read fSelected write SetSelected;
     property quarterNote: word read GriffHeader.Details.TicksPerQuarter;
   end;
@@ -211,16 +211,16 @@ end;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-procedure TGriffPartitur.AppendEvent(const Event: TGriffEvent);
+function TGriffPartitur.GetLength: integer;
 begin
-  if Length(GriffEvents) < 1000 then
-    SetLength(GriffEvents, 1000)
-  else
-  if High(GriffEvents) <= UsedEvents then
-    SetLength(GriffEvents, 2*Length(GriffEvents));
+  result := Length(GriffEvents);
+end;
 
-  GriffEvents[UsedEvents] := Event;
-  inc(GriffHeader.UsedEvents);
+procedure TGriffPartitur.AppendEvent(Event: TGriffEvent);
+begin
+  Event.AbsRect.Height := 1;
+  SetLength(GriffEvents, UsedEvents+1);
+  GriffEvents[UsedEvents-1] := Event;
 end;
 
 procedure TGriffPartitur.DeleteEvent(Index: integer);
@@ -231,7 +231,7 @@ begin
   begin
     for iEvent := Index to UsedEvents-2 do
       GriffEvents[iEvent] := GriffEvents[iEvent+1];
-    dec(GriffHeader.UsedEvents);
+    SetLength(GriffEvents, UsedEvents-1);
   end;
 end;
 
@@ -349,17 +349,18 @@ begin
       inc(k);
   end;
 end;
-
+{
 procedure TGriffPartitur.DeleteGriffEvent(Index: integer);
 var
   i: integer;
 begin
   i := Index;
+
   if UsedEvents > 1 then
   begin
     if (0 <= Index) and (Index < UsedEvents) then
     begin
-      dec(GriffHeader.UsedEvents);
+      UsedEvents);
       while Index < UsedEvents do
       begin
         GriffEvents[Index] := GriffEvents[Index+1];
@@ -372,9 +373,10 @@ begin
       end;
     end;
   end;
-end;
 
-procedure TGriffPartitur.InsertNewEvent(Index: Integer; Mute: boolean);
+end;
+ }
+procedure TGriffPartitur.InsertNewEvent(Index: Integer; Mute: boolean; Shift: TShiftState);
 var
   Event: TGriffEvent;
 begin
@@ -403,13 +405,16 @@ begin
       if NoteType = ntBass then
         AbsRect.Top := -1
       else
-      if AbsRect.Top > 1 then
-        dec(AbsRect.Top, 2)
-      else
-        AbsRect.Top := 3; 
+      if not (ssCtrl in Shift) then
+      begin
+        if AbsRect.Top > 1 then
+          dec(AbsRect.Top, 2)
+        else
+          AbsRect.Top := 3;
+      end;
       AbsRect.Height := 1;
       Repeat_ := rRegular;
-      if (GetKeyState(vk_capital) <> 1) then
+      if not (ssAlt in Shift)then
       begin
         if NoteType = ntBass then
           AbsRect.Offset(quarterNote, 0)
@@ -668,7 +673,6 @@ begin
   PartiturLoaded := false;
   PartiturFileName := '';
   GriffHeader.Version := 1;
-  GriffHeader.UsedEvents := 0;
   GriffHeader.Details.Clear;
   
   Unselect;
@@ -679,7 +683,7 @@ var
   iEvent: integer;
 begin
   result := 0;
-  for iEvent := 0 to GriffHeader.UsedEvents-1 do
+  for iEvent := 0 to UsedEvents-1 do
     if GriffEvents[iEvent].AbsRect.Right > result then
       result := GriffEvents[iEvent].AbsRect.Right;
 end;
@@ -697,7 +701,6 @@ var
   Sel: integer;
 begin
   Sel := Selected;
-  SetLength(GriffEvents, GriffHeader.UsedEvents);
   TGriffArray.SortGriffEvents(GriffEvents, Sel);
 
   fSelected := Sel;
@@ -843,7 +846,7 @@ begin
                      AbsRect.Height := 1;
                    end;
                    if Repeat_ <> rRegular then
-                     AppendGriffEvent(GriffEvent);
+                     AppendEvent(GriffEvent);
                  end;
               3: _Repeat := TRepeat(Event.d2);
               1, 2:
@@ -907,7 +910,7 @@ begin
 
               GriffEvent.AbsRect.Height := 1;
               GriffEvent.Repeat_ := _Repeat;
-              AppendGriffEvent(GriffEvent);
+              AppendEvent(GriffEvent);
               _Repeat := rRegular;
             end else
 ////////////////////////////////////////////////////// ==>
@@ -915,12 +918,12 @@ begin
               GriffEvent.InPush := In_Push;
               GriffEvent.SetNewGriffEvent(Instrument, Event);
               GriffEvent.Repeat_ := _Repeat;
-              AppendGriffEvent(GriffEvent);
+              AppendEvent(GriffEvent);
               _Repeat := rRegular;
             end else
 /////////////////////////////////////
             if GriffEvent.SetGriffEvent(Instrument, In_Push, false) then
-              AppendGriffEvent(GriffEvent)
+              AppendEvent(GriffEvent)
             else begin
               result := GriffEvent.NoteType = ntBass;
             end;
@@ -996,13 +999,13 @@ begin
               GriffEvent.InPush := In_Push;
               GriffEvent.SoundPitch := Event.d1;
               if GriffEvent.UniqueSoundToGriff(Instrument, Event.Channel) then
-                AppendGriffEvent(GriffEvent)
+                AppendEvent(GriffEvent)
               else begin
                 //if not (Event.Channel in [5,6]) then
                 result := false;
                 GriffEvent.InPush := not In_Push;
                 if GriffEvent.UniqueSoundToGriff(Instrument, Event.Channel) then
-                  AppendGriffEvent(GriffEvent)
+                  AppendEvent(GriffEvent)
               end;
             end;
           end;
@@ -1034,7 +1037,7 @@ begin
   try
     Stream.LoadFromFile(FileName);
     Stream.BulkRead(PByte(@GriffHeader), sizeof(TGriffHeader));
-    SetLength(GriffEvents, GriffHeader.UsedEvents);
+//    SetLength(GriffEvents, GriffHeader.UsedEvents);
     Stream.Position := 1024;
     Stream.BulkRead(PByte(@Instrument), sizeof(Instrument));
     Stream.Position := 2048;
@@ -1065,13 +1068,12 @@ begin
     for iEvent := 0 to Partitur.UsedEvents-1 do
     begin
       GriffEvents[iEvent].AbsRect.Offset(duration, 0);
-      AppendGriffEvent(Partitur.GriffEvents[iEvent]);
+      AppendEvent(Partitur.GriffEvents[iEvent]);
     end;
   finally
     Partitur.Free;
   end;      
 end;
-
 
 function TGriffPartitur.SetInstrument(Name: AnsiString): boolean;
 var
@@ -1122,9 +1124,11 @@ begin
     Stream.Free;
   end;
 end;
-
+{
 procedure TGriffPartitur.AppendGriffEvent(GriffEvent: TGriffEvent);
 begin
+  GriffEvent.AbsRect.Height := 1;
+
   if Length(GriffEvents) < 10 then
     SetLength(GriffEvents, 100);
   if UsedEvents = Length(GriffEvents) then
@@ -1132,11 +1136,11 @@ begin
   GriffEvents[GriffHeader.UsedEvents] := GriffEvent;
   inc(GriffHeader.UsedEvents);
 end;
-
+ }
 procedure TGriffPartitur.InsertNewSelected(const GriffEvent: TGriffEvent);
 begin
-  AppendGriffEvent(GriffEvent);
-  fSelected := GriffHeader.UsedEvents-1;
+  AppendEvent(GriffEvent);
+  fSelected := UsedEvents-1;
   SortEvents;
   frmGriff.Invalidate;
 end;
@@ -1201,6 +1205,8 @@ var
   takt: integer;
 begin
   takt := quarterNote*GriffHeader.Details.measureFact;
+  if GriffHeader.Details.measureDiv = 8 then
+    takt := takt div 2;
   delta := quarterNote div 3;
   i := 0;
   while i < UsedEvents do
@@ -1293,12 +1299,9 @@ begin
         inc(i);
       end;
     end;
-    i := k + 1
+    i := k + 1;
   end;
-
 end;
-
-
 
 function TGriffPartitur.ScreenToNotePoint(var NotePoint: TPoint; ScreenPoint: TPoint): boolean;
 begin
@@ -1324,26 +1327,26 @@ begin
   end;
 end;
 
- procedure TGriffPartitur.SetSelected(Index: integer);
- begin
-   fSelected := Index;
-   if (SelectedEvent <> nil) then
-     DoSoundPitch(SelectedEvent^);
+procedure TGriffPartitur.SetSelected(Index: integer);
+begin
+  fSelected := Index;
+  if (SelectedEvent <> nil) then
+    DoSoundPitch(SelectedEvent^);
 
-   if trimNote and (SelectedEvent <> nil) then
-     with SelectedEvent^, GriffHeader.Details do
-     begin
-       SetRaster(AbsRect);
-       if AbsRect.Width < smallestNote then
-         AbsRect.Width := smallestNote;
-     end;
- end;
+  if trimNote and (SelectedEvent <> nil) then
+    with SelectedEvent^, GriffHeader.Details do
+    begin
+      SetRaster(AbsRect);
+      if AbsRect.Width < smallestNote then
+        AbsRect.Width := smallestNote;
+    end;
+end;
 
 function TGriffPartitur.KeyDown(var Key: Word; Shift: TShiftState): boolean;
 
   procedure NewDiskantEvent(Key: integer);
   begin
-    InsertNewEvent(Selected, true);
+    InsertNewEvent(Selected, true, Shift - [ssCtrl]);
     with SelectedEvent^ do
     begin
       NoteType := ntDiskant;
@@ -1371,7 +1374,11 @@ function TGriffPartitur.KeyDown(var Key: Word; Shift: TShiftState): boolean;
       AbsRect.Top := -1;
       AbsRect.Height := 1;
       AbsRect.Width := quarterNote div 3;
-      GriffPitch := Key - ord('0');
+      if not Instrument.BassDiatonic then
+        GriffPitch := Key - ord('0')
+      else begin
+
+      end;
     end;
   end;
 
@@ -1385,8 +1392,12 @@ var
   Dur: TGriffDuration;
   FirstCopy: integer;
   iFirst, iLast: integer;
+  s: string;
 begin
   result := false;
+
+  if Key in [0, VK_SHIFT, VK_CONTROL, VK_MENU] then
+    exit;
 
   if (Key = ord(' ')) or
      ((Key = ord('S')) and (@DoSave <> nil) and (Shift = [ssCtrl])) then
@@ -1477,7 +1488,7 @@ begin
             end;
             for i := FirstCopy to UsedEvents-Length(CopyEvents)-1 do
               GriffEvents[i] := GriffEvents[i+Length(CopyEvents)];
-            dec(GriffHeader.UsedEvents, Length(CopyEvents));
+            SetLength(GriffEvents, UsedEvents - Length(CopyEvents));
             for i := FirstCopy to UsedEvents-1 do
               GriffEvents[i].AbsRect.Offset(-w, 0);
             fSelected := FirstCopy-1;
@@ -1537,6 +1548,19 @@ begin
         end;
     end;
 
+  if Instrument.BassDiatonic and
+     (SelectedEvent <> nil) and (SelectedEvent.NoteType = ntBass) and
+     (Key in [ord('A') .. ord('G')]) then
+  begin
+    NewBassEvent(Key);
+    s := chr(Key);
+    if not (ssShift in Shift) then
+      s := LowerCase(s);
+    SelectedEvent.SetIndexSteiBass(s);
+    SortEvents;
+    result := true;
+    exit;
+  end;
   case Key of
     ord('C'), ord('D'), ord('E'), ord('F'), ord('G'), ord('A'), ord('H'):
       begin
@@ -1590,6 +1614,11 @@ begin
 
   with SelectedEvent^ do
   begin
+    if Key = vk_Insert then
+    begin
+      InsertNewEvent(Selected, false, Shift);
+      result := true;
+    end else
     if [] = Shift then
     begin
       x := AbsRect.Left;
@@ -1774,14 +1803,9 @@ begin
             SortEvents;
             result := true;
           end;
-        vk_Insert:
-          begin
-            InsertNewEvent(Selected);
-            result := true;
-          end;
         vk_Delete:
           begin
-            DeleteGriffEvent(Selected);
+            DeleteEvent(Selected);
             result := true;
           end;          
       end;
@@ -2541,7 +2565,7 @@ begin
                 else
                   AbsRect.Width := TicksPerQuarter;
             end;
-            AppendGriffEvent(GriffEvent);
+            AppendEvent(GriffEvent);
           end;
         end;
       end;
@@ -2566,7 +2590,7 @@ begin
       GriffEvent.NoteType := ntBass;
       if GriffEvent.SetGriffEvent(Instrument, In_Push, false) then
       begin
-        AppendGriffEvent(GriffEvent);
+        AppendEvent(GriffEvent);
 {$if defined(CONSOLE)}
         if (GriffEvent.GriffPitch = 0) and
            (GriffEvent.NoteType = ntBass) then
@@ -2808,7 +2832,7 @@ begin
           GriffEvents[iNew] := GriffEvents[iEvent];
         inc(iNew);
       end;
-  GriffHeader.UsedEvents := iNew;
+  SetLength(GriffEvents, iNew);
 
   RepeatToRest;
 end;
@@ -2886,7 +2910,7 @@ begin
       inc(k);
     end;
   result := k < UsedEvents;
-  GriffHeader.UsedEvents := k;
+  SetLength(GriffEvents, k);
 end;
 
 
@@ -3263,7 +3287,7 @@ begin
       end;
     end;
   end;
-  GriffHeader.UsedEvents := iEvent;
+  SetLength(GriffEvents, iEvent);
   SortEvents;
 end;
 
@@ -3329,7 +3353,7 @@ begin
                 end;
               end;
               if Repeat_ <> rRegular then
-                AppendGriffEvent(GriffEvent);
+                AppendEvent(GriffEvent);
             end;
           3: _Repeat := TRepeat(Event.d2);
           1, 2:
@@ -3353,7 +3377,7 @@ begin
         GriffEvent.InPush := In_Push;
         GriffEvent.SetNewGriffEvent(Instrument, Event);
         GriffEvent.Repeat_ := _Repeat;
-        AppendGriffEvent(GriffEvent);
+        AppendEvent(GriffEvent);
         _Repeat := rRegular;
       end;
       if Event.Event in [8..14] then
@@ -3368,7 +3392,6 @@ begin
   PartiturLoaded := true;
   LoadChanges;
 end;
-
 
 initialization
   GriffPartitur_ := TGriffPartitur.Create;

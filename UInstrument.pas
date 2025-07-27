@@ -102,7 +102,8 @@ var
 {$endif}
 
 type
-  TSteiBass = array [5..6,1..8] of String[4];
+  TTBass = array[1..8] of string[4];
+  TSteiBass = array [5..6] of TTBass;
 
 const
   OergeliBassZusatz : array [1..9, 0..1] of integer =
